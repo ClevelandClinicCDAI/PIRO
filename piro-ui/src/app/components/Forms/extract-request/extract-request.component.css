@@ -1,0 +1,44 @@
+.form-group {
+    padding-top: 20px;
+}
+
+
+.q-input-control {
+    display: inline-block;
+    padding: 5px 8px;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+
+.form-control:focus{
+    border-color:#ced4da !important;
+    box-shadow: none !important;
+    background-image: none;
+}
+
+
+.invalid-feedback{
+    display: block;
+}
+
+.asterisk-danger{
+    color:rgb(202, 16, 16);
+}
+
+.custom-alert {  
+    max-width:2000px;  
+}
+
+.field-li {
+    width: 33%;
+}
+
+.field-ul {
+    padding-left: 50px;;
+}

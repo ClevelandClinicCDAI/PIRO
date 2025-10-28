@@ -1,0 +1,53 @@
+<div class="modal-header">
+    <h4 class="modal-title">MRN Search</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+    <div [ngClass]="!loaded ? 'input-group disabledDiv' : 'input-group'">
+        <input type="text" id="inputKeywordSearch" name="inputKeywordSearch"
+            class="form-control input input-md mrn-search" placeholder="MRN #" autocomplete="off" [(ngModel)]='mrnText'>
+        <button class="btn btn-info btn-md" type="button" (click)="search();">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+    <br />
+    <div class="spinner-border text-primary" role="status" *ngIf="!loaded">
+        <span class="sr-only">Loading...</span>
+    </div>
+    <div *ngIf="isSearch && items.length == 0">
+        <span class="text-center">No Record Found.</span>
+    </div>
+    <div class="tab-pane mrn-result" *ngIf="isSearch && items.length > 0">
+        <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+            <thead class="thead-dark">
+                <tr class="table-primary">
+                    <!-- <th></th> -->
+                    <th>Name</th>
+                    <th>MRN</th>
+                    <th>EPI</th>
+                </tr>
+            </thead>
+            <tbody *ngIf="items.length > 0">
+                <tr *ngFor="let item of items; let i =index; let first = first; let last = last" class="table-light">
+                    <!-- <td>
+                        <input type="radio" name="chkpatient" id="{{item?.patientid}}" value="{{item?.mrn}}" [checked]="i == 0">
+                    </td> -->
+                    <td>
+                        <p class="text-muted mb-0 ">{{item?.firstname}} {{item?.lastname}}</p>
+                    </td>
+                    <td>
+                        <p class="text-muted mb-0">{{item?.mrn}}</p>
+                    </td>
+                    <td>
+                        <p class="text-muted mb-0">{{item?.epi}}</p>
+                    </td>
+                </tr>
+            </tbody>             
+        </table>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" *ngIf="isSelected" class="btn btn-success" (click)="saveModal()">OK</button>
+    <button type="button" *ngIf="isSelected" class="btn btn-outline-dark" (click)="clearModal()">Clear</button>
+    <button type="button" class="btn btn-outline-dark" (click)="closeModal()">Close</button>
+</div>

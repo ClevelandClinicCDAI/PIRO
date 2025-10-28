@@ -1,0 +1,174 @@
+.btn-info {
+    background-color: rgb(204, 204, 223);
+    margin-right: 5px;
+}
+
+
+
+.btn-info{
+    border: none !important;
+}
+
+.btn-info:active{
+    border: none !important;
+    background: rgb(204, 204, 223) !important;
+}
+.table .thead-dark th {
+    color: #fff;
+    background-color: #212529;
+    border-color: #32383e;
+}
+
+.rounded-pill{
+    text-transform: capitalize;
+}
+
+.btn-info {
+    background-color: rgb(204, 204, 223);
+    margin-right: 5px;
+    z-index: 0;
+}
+
+
+.q-input-control {
+    display: inline-block;
+    padding: 5px 8px;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    width: auto;
+    white-space: pre;
+}
+.q-input-control option{
+    white-space: pre;
+}
+
+ul, li {list-style-type: none;}
+
+li {
+    padding-left: 0px;
+    /* text-indent: -2em; */
+}
+
+
+.facet{
+ border-radius: 5px;
+ border: 1px solid aqua;
+ padding: 10px;
+}
+
+.form-check-input {
+    padding-right: 10px;
+}
+
+.facetKey {
+    /* font-size: 11px; */
+    padding: 3px 7px;
+}
+
+.form-check-label {
+    width: 100%;
+}
+
+.form-group{
+    padding-top: 20px;
+}
+
+
+
+.btn-info{
+    border: none !important;
+}
+
+.btn-info:active{
+    border: none !important;
+    background: rgb(204, 204, 223) !important;
+}
+
+.input-md:focus{
+    box-shadow: none;
+}
+
+.suggestions-container {
+    position: absolute;
+    width: 36%;
+    background: #fff;
+    height: 200px;
+    box-shadow: 0 2px 5px rgb(0 0 0 / 25%);
+    box-sizing: border-box;
+    z-index: 99;
+    margin-left: 12.4%;
+    overflow: auto;
+}
+#filterSlider{
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+@media only screen and (max-width: 767px)  {
+    .filter_btns{
+        margin-top:0.5rem;
+    }
+}
+
+
+.dropdown-item{
+    cursor:pointer;
+}
+
+/* Filter Display */
+.filtered-data .form-item {
+    margin-right: 9px;
+  }
+
+.filterDisplayName{
+    color: #ffffff;
+  }
+
+.filteritem {
+    background-color: #60843d!important;
+}
+
+@media all and (max-width: 768px) {
+    .filterBy {
+        display: none!important;
+    }
+}
+.badge-success {
+    color: #fff;
+    background-color: green;
+}
+
+.badge-danger {
+    color: #fff;
+    background-color: red;
+}
+
+.badge {
+    display: inline-block;
+    padding: .25em .4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+}
+.mt-50 {
+    margin-top: 50px;
+}
+
+.mt-40 {
+    margin-top: 40px;
+}
+
+.badge-info {
+    color: #fff;
+    background-color: #17a2b8;
+}

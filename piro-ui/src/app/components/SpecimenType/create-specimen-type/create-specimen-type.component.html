@@ -1,0 +1,53 @@
+<div id="login" class="container">
+    <div class="row-fluid">
+        <div class="col-md-6" style="float:none;margin:auto;">
+            <div class="card shadow p-3 bg-white rounded">
+                <article class="card-body">
+                    <h4 class="card-title text-center mb-4 mt-1">Create Specimen Type</h4>
+                     <hr>
+                    <form [formGroup]="requestForm" (ngSubmit)="onSubmit()">
+                        <div class="form-group">
+                            <label for="dataInputName">Display Text<span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="display" [ngClass]="{ 'is-invalid': submitted && f.display.errors }">
+                            <div *ngIf="submitted && f.display.errors" class="invalid-feedback">
+                                <div *ngIf="f.display.errors.required">Display text is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Code <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="code" [ngClass]="{ 'is-invalid': submitted && f.code.errors }" >
+                            <div *ngIf="submitted && f.code.errors" class="invalid-feedback">
+                                <div *ngIf="f.code.errors.required">Code is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputDesc">Description <span class="asterisk-danger">*</span></label>
+                            <textarea  type="text" class="form-control" id="dataInputDesc" rows="4" formControlName="description" [ngClass]="{ 'is-invalid': submitted && f.description.errors }" ></textarea> 
+                            <div *ngIf="submitted && f.description.errors" class="invalid-feedback">
+                                <div *ngIf="f.description.errors.required">Description is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Reference <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="reference" [ngClass]="{ 'is-invalid': submitted && f.reference.errors }" >
+                            <div *ngIf="submitted && f.reference.errors" class="invalid-feedback">
+                                <div *ngIf="f.reference.errors.required">Reference is required</div>
+                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Category <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="category" [ngClass]="{ 'is-invalid': submitted && f.category.errors }" >
+                            <div *ngIf="submitted && f.category.errors" class="invalid-feedback">
+                                <div *ngIf="f.category.errors.required">Category is required</div>
+                             </div>
+                        </div>
+                        <br>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,2203 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="8/5/2025 2:01:05 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{BB4218D6-9896-4ED3-BD28-B22EF3E49756}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="linked_order"
+  DTS:PackageType="5"
+  DTS:VersionBuild="257"
+  DTS:VersionGUID="{F6025370-9609-48CE-A1C0-AA0E1C7A4DDD}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{1945E20B-895B-4220-BA12-91BE8EC33027}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="end_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-12-31</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{D241CFC9-B510-4BC8-B5E6-01398228E464}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'linked_order', '',
+        '', 'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{8B9C770E-3E3C-425D-88A5-8A574E7D2B12}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'linked_order', '',
+        '', 'query', 'SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE,
+        OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
+        RS.REQUISITION_ID,
+        LCI.CASE_NUM,
+        STR.SPEC_TST_ORDER_ID,
+        OLLO.ORDER_ID,
+        OR2.ORDER_PROC_ID,
+        CC.COMPONENT_ID,
+        CC.NAME COMP_NAME,
+        CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+        CC.DFLT_UNITS,
+        OP.PROC_ID,
+        OP.DESCRIPTION PROC_DESC,
+        STR.SPEC_NUMBER_RLTD,
+        RS.LINE SPEC_LINE,
+        STR.LINE SPEC_TEST_LINE,
+        OLLO.LINE LINKED_ORD_LINE,
+        OR2.ORD_VALUE,
+        OR2.ORD_NUM_VALUE,
+        OR2.REFERENCE_LOW,
+        OR2.REFERENCE_HIGH,
+        OR2.REFERENCE_UNIT,
+        OR2.ORD_RAW_VALUE,
+        OR2.RAW_LOW,
+        OR2.RAW_HIGH,
+        STR.REPORTABLE_YN
+        FROM LAB_CASE_INFO LCI
+        JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+        JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+        JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+        JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+        JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+        JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+        where RS.LINE = 1
+        AND (OR2.RESULT_DATE &gt; TO_DATE(''2025-01-31'',''yyyy-mm-dd'') OR OP.REVIEW_TIME &gt;
+        TO_DATE(''2025-01-31'',''yyyy-mm-dd''))', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{B44AEB1E-17A6-46C1-B073-065446CECD2E}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'linked_order', '',
+        '', 'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{ED182292-9E98-4AE2-B967-7693D1CB084A}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,&#xA;  RS.REQUISITION_ID,&#xA;  LCI.CASE_NUM,&#xA;  STR.SPEC_TST_ORDER_ID,&#xA;  OLLO.ORDER_ID,&#xA;  OR2.ORDER_PROC_ID,&#xA;  CC.COMPONENT_ID,&#xA;  CC.NAME COMP_NAME,&#xA;  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,&#xA;  CC.DFLT_UNITS,&#xA;  OP.PROC_ID,&#xA;  OP.DESCRIPTION PROC_DESC,&#xA;  STR.SPEC_NUMBER_RLTD,&#xA;  RS.LINE SPEC_LINE,&#xA;  STR.LINE SPEC_TEST_LINE,&#xA;  OLLO.LINE LINKED_ORD_LINE,&#xA;  OR2.ORD_VALUE,&#xA;  OR2.ORD_NUM_VALUE,&#xA;  OR2.REFERENCE_LOW,&#xA;  OR2.REFERENCE_HIGH,&#xA;  OR2.REFERENCE_UNIT,&#xA;  OR2.ORD_RAW_VALUE,&#xA;  OR2.RAW_LOW,&#xA;  OR2.RAW_HIGH,&#xA;  STR.REPORTABLE_YN&#xA;FROM LAB_CASE_INFO LCI&#xA;JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID&#xA;JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID&#xA;JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID&#xA;JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID&#xA;JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID&#xA;JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID&#xA;where RS.LINE = 1 &#xA;&quot; + (@[User::start_date] == &quot;&quot; ?  &quot;&quot; : &quot; AND  (OR2.RESULT_DATE &gt; TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd') OR OP.REVIEW_TIME &gt; TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd'))&quot;)"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE,
+        OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
+        RS.REQUISITION_ID,
+        LCI.CASE_NUM,
+        STR.SPEC_TST_ORDER_ID,
+        OLLO.ORDER_ID,
+        OR2.ORDER_PROC_ID,
+        CC.COMPONENT_ID,
+        CC.NAME COMP_NAME,
+        CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+        CC.DFLT_UNITS,
+        OP.PROC_ID,
+        OP.DESCRIPTION PROC_DESC,
+        STR.SPEC_NUMBER_RLTD,
+        RS.LINE SPEC_LINE,
+        STR.LINE SPEC_TEST_LINE,
+        OLLO.LINE LINKED_ORD_LINE,
+        OR2.ORD_VALUE,
+        OR2.ORD_NUM_VALUE,
+        OR2.REFERENCE_LOW,
+        OR2.REFERENCE_HIGH,
+        OR2.REFERENCE_UNIT,
+        OR2.ORD_RAW_VALUE,
+        OR2.RAW_LOW,
+        OR2.RAW_HIGH,
+        STR.REPORTABLE_YN
+        FROM LAB_CASE_INFO LCI
+        JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+        JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+        JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+        JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+        JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+        JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+        where RS.LINE = 1
+        AND (OR2.RESULT_DATE &gt; TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME &gt;
+        TO_DATE('2025-01-31','yyyy-mm-dd'))</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{77FBAF28-D0D3-40C4-8E8A-10F3D6DA8898}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="result_id_end">
+      <DTS:VariableValue
+        DTS:DataType="8"
+        xml:space="preserve"></DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{D38EE4E6-136A-4877-AC38-86520EC0E565}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="result_id_start">
+      <DTS:VariableValue
+        DTS:DataType="8"
+        xml:space="preserve"></DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{0606A1DA-EB44-4557-BBA2-33A870F21CCB}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="row_num">
+      <DTS:VariableValue
+        DTS:DataType="8"
+        xml:space="preserve"></DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{1884479B-DB99-45EB-ABC3-A3F9827A25EE}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="start_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-01-31</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\LinkedOrders-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="Data Flow Task"
+      DTS:DTSID="{8EB55BD9-65D4-4492-96E8-3381B57E574B}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="LinkedOrders-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:PropertyExpression
+        DTS:Name="[LinkedOrders-Source].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="LinkedOrders-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_LinkedOrder"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[CASE_ID]"
+                      cachedDataType="nText"
+                      cachedName="CASE_ID"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[LAST_RECV_UTC_DTTM]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="LAST_RECV_UTC_DTTM"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[LAST_RECV_UTC_DTTM]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LAST_RECV_UTC_DTTM]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[RESULT_DATE]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="RESULT_DATE"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RESULT_DATE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RESULT_DATE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[UPDATE_DATE]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="UPDATE_DATE"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[UPDATE_DATE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[UPDATE_DATE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORDER_INST]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="ORDER_INST"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_INST]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_INST]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REVIEW_TIME]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="REVIEW_TIME"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REVIEW_TIME]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REVIEW_TIME]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REQUISITION_ID]"
+                      cachedDataType="numeric"
+                      cachedName="REQUISITION_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REQUISITION_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[CASE_NUM]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="CASE_NUM"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_NUM]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_NUM]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[SPEC_TST_ORDER_ID]"
+                      cachedDataType="numeric"
+                      cachedName="SPEC_TST_ORDER_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_TST_ORDER_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TST_ORDER_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORDER_ID]"
+                      cachedDataType="numeric"
+                      cachedName="ORDER_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORDER_PROC_ID]"
+                      cachedDataType="numeric"
+                      cachedName="ORDER_PROC_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_PROC_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_PROC_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[COMPONENT_ID]"
+                      cachedDataType="numeric"
+                      cachedName="COMPONENT_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[COMP_NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="COMP_NAME"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_NAME]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_NAME]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[COMP_EXTERNAL_NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="COMP_EXTERNAL_NAME"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_EXTERNAL_NAME]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_EXTERNAL_NAME]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[DFLT_UNITS]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="DFLT_UNITS"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[DFLT_UNITS]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[DFLT_UNITS]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[PROC_ID]"
+                      cachedDataType="numeric"
+                      cachedName="PROC_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PROC_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_ID]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[PROC_DESC]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="PROC_DESC"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PROC_DESC]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_DESC]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[SPEC_NUMBER_RLTD]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="SPEC_NUMBER_RLTD"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_NUMBER_RLTD]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_NUMBER_RLTD]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[SPEC_LINE]"
+                      cachedDataType="numeric"
+                      cachedName="SPEC_LINE"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_LINE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[SPEC_TEST_LINE]"
+                      cachedDataType="numeric"
+                      cachedName="SPEC_TEST_LINE"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_TEST_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TEST_LINE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[LINKED_ORD_LINE]"
+                      cachedDataType="numeric"
+                      cachedName="LINKED_ORD_LINE"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[LINKED_ORD_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LINKED_ORD_LINE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORD_VALUE]"
+                      cachedDataType="wstr"
+                      cachedLength="4000"
+                      cachedName="ORD_VALUE"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_VALUE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_VALUE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORD_NUM_VALUE]"
+                      cachedDataType="numeric"
+                      cachedName="ORD_NUM_VALUE"
+                      cachedPrecision="38"
+                      cachedScale="4"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_NUM_VALUE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_NUM_VALUE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REFERENCE_LOW]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="REFERENCE_LOW"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_LOW]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_LOW]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REFERENCE_HIGH]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="REFERENCE_HIGH"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_HIGH]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_HIGH]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REFERENCE_UNIT]"
+                      cachedDataType="wstr"
+                      cachedLength="4000"
+                      cachedName="REFERENCE_UNIT"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_UNIT]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_UNIT]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[ORD_RAW_VALUE]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="ORD_RAW_VALUE"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_RAW_VALUE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_RAW_VALUE]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[RAW_LOW]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="RAW_LOW"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RAW_LOW]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_LOW]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[RAW_HIGH]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="RAW_HIGH"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RAW_HIGH]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_HIGH]" />
+                    <inputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].Columns[REPORTABLE_YN]"
+                      cachedDataType="wstr"
+                      cachedLength="1"
+                      cachedName="REPORTABLE_YN"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REPORTABLE_YN]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REPORTABLE_YN]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REQUISITION_ID]"
+                      dataType="numeric"
+                      name="REQUISITION_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_ID]"
+                      dataType="i4"
+                      name="CASE_ID" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_TST_ORDER_ID]"
+                      dataType="numeric"
+                      name="SPEC_TST_ORDER_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_ID]"
+                      dataType="numeric"
+                      name="ORDER_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_PROC_ID]"
+                      dataType="numeric"
+                      name="ORDER_PROC_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_ID]"
+                      dataType="numeric"
+                      name="COMPONENT_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_NUM]"
+                      dataType="wstr"
+                      length="1000"
+                      name="CASE_NUM" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PROC_ID]"
+                      dataType="numeric"
+                      name="PROC_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_NAME]"
+                      dataType="wstr"
+                      length="1000"
+                      name="COMP_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_EXTERNAL_NAME]"
+                      dataType="wstr"
+                      length="1000"
+                      name="COMP_EXTERNAL_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[DFLT_UNITS]"
+                      dataType="wstr"
+                      length="1000"
+                      name="DFLT_UNITS" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PROC_DESC]"
+                      dataType="wstr"
+                      length="1000"
+                      name="PROC_DESC" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_NUMBER_RLTD]"
+                      dataType="wstr"
+                      length="1000"
+                      name="SPEC_NUMBER_RLTD" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_LINE]"
+                      dataType="i4"
+                      name="SPEC_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_TEST_LINE]"
+                      dataType="i4"
+                      name="SPEC_TEST_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[LINKED_ORD_LINE]"
+                      dataType="i4"
+                      name="LINKED_ORD_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_VALUE]"
+                      dataType="wstr"
+                      length="4000"
+                      name="ORD_VALUE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_NUM_VALUE]"
+                      dataType="numeric"
+                      name="ORD_NUM_VALUE"
+                      precision="38"
+                      scale="5" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_LOW]"
+                      dataType="wstr"
+                      length="1000"
+                      name="REFERENCE_LOW" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_HIGH]"
+                      dataType="wstr"
+                      length="1000"
+                      name="REFERENCE_HIGH" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REFERENCE_UNIT]"
+                      dataType="wstr"
+                      length="4000"
+                      name="REFERENCE_UNIT" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORD_RAW_VALUE]"
+                      dataType="wstr"
+                      length="1000"
+                      name="ORD_RAW_VALUE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RAW_LOW]"
+                      dataType="wstr"
+                      length="1000"
+                      name="RAW_LOW" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RAW_HIGH]"
+                      dataType="wstr"
+                      length="1000"
+                      name="RAW_HIGH" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REPORTABLE_YN]"
+                      dataType="wstr"
+                      length="1000"
+                      name="REPORTABLE_YN" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[LAST_RECV_UTC_DTTM]"
+                      dataType="dbTimeStamp"
+                      name="LAST_RECV_UTC_DTTM" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RESULT_DATE]"
+                      dataType="dbTimeStamp"
+                      name="RESULT_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[UPDATE_DATE]"
+                      dataType="dbTimeStamp"
+                      name="UPDATE_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ORDER_INST]"
+                      dataType="dbTimeStamp"
+                      name="ORDER_INST" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REVIEW_TIME]"
+                      dataType="dbTimeStamp"
+                      name="REVIEW_TIME" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="LinkedOrders-Source"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
+                  NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE,
+                  OP.ORDER_INST, OP.REVIEW_TIME ,
+                  RS.REQUISITION_ID,
+                  LCI.CASE_NUM,
+                  STR.SPEC_TST_ORDER_ID,
+                  OLLO.ORDER_ID,
+                  OR2.ORDER_PROC_ID,
+                  CC.COMPONENT_ID,
+                  CC.NAME COMP_NAME,
+                  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+                  CC.DFLT_UNITS,
+                  OP.PROC_ID,
+                  OP.DESCRIPTION PROC_DESC,
+                  STR.SPEC_NUMBER_RLTD,
+                  RS.LINE SPEC_LINE,
+                  STR.LINE SPEC_TEST_LINE,
+                  OLLO.LINE LINKED_ORD_LINE,
+                  OR2.ORD_VALUE,
+                  OR2.ORD_NUM_VALUE,
+                  OR2.REFERENCE_LOW,
+                  OR2.REFERENCE_HIGH,
+                  OR2.REFERENCE_UNIT,
+                  OR2.ORD_RAW_VALUE,
+                  OR2.RAW_LOW,
+                  OR2.RAW_HIGH,
+                  STR.REPORTABLE_YN
+                  FROM LAB_CASE_INFO LCI
+                  JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+                  JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+                  JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+                  JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+                  JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+                  JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+                  where RS.LINE = 1
+                  AND (OR2.RESULT_DATE &gt; TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME
+                  &gt; TO_DATE('2025-01-31','yyyy-mm-dd'))</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_ID]"
+                      dataType="nText"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[CASE_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_ID]"
+                      name="CASE_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LAST_RECV_UTC_DTTM]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[LAST_RECV_UTC_DTTM]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LAST_RECV_UTC_DTTM]"
+                      name="LAST_RECV_UTC_DTTM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RESULT_DATE]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RESULT_DATE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RESULT_DATE]"
+                      name="RESULT_DATE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[UPDATE_DATE]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[UPDATE_DATE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[UPDATE_DATE]"
+                      name="UPDATE_DATE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_INST]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_INST]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_INST]"
+                      name="ORDER_INST"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REVIEW_TIME]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REVIEW_TIME]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REVIEW_TIME]"
+                      name="REVIEW_TIME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REQUISITION_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]"
+                      name="REQUISITION_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_NUM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[CASE_NUM]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[CASE_NUM]"
+                      name="CASE_NUM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TST_ORDER_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_TST_ORDER_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TST_ORDER_ID]"
+                      name="SPEC_TST_ORDER_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_ID]"
+                      name="ORDER_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_PROC_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_PROC_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORDER_PROC_ID]"
+                      name="ORDER_PROC_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]"
+                      name="COMPONENT_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMP_NAME]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_NAME]"
+                      name="COMP_NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_EXTERNAL_NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMP_EXTERNAL_NAME]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[COMP_EXTERNAL_NAME]"
+                      name="COMP_EXTERNAL_NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[DFLT_UNITS]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[DFLT_UNITS]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[DFLT_UNITS]"
+                      name="DFLT_UNITS"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[PROC_ID]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_ID]"
+                      name="PROC_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_DESC]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[PROC_DESC]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[PROC_DESC]"
+                      name="PROC_DESC"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_NUMBER_RLTD]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_NUMBER_RLTD]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_NUMBER_RLTD]"
+                      name="SPEC_NUMBER_RLTD"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_LINE]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_LINE]"
+                      name="SPEC_LINE"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TEST_LINE]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_TEST_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[SPEC_TEST_LINE]"
+                      name="SPEC_TEST_LINE"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LINKED_ORD_LINE]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[LINKED_ORD_LINE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[LINKED_ORD_LINE]"
+                      name="LINKED_ORD_LINE"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_VALUE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_VALUE]"
+                      length="4000"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_VALUE]"
+                      name="ORD_VALUE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_NUM_VALUE]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_NUM_VALUE]"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_NUM_VALUE]"
+                      name="ORD_NUM_VALUE"
+                      precision="38"
+                      scale="4"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_LOW]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_LOW]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_LOW]"
+                      name="REFERENCE_LOW"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_HIGH]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_HIGH]"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_HIGH]"
+                      name="REFERENCE_HIGH"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_UNIT]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_UNIT]"
+                      length="4000"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REFERENCE_UNIT]"
+                      name="REFERENCE_UNIT"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_RAW_VALUE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_RAW_VALUE]"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[ORD_RAW_VALUE]"
+                      name="ORD_RAW_VALUE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_LOW]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RAW_LOW]"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_LOW]"
+                      name="RAW_LOW"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_HIGH]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RAW_HIGH]"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[RAW_HIGH]"
+                      name="RAW_HIGH"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REPORTABLE_YN]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REPORTABLE_YN]"
+                      length="1"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].Columns[REPORTABLE_YN]"
+                      name="REPORTABLE_YN"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[CASE_ID]"
+                      dataType="nText"
+                      name="CASE_ID" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[LAST_RECV_UTC_DTTM]"
+                      dataType="dbTimeStamp"
+                      name="LAST_RECV_UTC_DTTM" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RESULT_DATE]"
+                      dataType="dbTimeStamp"
+                      name="RESULT_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[UPDATE_DATE]"
+                      dataType="dbTimeStamp"
+                      name="UPDATE_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_INST]"
+                      dataType="dbTimeStamp"
+                      name="ORDER_INST" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REVIEW_TIME]"
+                      dataType="dbTimeStamp"
+                      name="REVIEW_TIME" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REQUISITION_ID]"
+                      dataType="numeric"
+                      name="REQUISITION_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[CASE_NUM]"
+                      dataType="wstr"
+                      length="254"
+                      name="CASE_NUM" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_TST_ORDER_ID]"
+                      dataType="numeric"
+                      name="SPEC_TST_ORDER_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_ID]"
+                      dataType="numeric"
+                      name="ORDER_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORDER_PROC_ID]"
+                      dataType="numeric"
+                      name="ORDER_PROC_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_ID]"
+                      dataType="numeric"
+                      name="COMPONENT_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMP_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="COMP_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[COMP_EXTERNAL_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="COMP_EXTERNAL_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[DFLT_UNITS]"
+                      dataType="wstr"
+                      length="254"
+                      name="DFLT_UNITS" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[PROC_ID]"
+                      dataType="numeric"
+                      name="PROC_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[PROC_DESC]"
+                      dataType="wstr"
+                      length="254"
+                      name="PROC_DESC" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_NUMBER_RLTD]"
+                      dataType="wstr"
+                      length="254"
+                      name="SPEC_NUMBER_RLTD" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_LINE]"
+                      dataType="numeric"
+                      name="SPEC_LINE"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[SPEC_TEST_LINE]"
+                      dataType="numeric"
+                      name="SPEC_TEST_LINE"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[LINKED_ORD_LINE]"
+                      dataType="numeric"
+                      name="LINKED_ORD_LINE"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_VALUE]"
+                      dataType="wstr"
+                      length="4000"
+                      name="ORD_VALUE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_NUM_VALUE]"
+                      dataType="numeric"
+                      name="ORD_NUM_VALUE"
+                      precision="38"
+                      scale="4" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_LOW]"
+                      dataType="wstr"
+                      length="254"
+                      name="REFERENCE_LOW" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_HIGH]"
+                      dataType="wstr"
+                      length="50"
+                      name="REFERENCE_HIGH" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REFERENCE_UNIT]"
+                      dataType="wstr"
+                      length="4000"
+                      name="REFERENCE_UNIT" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[ORD_RAW_VALUE]"
+                      dataType="wstr"
+                      length="254"
+                      name="ORD_RAW_VALUE" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RAW_LOW]"
+                      dataType="wstr"
+                      length="50"
+                      name="RAW_LOW" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[RAW_HIGH]"
+                      dataType="wstr"
+                      length="50"
+                      name="RAW_HIGH" />
+                    <externalMetadataColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output].ExternalColumns[REPORTABLE_YN]"
+                      dataType="wstr"
+                      length="1"
+                      name="REPORTABLE_YN" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[CASE_ID]"
+                      dataType="nText"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[CASE_ID]"
+                      name="CASE_ID" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[LAST_RECV_UTC_DTTM]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[LAST_RECV_UTC_DTTM]"
+                      name="LAST_RECV_UTC_DTTM" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RESULT_DATE]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RESULT_DATE]"
+                      name="RESULT_DATE" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[UPDATE_DATE]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[UPDATE_DATE]"
+                      name="UPDATE_DATE" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_INST]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_INST]"
+                      name="ORDER_INST" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REVIEW_TIME]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REVIEW_TIME]"
+                      name="REVIEW_TIME" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REQUISITION_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REQUISITION_ID]"
+                      name="REQUISITION_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[CASE_NUM]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[CASE_NUM]"
+                      name="CASE_NUM" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_TST_ORDER_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_TST_ORDER_ID]"
+                      name="SPEC_TST_ORDER_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_ID]"
+                      name="ORDER_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_PROC_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORDER_PROC_ID]"
+                      name="ORDER_PROC_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMPONENT_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMPONENT_ID]"
+                      name="COMPONENT_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMP_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMP_NAME]"
+                      name="COMP_NAME" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMP_EXTERNAL_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[COMP_EXTERNAL_NAME]"
+                      name="COMP_EXTERNAL_NAME" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[DFLT_UNITS]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[DFLT_UNITS]"
+                      name="DFLT_UNITS" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[PROC_ID]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[PROC_ID]"
+                      name="PROC_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[PROC_DESC]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[PROC_DESC]"
+                      name="PROC_DESC" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_NUMBER_RLTD]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_NUMBER_RLTD]"
+                      name="SPEC_NUMBER_RLTD" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_LINE]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_LINE]"
+                      name="SPEC_LINE"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_TEST_LINE]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[SPEC_TEST_LINE]"
+                      name="SPEC_TEST_LINE"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[LINKED_ORD_LINE]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[LINKED_ORD_LINE]"
+                      name="LINKED_ORD_LINE"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_VALUE]"
+                      dataType="wstr"
+                      length="4000"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_VALUE]"
+                      name="ORD_VALUE" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_NUM_VALUE]"
+                      dataType="numeric"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_NUM_VALUE]"
+                      name="ORD_NUM_VALUE"
+                      precision="38"
+                      scale="4" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_LOW]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_LOW]"
+                      name="REFERENCE_LOW" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_HIGH]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_HIGH]"
+                      name="REFERENCE_HIGH" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_UNIT]"
+                      dataType="wstr"
+                      length="4000"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REFERENCE_UNIT]"
+                      name="REFERENCE_UNIT" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_RAW_VALUE]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ORD_RAW_VALUE]"
+                      name="ORD_RAW_VALUE" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RAW_LOW]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RAW_LOW]"
+                      name="RAW_LOW" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RAW_HIGH]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[RAW_HIGH]"
+                      name="RAW_HIGH" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REPORTABLE_YN]"
+                      dataType="wstr"
+                      length="1"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[REPORTABLE_YN]"
+                      name="REPORTABLE_YN" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\LinkedOrders-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{99344CF3-C9CE-4489-B475-38063CAF0A72}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.p_ssis_load_LinkedOrder"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{265FCB2A-9263-4C99-AFF4-032E0053FEAA}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{1E12F9B6-7A21-406F-B471-B68E4A7AD168}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{A4BF25A3-491E-4496-B8B2-B56AE72B6204}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{D36F1FA6-1BCB-4C7B-A80E-617EA7030B99}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="dbo.[P_SSIS_TruncateTable_LinkedOrder]"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Variables-Set"
+      DTS:CreationName="Microsoft.ScriptTask"
+      DTS:Description="Script Task"
+      DTS:DTSID="{C3930C74-D1CE-408A-B3B3-ACC9F5A736FA}"
+      DTS:ExecutableType="Microsoft.ScriptTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Variables-Set"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ScriptProject
+          Name="ST_b4e89275ccf4467ab0c4c694e8d253fc"
+          VSTAMajorVersion="14"
+          VSTAMinorVersion="0"
+          Language="CSharp"
+          ReadOnlyVariables="start_date_main,row_num_main,result_id_start_main,result_id_end_main,end_date_main"
+          ReadWriteVariables="start_date,row_num,result_id_start,result_id_end,end_date">
+          <ProjectItem
+            Name="Properties\AssemblyInfo.cs"
+            Encoding="UTF8"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
+//
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyCopyright("Copyright @  2025")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers
+// by using the '*' as shown below:
+
+[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.resx"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>]]></ProjectItem>
+          <ProjectItem
+            Name="ST_b4e89275ccf4467ab0c4c694e8d253fc.csproj"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup><ProjectTypeGuids>{30D016F9-3734-4E33-A861-5E7D899E18F3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids><Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration><Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform><ProductVersion>8.0.30703</ProductVersion><SchemaVersion>2.0</SchemaVersion><ProjectGuid>{1e7aea78-f9ec-4063-8f0c-85107d1eea8d}</ProjectGuid><OutputType>Library</OutputType><AppDesignerFolder>Properties</AppDesignerFolder><RootNamespace>ST_eb712b52076c41a2ab60a34b0214c004</RootNamespace><AssemblyName>ST_b4e89275ccf4467ab0c4c694e8d253fc</AssemblyName><TargetFrameworkVersion>v4.5</TargetFrameworkVersion><FileAlignment>512</FileAlignment><ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Debug' "><DebugSymbols>true</DebugSymbols><DebugType>full</DebugType><Optimize>false</Optimize><OutputPath>.\bin\Debug\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>DEBUG;TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Release' "><DebugSymbols>false</DebugSymbols><Optimize>true</Optimize><OutputPath>.\bin\Release\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><ItemGroup><Reference Include="System" /><Reference Include="System.Data" /><Reference Include="System.Windows.Forms" /><Reference Include="System.Xml" /><Reference Include="Microsoft.SqlServer.ManagedDTS, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /><Reference Include="Microsoft.SqlServer.ScriptTask, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /></ItemGroup><ItemGroup><AppDesigner Include="Properties\" /><Compile Include="Properties\AssemblyInfo.cs"><SubType>Code</SubType></Compile><EmbeddedResource Include="Properties\Resources.resx"><Generator>ResXFileCodeGenerator</Generator><LastGenOutput>Resources.Designer.cs</LastGenOutput></EmbeddedResource><Compile Include="Properties\Resources.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Resources.resx</DependentUpon></Compile><None Include="Properties\Settings.settings"><Generator>SettingsSingleFileGenerator</Generator><LastGenOutput>Settings.Designer.cs</LastGenOutput></None><Compile Include="Properties\Settings.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Settings.settings</DependentUpon></Compile><Compile Include="ScriptMain.cs"><SubType>Code</SubType></Compile></ItemGroup><!-- Include the build rules for a C# project.--><Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" /><ProjectExtensions><VisualStudio><FlavorProperties GUID="{30D016F9-3734-4E33-A861-5E7D899E18F3}"><ProjectProperties HostName="ScriptTask" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" DebugInfoCommandLine="" DebugInfoWorkingDir="" IconImageList="" /><Host Name="ScriptTask" GeneratedNamespace="$safeprojectname" IconIndex=""></Host><ProjectClient><HostIdentifier>SSIS_ST130</HostIdentifier></ProjectClient></FlavorProperties></VisualStudio></ProjectExtensions></Project>]]></ProjectItem>
+          <ProjectItem
+            Name="ScriptMain.cs"
+            Encoding="UTF8"><![CDATA[#region Help:  Introduction to the script task
+/* The Script Task allows you to perform virtually any operation that can be accomplished in
+ * a .Net application within the context of an Integration Services control flow.
+ *
+ * Expand the other regions which have "Help" prefixes for examples of specific ways to use
+ * Integration Services features within this script task. */
+#endregion
+
+
+#region Namespaces
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Runtime;
+using System.Windows.Forms;
+#endregion
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004
+{
+    /// <summary>
+    /// ScriptMain is the entry point class of the script.  Do not change the name, attributes,
+    /// or parent of this class.
+    /// </summary>
+	[Microsoft.SqlServer.Dts.Tasks.ScriptTask.SSISScriptTaskEntryPointAttribute]
+	public partial class ScriptMain : Microsoft.SqlServer.Dts.Tasks.ScriptTask.VSTARTScriptObjectModelBase
+	{
+        #region Help:  Using Integration Services variables and parameters in a script
+        /* To use a variable in this script, first ensure that the variable has been added to
+         * either the list contained in the ReadOnlyVariables property or the list contained in
+         * the ReadWriteVariables property of this script task, according to whether or not your
+         * code needs to write to the variable.  To add the variable, save this script, close this instance of
+         * Visual Studio, and update the ReadOnlyVariables and
+         * ReadWriteVariables properties in the Script Transformation Editor window.
+         * To use a parameter in this script, follow the same steps. Parameters are always read-only.
+         *
+         * Example of reading from a variable:
+         *  DateTime startTime = (DateTime) Dts.Variables["System::StartTime"].Value;
+         *
+         * Example of writing to a variable:
+         *  Dts.Variables["User::myStringVariable"].Value = "new value";
+         *
+         * Example of reading from a package parameter:
+         *  int batchId = (int) Dts.Variables["$Package::batchId"].Value;
+         *
+         * Example of reading from a project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].Value;
+         *
+         * Example of reading from a sensitive project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].GetSensitiveValue();
+         * */
+
+        #endregion
+
+        #region Help:  Firing Integration Services events from a script
+        /* This script task can fire events for logging purposes.
+         *
+         * Example of firing an error event:
+         *  Dts.Events.FireError(18, "Process Values", "Bad value", "", 0);
+         *
+         * Example of firing an information event:
+         *  Dts.Events.FireInformation(3, "Process Values", "Processing has started", "", 0, ref fireAgain)
+         *
+         * Example of firing a warning event:
+         *  Dts.Events.FireWarning(14, "Process Values", "No values received for input", "", 0);
+         * */
+        #endregion
+
+        #region Help:  Using Integration Services connection managers in a script
+        /* Some types of connection managers can be used in this script task.  See the topic
+         * "Working with Connection Managers Programatically" for details.
+         *
+         * Example of using an ADO.Net connection manager:
+         *  object rawConnection = Dts.Connections["Sales DB"].AcquireConnection(Dts.Transaction);
+         *  SqlConnection myADONETConnection = (SqlConnection)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Sales DB"].ReleaseConnection(rawConnection);
+         *
+         * Example of using a File connection manager
+         *  object rawConnection = Dts.Connections["Prices.zip"].AcquireConnection(Dts.Transaction);
+         *  string filePath = (string)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Prices.zip"].ReleaseConnection(rawConnection);
+         * */
+        #endregion
+
+
+		/// <summary>
+        /// This method is called when this script task executes in the control flow.
+        /// Before returning from this method, set the value of Dts.TaskResult to indicate success or failure.
+        /// To open Help, press F1.
+        /// </summary>
+		public void Main()
+		{
+            // TODO: Add your code here
+            Dts.Variables["start_date"].Value = Dts.Variables["start_date_main"].Value;
+            Dts.Variables["end_date"].Value = Dts.Variables["end_date_main"].Value;
+            Dts.Variables["row_num"].Value = Dts.Variables["row_num_main"].Value;
+
+            Dts.Variables["result_id_start"].Value = Dts.Variables["result_id_start_main"].Value;
+            Dts.Variables["result_id_end"].Value = Dts.Variables["result_id_end_main"].Value;
+            //MessageBox.Show(Dts.Variables["start_date"].Value.ToString());
+            Dts.TaskResult = (int)ScriptResults.Success;
+		}
+
+        #region ScriptResults declaration
+        /// <summary>
+        /// This enum provides a convenient shorthand within the scope of this class for setting the
+        /// result of the script.
+        ///
+        /// This code was generated automatically.
+        /// </summary>
+        enum ScriptResults
+        {
+            Success = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Success,
+            Failure = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Failure
+        };
+        #endregion
+
+	}
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Project"
+            Encoding="UTF16LE"><![CDATA[<?xml version="1.0" encoding="UTF-16" standalone="yes"?>
+<c:Project xmlns:c="http://schemas.microsoft.com/codeprojectml/2010/08/main" xmlns:msb="http://schemas.microsoft.com/developer/msbuild/2003" runtimeVersion="3.0" schemaVersion="1.0">
+	<msb:PropertyGroup>
+		<msb:Language>msBuild</msb:Language>
+		<msb:CodeName>ST_eb712b52076c41a2ab60a34b0214c004</msb:CodeName>
+		<msb:DisplayName>ST_eb712b52076c41a2ab60a34b0214c004</msb:DisplayName>
+		<msb:ProjectId>{F5728C75-71DE-4670-BB4B-1F18C64576BE}</msb:ProjectId>
+	</msb:PropertyGroup>
+	<msb:ItemGroup>
+		<msb:Project Include="ST_b4e89275ccf4467ab0c4c694e8d253fc.csproj"/>
+		<msb:File Include="Properties\Settings.settings"/>
+		<msb:File Include="Properties\AssemblyInfo.cs"/>
+		<msb:File Include="Properties\Resources.resx"/>
+		<msb:File Include="Properties\Resources.Designer.cs"/>
+		<msb:File Include="Properties\Settings.Designer.cs"/>
+		<msb:File Include="ScriptMain.cs"/>
+	</msb:ItemGroup>
+</c:Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Settings.get_Default():ST_eb712b52076c41a2ab60a34b0214c004.Properties.Sett" +
+    "ings")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.settings"
+            Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_ResourceManager():System.Resources.Resou" +
+    "rceManager")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_Culture():System.Globalization.CultureIn" +
+    "fo")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.set_Culture(System.Globalization.CultureInfo" +
+    "):Void")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    /// <summary>
+    ///   A strongly-typed resource class, for looking up localized strings, etc.
+    /// </summary>
+    // This class was auto-generated by the StronglyTypedResourceBuilder
+    // class via a tool like ResGen or Visual Studio.
+    // To add or remove a member, edit your .ResX file then rerun ResGen
+    // with the /str option, or rebuild your VS project.
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    internal class Resources {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+
+        /// <summary>
+        ///   Returns the cached ResourceManager instance used by this class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if ((resourceMan == null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Overrides the current thread's CurrentUICulture property for all
+        ///   resource lookups using this strongly typed resource class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <BinaryItem
+            Name="ST_b4e89275ccf4467ab0c4c694e8d253fc.dll">[binary item]</BinaryItem>
+        </ScriptProject>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{9ED9BCD0-9AAE-4733-A016-7410E84C83D5}"
+      DTS:From="Package\Variables-Set"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{6901C355-6A41-4406-81E7-B91C36CD8D5C}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\LinkedOrders-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{0E68E8A2-0EE1-4AD2-9935-D2F12CE78A7A}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{F3B942D5-BB74-4376-9DA7-82AFC87E61DD}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Variables-Set" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{4CE25023-7B94-4BE7-8284-5B701BECE53E}"
+      DTS:From="Package\LinkedOrders-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 5]"
+      DTS:CreationName=""
+      DTS:DTSID="{6E390619-4D93-407D-B604-BE34AE56E7A5}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 5"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="225,42"
+          Id="Package\LinkedOrders-Data Flow Task"
+          TopLeft="59,394" />
+        <NodeLayout
+          Size="161,42"
+          Id="Package\Load Main Table"
+          TopLeft="100,467" />
+        <NodeLayout
+          Size="117,42"
+          Id="Package\Log End"
+          TopLeft="119,545" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Log Query"
+          TopLeft="116,307" />
+        <NodeLayout
+          Size="122,42"
+          Id="Package\Log Start"
+          TopLeft="125,56" />
+        <NodeLayout
+          Size="150,42"
+          Id="Package\Truncate Table"
+          TopLeft="107,132" />
+        <NodeLayout
+          Size="141,42"
+          Id="Package\Variables-Set"
+          TopLeft="105,215" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="177.75,257">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,50"
+              Start="0,0"
+              End="0,42.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,42.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="180,349">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-8.5,45"
+              Start="0,0"
+              End="-8.5,37.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,18.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,18.5"
+                    Point2="0,22.5"
+                    Point3="-4,22.5" />
+                  <mssgle:LineSegment
+                    End="-4.5,22.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-4.5,22.5"
+                    Point2="-8.5,22.5"
+                    Point3="-8.5,26.5" />
+                  <mssgle:LineSegment
+                    End="-8.5,37.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="184,98">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,34"
+              Start="0,0"
+              End="0,26.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,26.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="178.75,174">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,41"
+              Start="0,0"
+              End="0,33.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,33.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="171.5,436">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="9,31"
+              Start="0,0"
+              End="9,23.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,11.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,11.5"
+                    Point2="0,15.5"
+                    Point3="4,15.5" />
+                  <mssgle:LineSegment
+                    End="5,15.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="5,15.5"
+                    Point2="9,15.5"
+                    Point3="9,19.5" />
+                  <mssgle:LineSegment
+                    End="9,23.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 5]"
+          TopLeft="179,509">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,36"
+              Start="0,0"
+              End="0,28.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,28.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\LinkedOrders-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="184,42"
+          Id="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source"
+          TopLeft="234,88" />
+        <NodeLayout
+          Size="204,42"
+          Id="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination"
+          TopLeft="239,323" />
+        <EdgeLayout
+          Id="Package\LinkedOrders-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="326,130">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="15,193"
+              Start="0,0"
+              End="15,185.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,92.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,92.5"
+                    Point2="0,96.5"
+                    Point3="4,96.5" />
+                  <mssgle:LineSegment
+                    End="11,96.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="11,96.5"
+                    Point2="15,96.5"
+                    Point3="15,100.5" />
+                  <mssgle:LineSegment
+                    End="15,185.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\LinkedOrders-Data Flow Task\LinkedOrders-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\LinkedOrders-Data Flow Task\LinkedOrders-Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

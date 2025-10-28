@@ -1,0 +1,178 @@
+<div class="container">
+    <div class="row-fluid">
+        <div class="col-md-7" style="float:none;margin:auto;">
+            <div class="card shadow p-3 bg-white rounded">
+                <article class="card-body">
+                    <h4 class="card-title text-center mb-4 mt-1">Data Extract Request</h4>
+                    <hr>
+                    <form [formGroup]="dataRequestForm" (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+                        <!-- <div class="overlay show" *ngIf="!contentLoaded"></div>
+                        <div class="spanner show" *ngIf="!contentLoaded">
+                            <div class="loader"></div>
+                            <p>.......</p>
+                        </div> -->
+                        <div class="form-group">
+                            <label for=""><b>User Instructions</b></label>
+                            <label>
+                                <ul>
+                                    <li>Please list the exact data elements you want in your data extract. For
+                                        IRB-approved
+                                        research, these must be listed in your IRB Data Collection Sheet.</li>
+                                    <li>Please list the exact date range of your data-set.</li>
+                                    <li>
+                                        For the request name, please type in your last name, plus something relevant to
+                                        your search, like "Goldblum sarcoma", or "Billings melanoma"
+                                    </li>
+                                </ul>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="">Requester Name</label>
+                            <input type="text" class="form-control disabled" id="username" [disabled]="true"
+                                value="{{userName}}">
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Data Request Name <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="name"
+                                [ngClass]="{ 'is-invalid': submitted && f.name.errors }">
+                            <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
+                                <div *ngIf="f.name.errors.required">Name is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="reasonId">Select Request Type <span class="asterisk-danger">*</span></label>
+                            <br>
+                            <select class="q-input-control" (change)="onReasonChange()" formControlName="reasonId" id="reasonId"
+                                [ngClass]="{ 'is-invalid': submitted && f.reasonId.errors }">
+                                <option value="">Select Option</option>
+                                <option value="{{reason.value}}" *ngFor="let reason of reasons.data">{{reason.text}}
+                                </option>
+                            </select>
+                            <div *ngIf="submitted && f.reasonId.errors" class="invalid-feedback">
+                                <div *ngIf="f.reasonId.errors.required">Please select a option</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="asterisk-danger" style="font-weight: 500;">For IRB research requests, only data elements listed on the approved Data Collection Sheet (DCS) 
+                                may be provided, regardless of the export fields selected in PIRO. Please ensure the data elements 
+                                requested are listed on the DCS prior to submitting your request.</label>
+                            <br/>
+                            <label for="select_column">Select Export fields <span
+                                    class="asterisk-danger">*</span></label>
+                            &nbsp;
+                            <button class="btn btn-primary hand" type="button" (click)="openexportfieldModal()">
+                                <span name="select_column" class="hand"><i class="fa fa-list"></i> </span>
+                            </button>
+
+                            <div *ngIf="selectedFields.length > 0">
+                                <!-- <ul>
+                                    <li *ngFor="let column of selectedFields;">
+                                            {{column.display}}
+                                    </li>
+                                </ul> -->
+                                <ul class="list-group list-group-horizontal flex-wrap field-ul">
+                                    <li *ngFor="let column of selectedFields;" class="list-group-item- field-li">
+                                        {{column.display}}
+                                    </li>
+                                </ul>
+                            </div>
+                            <div *ngIf="submitted && !isselectedFields" class="invalid-feedback">
+                                <div *ngIf="!f.isselectedFields">Please select the export fields</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comment">Notes:<span class="asterisk-danger">*</span></label>
+                            <textarea type="text" class="form-control" id="comment" rows="4" formControlName="comment"
+                                [ngClass]="{ 'is-invalid': submitted && f.comment.errors }"></textarea>
+                            <div *ngIf="submitted && f.comment.errors" class="invalid-feedback">
+                                <div *ngIf="f.comment.errors.required">Notes is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="searchId">Select Saved Search <span class="asterisk-danger">*</span></label>
+                            <br>
+                            <select class="q-input-control" formControlName="searchId" id="searchId"
+                                [ngClass]="{ 'is-invalid': submitted && f.searchId.errors }">
+                                <option value="">Select Option</option>
+                                <option value="{{search.value}}" *ngFor="let search of searches.data">{{search.text}}
+                                </option>
+                            </select>
+                            <div *ngIf="submitted && f.searchId.errors" class="invalid-feedback">
+                                <div *ngIf="f.searchId.errors.required">Please select a option</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dateFrom">Date Range<span class="asterisk-danger">*</span></label>
+                            <br>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="input-group">
+                                        <input class="form-control" placeholder="yyyy-mm-dd" name="dateFrom"
+                                            ngbDatepicker formControlName="dateFrom" id="dateFrom" #d="ngbDatepicker" />
+                                        <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()"
+                                            type="button"></button>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="input-group">
+                                        <input class="form-control" placeholder="yyyy-mm-dd" name="dateTo" ngbDatepicker
+                                            formControlName="dateTo" id="dateTo" #dd="ngbDatepicker" />
+                                        <button class="btn btn-outline-secondary bi bi-calendar3" (click)="dd.toggle()"
+                                            type="button"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="submitted && (f.dateTo.errors || f.dateFrom.errors)" class="invalid-feedback">
+                                <div *ngIf="f.dateTo.errors || f.dateFrom.errors">Please select date range</div>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="isirb">
+                            <label for="searchId">IRB # <span class="asterisk-danger">*</span></label>
+                            <br>
+                            <input type="text" class="form-control" id="irbNumber" formControlName="irbNumber"
+                                [ngClass]="{ 'is-invalid': submitted && f.irbNumber.errors }">
+                            <div *ngIf="submitted && f.irbNumber.errors" class="invalid-feedback">
+                                <div *ngIf="f.irbNumber.errors.required">IRB # is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="isirb">
+                            <label for="searchId">IRB is approved for pediatric data <span
+                                    class="asterisk-danger">*</span></label>
+                            <br>
+                            <select class="q-input-control" formControlName="isPediatric" id="isPediatric"
+                                [ngClass]="{ 'is-invalid': submitted && f.isPediatric.errors }">
+                                <option value="">Select Option</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>                                
+                            </select>
+                            <div *ngIf="submitted && f.isPediatric.errors" class="invalid-feedback">
+                                <div *ngIf="f.isPediatric.errors.required">Please select a option</div>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="isirb">
+                            <label for="exampleInputEmail1">Upload IRB-stamped data collection sheet. The IRB stamp must
+                                include the IRB number and expiration date. <span
+                                    class="asterisk-danger">*</span></label>
+                            <br />
+                            <input type="file" class="" formControlName="request_file"
+                                [ngClass]="{ 'is-invalid': submitted && !isfileValid }" (change)="uploadFile($event)">
+                            <!-- </div> -->
+                            <div *ngIf="submitted && !isfileValid" class="invalid-feedback">
+                                <div *ngIf="!isfileValid">Please select a file</div>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary" *ngIf="contentLoaded">Save</button>
+                            <button class="btn btn-primary" type="button" *ngIf="!contentLoaded" disabled>
+                                <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                Saving...
+                            </button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>

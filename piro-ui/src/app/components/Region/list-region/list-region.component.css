@@ -1,0 +1,25 @@
+.btn-info {
+    background-color: rgb(204, 204, 223);
+    margin-right: 5px;
+}
+
+
+
+.btn-info{
+    border: none !important;
+}
+
+.btn-info:active{
+    border: none !important;
+    background: rgb(204, 204, 223) !important;
+}
+.table .thead-dark th {
+    color: #fff;
+    background-color: #212529;
+    border-color: #32383e;
+}
+
+.rounded-pill{
+    text-transform: capitalize;
+}
+

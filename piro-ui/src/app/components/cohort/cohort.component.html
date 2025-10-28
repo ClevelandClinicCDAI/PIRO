@@ -1,0 +1,83 @@
+<div class="bg-white p-3">
+    <h3 class="d-inline">Cohorts</h3>
+    
+    <a class="btn btn-primary pull-right mr-10" href="javascript:void(0);" (click)="exportMRNTemplate()">Download MRN Template <i class="fa fa-file-excel-o"></i></a>
+    <a class="btn btn-primary pull-right mr-10" href="javascript:void(0);" (click)="exportEIDTemplate()">Download EID Template <i class="fa fa-file-excel-o"></i></a>
+    <a class="btn btn-primary pull-right mr-10" href="javascript:void(0);" (click)="exportCaseTemplate()">Download Case Template <i class="fa fa-file-excel-o"></i></a>    
+    <a class="btn btn-primary pull-right mr-10" href="javascript:void(0);" (click)="openAddNew()">Add New Cohort</a>
+    <br /><br />
+
+    <div class="overlay show" *ngIf="!contentLoaded"></div>
+    <div class="spanner show" *ngIf="!contentLoaded">
+        <div class="loader"></div>
+        <p>{{contentText}}</p>
+    </div>
+    <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+        <thead class="thead-dark">
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Disease</th>          
+                <th>Type</th>
+                <th>Patients Uploaded</th>
+                <th>Patients Matched</th>
+                <th>Cases Matched</th>
+                <th>Display on Search</th>
+                <th width="10%" class="text-center">Action</th>
+            </tr>
+        </thead>
+        <tbody *ngIf="items.length > 0">
+            <tr *ngFor="let item of items;">
+                <td>
+                    <p class="text-muted mb-0 ">{{item.name}}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.desc }}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.disease }}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.type }}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.patientCount }}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.matched }}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{ item.caseCount }}</p>
+                </td>
+                <td>
+                    <i *ngIf="item.display" class="btn btn-primary bi bi-check-square-fill pointer"></i>
+                    <i *ngIf="!item.display" class=" btn btn-primary bi bi-square pointer"></i>
+                </td>
+                <td class="text-center">
+                    <table width="100%" style="margin-top:0px">
+                        <tr>
+                            <td>
+                                <a class="btn btn-primary" href="javascript:void(0);" title="Edit Cohort" (click)="editcohort(item.cohortId)"><i class="fa fa-pencil"></i></a>
+                            </td>
+                            <td>
+                                <a class="btn btn-success" href="javascript:void(0);" (click)="download(item.cohortId, item.name)" title="Download Cohort data"><i class="fa fa-file-excel-o"></i></a>
+                            </td>
+                            <td>
+                                <a class="btn btn-danger" href="javascript:void(0);"  (click)="delete(item.cohortId, item.name)" title="Delete Cohort"><i class="fa fa-trash-o"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+        <tbody *ngIf="items.length == 0">
+            <tr>
+                <th colspan="3" class="text-left">No Record Found.</th>
+            </tr>
+        </tbody>
+    </table>
+    <div class="d-flex justify-content-center mt-5" *ngIf="items.length > 0">
+        <!-- <pagination-controls previousLabel="Prev" nextLabel="Next" (pageChange)="onTableDataChange($event)">
+        </pagination-controls> -->
+    </div>
+</div>

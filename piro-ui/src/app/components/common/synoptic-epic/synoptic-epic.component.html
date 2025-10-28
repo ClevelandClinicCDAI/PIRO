@@ -1,0 +1,128 @@
+<div *ngIf="isModal" class="modal-header">
+    <h4 class="modal-title">Synoptic Text</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+    <div *ngIf="!isModal">
+        <div class="overlay show" *ngIf="!contentLoaded"></div>
+        <div class="spanner show" *ngIf="!contentLoaded">
+            <div class="loader"></div>
+        </div>
+    </div>    
+    <div class="row">
+        <div class="col-2" style="width:10%">
+            <br />
+            <nav class="nav-specimen navbar bg-light shadow rounded">
+                <ul class="nav navbar-nav" role="tablist">
+                    <li  class="nav-item" *ngFor="let item of specimensGroup; let ii = index;"
+                        role="presentation">
+                        <a *ngIf="item.isSpecimenLevel" [ngClass]="item.synopticId == synopticlistId ? 'nav-link active' : 'nav-link hand'"
+                            (click)="getSynopticText(item.synopticId)">                          
+                            <div *ngFor="let spec of item.specimens;" class="hand">
+                                <span>{{spec}}</span>
+                                <br />
+                            </div>
+                        </a>
+                        <a *ngIf="!item.isSpecimenLevel" [ngClass]="item.synopticId == synopticlistId ? 'nav-link active' : 'nav-link hand'"
+                            (click)="getSynopticText(item.synopticId)">                          
+                            <div class="hand">
+                                <span>All Specimens</span>
+                                <br />
+                            </div>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <div class="col-10" style="width:90%">
+            <div *ngIf="synopticlist.length > 0">
+                <label for="synoptidId"><b>Report Date</b> &nbsp;</label>
+                {{versionDate | date:'MM-dd-yyyy'}}
+
+                <label style="margin-left: 50px;" for="synoptidId"><b>Versions</b> &nbsp;</label>
+                <select class="q-input-control" id="synoptidId" (change)="onSynopticChange($event)">
+                    <option value="{{item.id}}" *ngFor="let item of synopticlist">
+                        {{item.text}}
+                    </option>
+                </select>
+                <hr />
+            </div>
+            <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded" *ngIf="!parsed">
+                <tbody>
+                    <ng-container
+                        *ngFor="let item of synopticReports; let i =index; let first = first; let last = last">
+                        <tr class="table-light">
+                            <td *ngIf="item.isSection" colspan="2">
+                                <h6>{{item.text}}</h6>
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td *ngIf="item.isSection && item.subtext != ''" colspan="2">
+                                <span style="padding-left: 15px;">{{item.subtext}}</span>
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td *ngIf="item.isSection && item.subtext2 != ''" colspan="2">
+                                <span style="padding-left: 30px;">{{item.subtext2}}</span>
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td *ngIf="!item.isSection && item.subtext != ''">
+                                <span *ngIf="item.level == 2"
+                                    style="padding-left: 15px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 3"
+                                    style="padding-left: 30px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 4"
+                                    style="padding-left: 45px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 5"
+                                    style="padding-left: 60px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 6"
+                                    style="padding-left: 75px;">{{item.text}}</span>
+                            </td>
+                            <td *ngIf="!item.isSection && item.subtext != '' && item.comment != ''">
+                                {{item.subtext}} : {{item.comment}}                                                
+                            </td>
+                            <td *ngIf="!item.isSection && item.subtext != '' && item.comment == ''">
+                                {{item.subtext}}                                                
+                            </td>
+                        </tr>
+                    </ng-container>
+                </tbody>
+            </table>
+
+
+            <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded" *ngIf="parsed">
+                <tbody>
+                    <ng-container
+                        *ngFor="let item of synopticReports; let i =index; let first = first; let last = last">
+                        <tr class="table-light">
+                            <td *ngIf="item.level == 1" colspan="2">
+                                <h6>{{item.text}}</h6>
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td *ngIf="item.level == 2" colspan="2">
+                                <span style="padding-left: 15px;">{{item.text}}</span>
+                            </td>
+                        </tr>                         
+                        <tr class="table-light"  *ngIf="!item.isSection">
+                            <td>                                
+                                <span *ngIf="item.level == 3"
+                                    style="padding-left: 30px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 4"
+                                    style="padding-left: 45px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 5"
+                                    style="padding-left: 60px;">{{item.text}}</span>
+                                <span *ngIf="item.level == 6"
+                                    style="padding-left: 75px;">{{item.text}}</span>
+                            </td>
+                            <td>
+                                {{item.value}}                                                
+                            </td>                             
+                        </tr>
+                    </ng-container>
+                </tbody>
+            </table>
+        </div>
+    </div> 
+</div>

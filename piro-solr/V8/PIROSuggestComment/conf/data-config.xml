@@ -1,0 +1,19 @@
+<dataConfig>
+  <dataSource type="JdbcDataSource"
+    driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+    user="[username]"
+    password="[password]"
+    encryptKeyFile="[path]/dih-encryptionkey"
+  />
+
+  <document>
+
+    <entity name="PIROComment"
+      pk="id"
+      query="select CaseId, (Comment + ' ' + Final + ' ' + ADDEND + ' ' + Gross + ' ' + INTRAOP + ' ' + RESIDENT) as Comment from [dbo].[CaseSolr]">
+      <field column="CaseId" name="id" />
+      <field column="Comment" name="comment" />
+    </entity>
+  </document>
+</dataConfig>

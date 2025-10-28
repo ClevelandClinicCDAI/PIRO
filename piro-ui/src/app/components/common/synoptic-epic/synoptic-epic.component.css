@@ -1,0 +1,39 @@
+.nav-specimen .navbar-nav a.active {
+    /* background-color: #d1d1d4; */
+    color: gray;
+    font-weight: 700;
+}
+
+.nav-specimen .navbar-nav {
+    width: 100%;
+}
+
+.nav-specimen .navbar-nav a {
+    border-bottom: 1px solid gray;
+    /* border-top: 1px solid gray; */
+    padding-left: 10px;
+    color: gray;
+    font-weight: 500;
+    font-size: smaller;
+}
+
+.q-input-control {
+    display: inline-block;
+    padding: 5px 8px;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    width: auto;
+}
+
+
+@media screen and (min-width: 676px) {
+    .modal-dialog {
+      max-width: 1400px; /* New width for default modal */
+    }
+}
+
+

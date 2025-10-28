@@ -1,0 +1,19 @@
+<dataConfig>
+
+    <dataSource type="JdbcDataSource"
+        driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+        url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+        user="[username]"
+        password="[password]"
+        encryptKeyFile="[path]/dih-encryptionkey"
+    />
+
+    <document>
+        <entity name="PIROCaseNumber"
+            pk="id"
+            query="select CaseId, CaseNumber from [dbo].[CaseSuggestionSolr_Delta]">
+            <field column="CaseId" name="id" />
+            <field column="CaseNumber" name="casenumber" />
+        </entity>
+    </document>
+</dataConfig>

@@ -1,0 +1,16 @@
+-c core_requirements.txt
+
+black
+factory_boy
+fastapi-debug-toolbar
+isort
+pandas
+polars
+polyfactory
+pre-commit
+pyarrow
+pytest-mock
+pytest-order
+ruff
+coverage
+pipdeptree

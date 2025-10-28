@@ -1,0 +1,22 @@
+li.facet-group-item {
+    padding: 10px;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    list-style-type: none;
+}
+
+li.facet-group-item a{
+    text-decoration: none;
+    color:#000;
+}
+
+.facet-group{
+    padding-left: 0rem;
+}
+.delete_btn{
+    color: #fff !important;
+    margin-top: -5px;
+    padding: 0.2rem 0.5rem;
+}

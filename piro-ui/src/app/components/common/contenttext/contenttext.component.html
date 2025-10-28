@@ -1,0 +1,6 @@
+<b class="result-heading" *ngIf="inData.content.length > 0">{{inData.heading}}</b><br>
+<div class="paragraph comment-font"   *ngFor="let fin of inData.content"  >
+    <!-- <p class="result-comment">{{transform(fin,'150')}}</p> -->     
+    <!-- <p [innerHTML]="fin | rtfPipe | async" class="result-comment"></p> -->
+    <p *ngFor="let text of (fin || '').split('   ||||   ')" [innerHTML]="text | rtfPipe | async" class="result-comment"></p>
+</div>

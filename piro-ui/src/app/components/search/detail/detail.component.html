@@ -1,0 +1,378 @@
+<div class="overlay show" *ngIf="!contentLoaded"></div>
+<div class="spanner show" *ngIf="!contentLoaded">
+    <div class="loader"></div>
+    <p>{{contentText}}</p>
+</div>
+
+<div class="table">
+    <div class="row" *ngIf="isShowBreadcrumb">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><span class="label label-success">{{(item?.case?.casenumber || '' ) ===
+                            '' ? '__-____' :
+                            item?.case?.casenumber}}</span></li>
+                    <li class="breadcrumb-item"><span class="label label-success">{{caseSource}}</span></li>
+                    <li *ngIf="isAge" class="breadcrumb-item"><span class="label label-success">{{(item?.case?.age || ''
+                            ) === '' ? '' : (item?.case?.age + " years")}} </span></li>
+                    <li *ngIf="isGender" class="breadcrumb-item"><span
+                            class="label label-success">{{item?.case?.gender}}</span></li>
+                    <li *ngIf="isName" class="breadcrumb-item"><span
+                            class="label label-success">{{item?.case?.name}}</span></li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-6">
+            <a (click)="back()" class="pull-right btn btn-1 btn-danger" href="javascript:void(0);">Back</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation" *ngIf="showEpic">
+                    <button class="nav-link {{classEpic}}" id="epic-tab" data-bs-toggle="tab"
+                        data-bs-target="#epic-target" type="button" role="tab" aria-controls="epic-target"
+                        aria-selected="false" (click)="getEpicComments()">Formatted Text</button>
+                </li>
+                <li class="nav-item" role="presentation" *ngIf="showCopath">
+                    <button class="nav-link {{classCopath}}" id="copath-tab" data-bs-toggle="tab"
+                        data-bs-target="#copath-target" type="button" role="tab" aria-controls="copath-target"
+                        aria-selected="false" (click)="getCoPathComments()">Formatted Text</button>
+                </li>
+                <li class="nav-item" role="presentation" *ngIf="showMigrated">
+                    <button class="nav-link {{classMigrated}}" id="text-tab" data-bs-toggle="tab"
+                        data-bs-target="#text-target" type="button" role="tab" aria-controls="text-target"
+                        aria-selected="false" (click)="getTextComments()">Unformatted Text</button>
+                </li>
+                <li class="nav-item" role="presentation" *ngIf="showSynoptic">
+                    <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#synoptic-target"
+                        type="button" role="tab" aria-controls="text-target" aria-selected="false"
+                        (click)="getSynopticComments()">Synoptic Text</button>
+                </li>
+                <li class="nav-item" role="presentation" *ngIf="showCopath && coPathSynopticComments.length > 0">
+                    <button class="nav-link" id="text-tab" data-bs-toggle="tab" data-bs-target="#synoptic-copath-target"
+                        type="button" role="tab" aria-controls="text-target" aria-selected="false">Synoptic
+                        Text</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {{classCase}}" id="case-tab" data-bs-toggle="tab"
+                        data-bs-target="#case-info-target" type="button" role="tab" aria-controls="text-target"
+                        aria-selected="false">Case Info</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pathalogist-tab" data-bs-toggle="tab"
+                        data-bs-target="#pathalogist-info-target" type="button" role="tab" aria-controls="text-target"
+                        aria-selected="false">Pathologist Info</button>
+                </li>
+                <li class="nav-item" role="presentation" >
+                    <button class="nav-link {{classAI}}" id="pathalogist-tab" data-bs-toggle="tab" data-bs-target="#ai-info-target"
+                        type="button" role="tab" aria-controls="text-target" aria-selected="false">AI Insights</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade {{classEpic}}" id="epic-target" role="tabpanel" aria-labelledby="epic-tab"
+                    *ngIf="showEpic">
+                    <div [app-commenttext]="{textComments: epicComments}"></div>
+                </div>
+                <div class="tab-pane fade {{classCopath}}" id="copath-target" role="tabpanel"
+                    aria-labelledby="copath-tab" *ngIf="showCopath">
+                    <div [app-commenttext]="{textComments: coPathComments}"></div>
+                </div>
+                <div class="tab-pane fade {{classMigrated}}" id="text-target" role="tabpanel" aria-labelledby="text-tab"
+                    *ngIf="showMigrated">
+                    <div [app-commenttext]="{textComments: textComments}"></div>
+                </div>
+                <div class="tab-pane fade" id="synoptic-target" role="tabpanel" aria-labelledby="text-tab"
+                    *ngIf="showSynoptic">
+                    <app-synoptic-epic caseId="{{caseid}}"></app-synoptic-epic>
+                </div>
+                <div class="tab-pane fade" id="synoptic-copath-target" role="tabpanel" aria-labelledby="copath-tab"
+                    *ngIf="showCopath && coPathSynopticComments.length > 0">
+                    <!-- <div [app-commenttext]="{textComments: coPathSynopticComments}"></div> -->
+                    <app-synoptic-copath caseId="{{caseid}}"></app-synoptic-copath>
+                </div>
+                <div class="tab-pane fade {{classCase}}" id="case-info-target" role="tabpanel" aria-labelledby="case-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Case Info
+                                </div>
+                                <div class="">
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <td>Case Number</td>
+                                                <td>{{convertData('CaseNumber', item?.case?.casenumber)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Requisition Id</td>
+                                                <td>{{convertData('RefRequisitionKey', item?.case?.reqkey)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Specimen Year</td>
+                                                <td>{{convertData('SpecimenYear', item?.case?.specimenyear)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Accession Date</td>
+                                                <td>{{convertDate('AccessionDate', item?.case?.accessiondate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Receive Date</td>
+                                                <td>{{convertDate('ReceiveDate', item?.case?.receivedate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Overdue Date</td>
+                                                <td>{{convertDate('OverdueDate', item?.case?.overduedate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Collection Date</td>
+                                                <td>{{convertDate('CollectionDate', item?.case?.collectiondate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Signout Date</td>
+                                                <td>{{convertDate('SignoutDate', item?.case?.signoutdate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Case Status</td>
+                                                <td>{{convertData('CaseStatus', item?.case?.status)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Case Type</td>
+                                                <td>{{convertData('CaseType', item?.case?.casetype)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Case Type Category</td>
+                                                <td>{{convertData('CaseTypeCategory', item?.case?.casetypecategory)}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Review Type</td>
+                                                <td>{{convertData('ReviewType', item?.case?.reviewtype)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Specialty</td>
+                                                <td>{{convertData('Specialty', item?.case?.speciality)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Specialty Code</td>
+                                                <td>{{convertData('SpecialtyCode', (item?.case?.specialitycode ==
+                                                    'NULL') ? '' :
+                                                    item?.case?.specialitycode)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Specialty Category</td>
+                                                <td>{{convertData('SpecialtyCategory', item?.case?.specialitycategory)}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Concentric URL</td>
+                                                <td *ngIf="item?.case?.isconcentriq"><a href="{{item?.case?.concentriqurl}}" target="_blank">{{item?.case?.concentriqurl}}</a>
+                                                </td>
+                                                <td *ngIf="!item?.case?.isconcentriq">N/A</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Patient Info
+                                </div>
+                                <div class="">
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <td>Name</td>
+                                                <td>{{convertData('PatientName', item?.case?.name)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>DOB</td>
+                                                <td>{{convertDate('PatientDOB', item?.case?.dob)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Enterprise Id (EID)</td>
+                                                <td>{{convertData('PatientEpi', item?.case?.epi)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>MRN</td>
+                                                <td>{{convertData('PatientMrn', item?.case?.mrn)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Language</td>
+                                                <td>{{convertData('PatientLanguage', item?.case?.language)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Ethnicity</td>
+                                                <td>{{convertData('PatientEthnicity', item?.case?.ethnicity)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Gender</td>
+                                                <td>{{convertData('PatientGender', item?.case?.gender)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Decease Date</td>
+                                                <td>{{convertDate('PatientDeathDate', item?.case?.deceasedate)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Deceased</td>
+                                                <td>{{convertData('PatientIsDeceased', item?.case?.isdeceased == null ?
+                                                    '' : (item?.case?.isdeceased ?
+                                                    'Yes' : 'No'))}}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Race</td>
+                                                <td>{{convertData('PatientRace', item?.case?.race)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>City</td>
+                                                <td>{{convertData('PatientCity', item?.case?.city)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>State</td>
+                                                <td>{{convertData('PatientState', item?.case?.state)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Country</td>
+                                                <td>{{convertData('PatientCountry', item?.case?.country)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Hospital</td>
+                                                <td>{{convertData('Hospital', item?.case?.hospital)}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Region</td>
+                                                <td>{{convertData('Region', item?.case?.region)}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pathalogist-info-target" role="tabpanel"
+                    aria-labelledby="pathologist-tab">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    PATHOLOGISTS
+                                </div>
+                                <div class="">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Full Name</th>
+                                                <th>User ID</th>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr *ngFor="let staff of item?.caseStaffs || []">
+                                                <td>{{staff?.name}}</td>
+                                                <td>{{staff?.userid}}</td>
+                                                <td>{{convertDate('StartDate', staff?.startdate)}} </td>
+                                                <td>{{convertDate('EndDate', staff?.enddate)}} </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    INTERPRETERS
+                                </div>
+                                <div class="">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Full Name</th>
+                                                <th>Procedure Category</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr *ngFor="let interpreter of item?.interpreters || []">
+                                                <td>{{interpreter?.name}}</td>
+                                                <td>{{interpreter?.category}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade tab-pane {{classAI}}" id="ai-info-target" role="tabpanel" aria-labelledby="pathologist-tab">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    AI Insights (AI-detected elements)
+                                </div>
+                                <div class="">
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr *ngFor="let config of annotationConfig; let i = index;">
+                                                <td style="width: 20%;">{{config.display}}</td>
+                                                <td>
+                                                    {{convertAnnotationData(config.metric,
+                                                    item?.case?.annotationmalignant)}}
+                                                </td>
+                                                <td>
+                                                    <div *ngIf="convertAnnotationData(config.metric,
+                                                    item?.case?.annotationmalignant) != '-'">
+
+                                                        <button type="button" class="btn btn-primary position-relative" [ngClass]="{ 'btn-block': config.myVote == 1 }"
+                                                            title="Approve the annotation"
+                                                            (click)="openAiVote(config.annotationConfigurationId, item?.case?.caseid, 1, config.display)">
+                                                            <i class="bi bi-check-square"></i>
+                                                            <span
+                                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                                {{config.postiveVoteCount}}
+                                                            </span>
+                                                        </button>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                        <button type="button"
+                                                            class="btn btn-secondary position-relative" [ngClass]="{ 'btn-block': config.myVote == -1 }"
+                                                            title="Reject the annotation"
+                                                            (click)="openAiVote(config.annotationConfigurationId, item?.case?.caseid, -1, config.display)">
+                                                            <i class="bi bi-x-square"></i>
+                                                            <span
+                                                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                                {{config.negativeVoteCount}}
+                                                            </span>
+                                                        </button>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                        <button *ngIf="isReviewAnnotation" type="button"
+                                                            class="btn btn-danger" title="View the feedback"
+                                                            (click)="openAiReview(config.annotationConfigurationId, item?.case?.caseid, config.display)">
+                                                            Review
+                                                        </button>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                        <button *ngIf="isReviewAnnotation" type="button"
+                                                            class="btn btn-danger" title="View data audit"
+                                                            (click)="openAiAudit(config.annotationConfigurationId, item?.case?.caseid, config.display)">
+                                                            Audit
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

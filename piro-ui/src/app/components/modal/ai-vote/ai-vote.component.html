@@ -1,0 +1,31 @@
+
+<div class="modal-header">
+    <h4 class="modal-title">Annotation Feedback: {{casenum}}</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+    <div class="form-group">
+        <div [innerHTML]="description"></div>
+        <br/>
+    </div>
+    <form (ngSubmit)="submitForm()" [formGroup]="saveAIForm">
+    <div class="form-group">
+        <label for="description" *ngIf="this.vote">Feedback Comments
+
+            <span class="asterisk-danger" *ngIf="this.iscommentrequiredApprove && this.vote == 1">*</span>
+            <span class="asterisk-danger" *ngIf="!this.iscommentrequiredApprove && this.vote == 1"></span>
+            <span class="asterisk-danger" *ngIf="this.iscommentrequiredReject && this.vote == -1 ">*</span>
+            <span class="asterisk-danger" *ngIf="!this.iscommentrequiredReject && this.vote == -1 "></span>
+        </label>
+        <textarea formControlName="comment" id="description" rows="5" placeholder="Enter Comment" class="form-control" maxlength="500"  [ngClass]="{ 'is-invalid': submitted && f.comment.errors }"></textarea>
+        <div *ngIf="submitted && f.comment.errors" class="invalid-feedback">
+            <div *ngIf="f.comment.errors.required">Comment is required</div>
+        </div>
+    </div>
+    <br />
+    <button type="submit" class="btn btn-success">Save</button>
+    </form>
+</div>
+<div class="modal-footer">
+
+</div>

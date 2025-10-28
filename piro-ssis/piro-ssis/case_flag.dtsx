@@ -1,0 +1,931 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/1/2025 8:50:23 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{4439A79C-ABF6-46C0-8311-4D46D49044B8}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="case_flag"
+  DTS:PackageType="5"
+  DTS:VersionBuild="74"
+  DTS:VersionGUID="{310C34FF-7163-4C5F-82E0-41896036DB34}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:LogProviders>
+    <DTS:LogProvider
+      DTS:ConfigString="oledb-piro"
+      DTS:CreationName="Microsoft.LogProviderSQLServer"
+      DTS:Description="Writes log entries for events to a SQL Server database"
+      DTS:DTSID="{4BB29DD9-3F6D-44CF-8863-167D7E1A55DA}"
+      DTS:ObjectName="SSIS log provider for SQL Server">
+      <DTS:ObjectData>
+        <InnerObject />
+      </DTS:ObjectData>
+    </DTS:LogProvider>
+  </DTS:LogProviders>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{5EBFDB15-479C-4DCD-9C23-2F52EC027F4D}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'case_flag', '', '',
+        'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{EE55D6E2-F523-4286-ABE8-0262E912D9B0}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'case_flag', '', '',
+        'query', 'SELECT * FROM CLARITY.ZC_CASE_FLAGS', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{AAC3C83D-B56B-4E5D-8B58-0B3C537320FD}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'case_flag', '', '',
+        'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{34E835B4-045B-47D0-A112-16285DF14E85}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT * FROM CLARITY.ZC_CASE_FLAGS&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT * FROM CLARITY.ZC_CASE_FLAGS</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:LoggingOptions
+    DTS:FilterKind="0"
+    DTS:LoggingMode="1">
+    <DTS:Property
+      DTS:DataType="8"
+      DTS:Name="EventFilter">
+      6,7,OnError,13,OnPostExecute,14,OnPostValidate,12,OnPreExecute,13,OnPreValidate,12,OnTaskFailed</DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnError"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnTaskFailed"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:SelectedLogProviders>
+      <DTS:SelectedLogProvider
+        DTS:InstanceID="{4BB29DD9-3F6D-44CF-8863-167D7E1A55DA}" />
+    </DTS:SelectedLogProviders>
+  </DTS:LoggingOptions>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\CaseFlag-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="CaseFlag-Data Flow Task"
+      DTS:DTSID="{5388597E-46F5-421A-AB5B-7C2D9427C1C9}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="CaseFlag-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:LoggingOptions
+        DTS:FilterKind="0" />
+      <DTS:PropertyExpression
+        DTS:Name="[CaseFlag-Source-ADO].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="CaseFlag-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_CaseFlag"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].Columns[CASE_FLAGS_C]"
+                      cachedDataType="numeric"
+                      cachedName="CASE_FLAGS_C"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_FLAGS_C]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[CASE_FLAGS_C]" />
+                    <inputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].Columns[NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="NAME"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]" />
+                    <inputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].Columns[TITLE]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="TITLE"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]" />
+                    <inputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].Columns[ABBR]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="ABBR"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]" />
+                    <inputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].Columns[INTERNAL_ID]"
+                      cachedDataType="numeric"
+                      cachedName="INTERNAL_ID"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[CASE_FLAGS_C]"
+                      dataType="numeric"
+                      name="CASE_FLAGS_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="CaseFlag-Source-ADO"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
+                  * FROM CLARITY.ZC_CASE_FLAGS</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[CASE_FLAGS_C]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[CASE_FLAGS_C]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[CASE_FLAGS_C]"
+                      name="CASE_FLAGS_C"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]"
+                      name="NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      name="TITLE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      name="ABBR"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[CASE_FLAGS_C]"
+                      dataType="numeric"
+                      name="CASE_FLAGS_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[CASE_FLAGS_C]"
+                      dataType="numeric"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[CASE_FLAGS_C]"
+                      name="CASE_FLAGS_C"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      name="NAME" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      name="TITLE" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      name="ABBR" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\CaseFlag-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\CaseFlag-Data Flow Task\CaseFlag-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{f479630a-586a-425c-90a8-a0d3b6f5dd33}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.P_SSIS_Load_Lookup_Specialty"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{6c66fa99-fab9-4e16-826c-aee272452e4a}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{ada0ea07-ef17-4809-94b2-daec1a3fd171}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{b0540841-fa0d-4872-9254-ade3080eece9}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{7ebfe0de-4581-4169-a8bf-726b4ee7544d}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="P_SSIS_TruncateTable_CaseFlag"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{21BA2D55-0F18-4AE0-A143-140417A57816}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\CaseFlag-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{A347EC23-0382-4290-80D9-D64A2D9045DC}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{6BF50E5E-1AF0-400D-BCF6-E2B604443988}"
+      DTS:From="Package\CaseFlag-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{D78A7DC5-7265-45A4-9585-A11CA866307C}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{B59CA62C-A58C-489E-BE41-6522B2CE622D}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="178,42"
+          Id="Package\CaseFlag-Data Flow Task"
+          TopLeft="106,252" />
+        <NodeLayout
+          Size="117,42"
+          Id="Package\Log End"
+          TopLeft="128,442" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Log Query"
+          TopLeft="133,180" />
+        <NodeLayout
+          Size="122,42"
+          Id="Package\Log Start"
+          TopLeft="121,27" />
+        <NodeLayout
+          Size="150,42"
+          Id="Package\Truncate Table"
+          TopLeft="126,111" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="196,222">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,30"
+              Start="0,0"
+              End="0,22.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,22.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="182,69">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="19,42"
+              Start="0,0"
+              End="19,34.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,17" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,17"
+                    Point2="0,21"
+                    Point3="4,21" />
+                  <mssgle:LineSegment
+                    End="15,21" />
+                  <mssgle:CubicBezierSegment
+                    Point1="15,21"
+                    Point2="19,21"
+                    Point3="19,25" />
+                  <mssgle:LineSegment
+                    End="19,34.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="199,153">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,27"
+              Start="0,0"
+              End="0,19.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,19.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="161,42"
+          Id="Package\Load Main Table"
+          TopLeft="106,354" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="195,294">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-8.5,60"
+              Start="0,0"
+              End="-8.5,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,26" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,26"
+                    Point2="0,30"
+                    Point3="-4,30" />
+                  <mssgle:LineSegment
+                    End="-4.5,30" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-4.5,30"
+                    Point2="-8.5,30"
+                    Point3="-8.5,34" />
+                  <mssgle:LineSegment
+                    End="-8.5,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="186.5,396">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,46"
+              Start="0,0"
+              End="0,38.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,38.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\CaseFlag-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="182,42"
+          Id="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO"
+          TopLeft="199,45" />
+        <NodeLayout
+          Size="184,42"
+          Id="Package\CaseFlag-Data Flow Task\CaseFlag-Destination"
+          TopLeft="167,223" />
+        <EdgeLayout
+          Id="Package\CaseFlag-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="290,87">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-31,136"
+              Start="0,0"
+              End="-31,128.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,64" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,64"
+                    Point2="0,68"
+                    Point3="-4,68" />
+                  <mssgle:LineSegment
+                    End="-27,68" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-27,68"
+                    Point2="-31,68"
+                    Point3="-31,72" />
+                  <mssgle:LineSegment
+                    End="-31,128.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\CaseFlag-Data Flow Task\CaseFlag-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\CaseFlag-Data Flow Task\CaseFlag-Source-ADO">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

@@ -1,0 +1,75 @@
+<dataConfig>
+
+	<dataSource type="JdbcDataSource"
+		driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+		user="[username]"
+		password="[password]"
+		encryptKeyFile="[path]/dih-encryptionkey"
+	/>
+
+	<document>
+		<entity name="PIROCase"
+			pk="id"
+			query="SELECT  [CaseId], [RefRequisitionKey], [SpecimenYear], [CaseNumber], [AccessionDate], [ReceiveDate], [OverdueDate], [CollectionDate], [SignoutDate], [PatientName], [PatientDOB], [PatientEpi], [PatientMrn], [PatientLanguage], [PatientEthnicity], [PatientGender], [PatientDeathDate], [PatientIsDeceased], [PatientRace], [PatientCity], [PatientState], [PatientCountry], [Hospital], [Region], [CaseStatus], [CaseType], [CaseTypeCategory], [ReviewType], [Specialty], [SpecialtyCode], [SpecialtyCategory], [ADDEND], [ADDENDCount], [COMMENT], [COMMENTCount], [FINAL], [FINALCount], [GROSS], [GROSSCount], [INTRAOP], [INTRAOPCount], [RESIDENT], [RESIDENTCount], [SYNOPTIC], [SYNOPTICCount], [CLINICAL], [CLINICALCount], [Interpreter], [ProcedureCategory], [StaffName], [SpecimenNumber], [CasePatientAge], [CasePatientAgeYears], [IsEpic], [IsEpicMigrated], [IsCopath], [CurrentDate], [CreateDate], [UpdateDate], [Pathologist], [AnnotationMalignant] FROM [dbo].[V_SOLR_Case_Delta]">
+			<field column="CaseId" name="id" />
+			<field column="CaseId" name="caseid" />
+			<field column="SpecimenYear" name="specimenyear" />
+			<field column="CaseNumber" name="casenumber" />
+			<field column="AccessionDate" name="accessiondate" />
+			<field column="ReceiveDate" name="receivedate" />
+			<field column="OverdueDate" name="overduedate" />
+			<field column="CollectionDate" name="collectiondate" />
+			<field column="SignoutDate" name="signoutdate" />
+			<field column="PatientName" name="patientname" />
+			<field column="PatientDOB" name="dob" />
+			<field column="PatientEpi" name="epi" />
+			<field column="PatientMrn" name="mrn" />
+			<field column="PatientLanguage" name="language" />
+			<field column="PatientEthnicity" name="ethnicity" />
+			<field column="PatientGender" name="gender" />
+			<field column="PatientDeathDate" name="deathdate" />
+			<field column="PatientIsDeceased" name="isdeceased" />
+			<field column="PatientRace" name="race" />
+			<field column="Hospital" name="hospital" />
+			<field column="Region" name="region" />
+			<field column="CaseStatus" name="casestatus" />
+			<field column="CaseType" name="casetype" />
+			<field column="ReviewType" name="reviewtype" />
+			<field column="CaseTypeCategory" name="casetypecategory" />
+			<field column="Specialty" name="specialty" />
+			<field column="SpecialtyCode" name="specialtycode" />
+			<field column="SpecialtyCategory" name="specialtycategory" />
+			<field column="CreateDate" name="createdate" />
+			<field column="UpdateDate" name="updatedate" />
+			<field column="ADDEND" name="addend" />
+			<field column="ADDENDCount" name="addendcount" />
+			<field column="COMMENT" name="comment" />
+			<field column="COMMENTCount" name="commentcount" />
+			<field column="FINAL" name="final" />
+			<field column="FINALCount" name="finalcount" />
+			<field column="GROSS" name="gross" />
+			<field column="GROSSCount" name="grosscount" />
+			<field column="INTRAOP" name="intraop" />
+			<field column="INTRAOPCount" name="intraopcount" />
+			<field column="RESIDENT" name="resident" />
+			<field column="RESIDENTCount" name="residentcount" />
+			<field column="SYNOPTIC" name="synoptic" />
+			<field column="SYNOPTICCount" name="synopticcount" />
+			<field column="CLINICAL" name="clinical" />
+			<field column="CLINICALCount" name="clinicalcount" />
+			<field column="Interpreter" name="interpreter" />
+			<field column="ProcedureCategory" name="procedurecategory" />
+			<field column="StaffName" name="staffname" />
+			<field column="SpecimenNumber" name="specimennumber" />
+			<field column="CasePatientAge" name="casepatientage" />
+			<field column="CasePatientAgeYears" name="casepatientageyears" />
+			<field column="IsEpic" name="isepic" />
+			<field column="IsEpicMigrated" name="isepicmigrated" />
+			<field column="IsCopath" name="iscopath" />
+			<field column="CurrentDate" name="importDate" />
+			<field column="Pathologist" name="pathologist" />
+			<field column="AnnotationMalignant" name="annotationmalignant" />
+		</entity>
+	</document>
+</dataConfig>

@@ -1,0 +1,62 @@
+from datetime import date
+
+
+# TODO: consider changing this to a dataclass
+class document:
+    collectiondate: date
+    gender: str
+    age: int
+    casepatientageyears: int
+    epi: str
+    casetypecategory: str
+    specimenyear: int
+    procedurecategory: str
+    signoutdate: date
+    receivedate: date
+    language: str
+    specimennumber: str
+    casenumber: str
+    hospital: str
+    accessiondate: date
+    ethnicity: str
+    importdate: str
+    interpreter: str
+    staffname: str
+    pathologist: str
+    isdeceased: bool
+    dob: date
+    caseid: str
+    final: str
+    gross: str
+    comment: str
+    addend: str
+    intraop: str
+    resident: str
+    synoptic: str
+    patientname: str
+    patientdeathdate: date
+    deathdate: date
+    race: str
+    specialty: str
+    mrn: str
+    casetype: str
+    overduedate: date
+    casestatus: str
+    region: str
+    specialtycode: str
+    addendcount: int
+    grosscount: int
+    commentcount: int
+    intraopcount: int
+    finalcount: int
+    synopticcount: int
+    residentcount: int
+    annotationmalignant: str
+    isepic: bool
+    isepicmigrated: bool
+    iscopath: bool
+    reviewtype: str
+    specialtycategory: str
+    isconcentriq: bool
+    concentriqid: int
+    concentriqurl: str

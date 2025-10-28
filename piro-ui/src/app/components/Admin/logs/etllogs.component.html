@@ -1,0 +1,64 @@
+<div class="bg-white p-3">
+    <h3 class="d-inline">ETL Logs</h3>
+</div>
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>Date</th>            
+            <th>Table</th>
+            <th>Insert Count</th>
+            <th>Inserted Count</th>
+            <th>Update Count</th>
+            <th>Updated Count</th>
+            <th>Is Success</th>
+            <th>Error Message</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="items.length > 0">
+        <tr *ngFor="let item of items | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+            let i = index;">
+            <td>
+                <p class="text-muted mb-0 ">{{item.createdon}}</p>
+            </td>    
+            <td>
+                <p class="text-muted mb-0 ">{{item.tablename}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item.insertcount}}</p>
+            </td>
+            <td>
+                <span class="badge-success">{{item.insertedcount}}</span>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item.updatecount}}</p>
+            </td>
+            <td>
+                <span class="badge-success">{{item.updatedcount}}</span>
+            </td>
+            <td>
+                <span class="badge-success">{{item.success}}</span>
+            </td>
+            <td>
+                <span class="badge-success">{{item.message}}</span>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="items.length == 0">
+        <tr>
+            <th colspan="9" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="items.length > 0">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (pageChange)="onTableDataChange($event)"
+    >
+</pagination-controls>
+</div>

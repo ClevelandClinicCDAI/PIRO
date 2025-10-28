@@ -1,0 +1,266 @@
+<div class="accordion " id="accordionPanelsStayOpenExample">
+
+  <div class="accordion-item" *ngIf="mrn != ''">
+    <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseThree">
+        Patient
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingThree">
+      <div class="accordion-body  shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item">
+            <input class="form-check-input" type="checkbox" value="{{mrn}}" [checked]="'true'"
+              (change)="checkMrnValue($event)" id="mrn-{{mrn}}">
+            <label class="facetKey" for="mrn-{{mrn}}">{{mrnDisplay}}</label>
+            <app-facetloader [value]="filterTotal" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="casetype?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseThree">
+        Case Type
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingThree">
+      <div class="accordion-body  shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let c of casetype; index as i">
+            <input class="form-check-input" type="checkbox" value="{{c.key}}" [checked]="c.checked"
+              (change)="checkCaseTypeValue($event)" id="casetype-{{i}}">
+            <label class="facetKey" for="casetype-{{i}}">{{c.key}}</label>
+            <app-facetloader [value]="c.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="consultationtype?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingFour">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseFour" aria-expanded="true" aria-controls="panelsStayOpen-collapseFour">
+        Consultation Type
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseFour" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingFour">
+      <div class="accordion-body  shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let v of consultationtype; index as i">
+            <input class="form-check-input" type="checkbox" value="{{v.key}}" [checked]="v.checked"
+              (change)="checkConsultationTypeValue($event)" id="consultationtype-{{i}}">
+            <label class="facetKey" for="consultationtype-{{i}}">{{v.key}}</label>
+            <app-facetloader [value]="v.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="casetype?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingTwo">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="true" aria-controls="panelsStayOpen-collapseTwo">
+        Region
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingTwo">
+      <div class="accordion-body  shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let region of regions; index as i">
+            <input class="form-check-input" type="checkbox" value="{{region.key}}" [checked]="region.checked"
+              (change)="checkRegionValue($event)" id="region-{{i}}">
+            <label class="facetKey" for="region-{{i}}">{{region.key}}</label>
+            <app-facetloader [value]="region.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseThree">
+        Patient Age
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingThree">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+
+        <ngx-slider [(value)]="minValue" [(highValue)]="maxValue" [options]="options"
+          (mouseup)="checkAgeValue()"></ngx-slider>
+        <style>
+          .ngx-slider .ngx-slider-pointer {
+            background-color: #a61f56 !important;
+          }
+        </style>
+        <div style="padding-top: 10px;padding-bottom: 10px;">
+          <app-facetloader [value]="filterTotal" [contentLoaded]="contentLoaded"></app-facetloader>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseThreeTwo" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseThreeTwo">
+        Deceased
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThreeTwo" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingThree">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label [ngClass]="deceased == 'Alive' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onDeceasedChange('Alive')">No
+          </label>
+          <label [ngClass]="deceased == 'NA' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onDeceasedChange('NA')">N/A
+          </label>
+          <label [ngClass]="deceased == 'Deceased' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onDeceasedChange('Deceased')">Yes
+          </label>
+        </div>
+        <app-facetloader [value]="filterTotal" [contentLoaded]="contentLoaded"></app-facetloader>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="panelsStayOpen-headingThree">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseThreeTwo" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseThreeTwo">
+        Concentriq
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThreeTwo" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingThree">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label [ngClass]="concentriq == 'Concentriq(No)' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onConcentriqChange('Concentriq(No)')">No
+          </label>
+          <label [ngClass]="concentriq == 'NA' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onConcentriqChange('NA')">N/A
+          </label>
+          <label [ngClass]="concentriq == 'Concentriq(Yes)' ? 'btn btn-primary active' : 'btn btn-secondary'">
+            <input type="radio" name="options" autocomplete="off" (click)="onConcentriqChange('Concentriq(Yes)')">Yes
+          </label>
+        </div>
+        <app-facetloader [value]="filterTotalConcentriq" [contentLoaded]="contentLoaded"></app-facetloader>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="accordion-item" *ngIf="genders?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingFour">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseFour" aria-expanded="true" aria-controls="panelsStayOpen-collapseFour">
+        Sex
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseFour" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingFour">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let gender of genders; index as i">
+            <input class="form-check-input" type="checkbox" value="{{gender.key}}" [checked]="gender.checked"
+              (change)="checkGenderValue($event)" id="gender-{{i}}">
+            <label class="facetKey" for="gender-{{i}}">{{gender.key}}</label>
+            <app-facetloader [value]="gender.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="malignants?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingFive">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseFive" aria-expanded="true" aria-controls="panelsStayOpen-collapseFive">
+        Malignant &nbsp;&nbsp; <i class="bi bi-robot"  style = "color:white;font-size: x-large;"
+        ngbPopover="Filtered results based on AI-detected elements. Some cases may not be included."
+        triggers="mouseenter:mouseleave"></i>
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseFive" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingFive">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let malignant of malignants; index as i">
+            <input class="form-check-input" type="checkbox" value="{{malignant.key}}" [checked]="malignant.checked"
+              (change)="checkMalignantValue($event)" id="malignant-{{i}}">
+            <label class="facetKey" for="malignant-{{i}}">{{malignant.key}}</label>
+            <app-facetloader [value]="malignant.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="cohorts?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingSix">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseSix" aria-expanded="true" aria-controls="panelsStayOpen-collapseSix">
+        Cohort &nbsp;&nbsp; <a routerLink="/cohort" class="pencil_anchor"><i style = "color:white;font-size: x-large;" class="bi bi-pencil-square" 
+          ngbPopover="Click to update cohort"
+          triggers="mouseenter:mouseleave"></i></a>
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseSix" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingSix">
+      <div class="accordion-body shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let cohort of cohorts; index as i">
+            <input class="form-check-input" type="checkbox" value="{{cohort.key}}" [checked]="cohort.checked"
+              (change)="checkCohortValue($event)" id="cohort-{{i}}" title="{{cohort.name}}">
+            <label class="facetKey" for="cohort-{{i}}">{{cohort.name}}</label>
+            <app-facetloader [value]="cohort.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="accordion-item" *ngIf="specialtytype?.length >= 0">
+    <h2 class="accordion-header" id="panelsStayOpen-headingSpecialty">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+        data-bs-target="#panelsStayOpen-collapseSpecialty" aria-expanded="true"
+        aria-controls="panelsStayOpen-collapseSpecialty">
+        Specialty
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseSpecialty" class="accordion-collapse collapse show"
+      aria-labelledby="panelsStayOpen-headingSpecialty">
+      <div class="accordion-body  shadow p-3 bg-white rounded">
+        <ul class="facet-group">
+          <li class="facet-group-item" *ngFor="let specialty of specialtytype; index as i">
+            <input class="form-check-input" type="checkbox" value="{{specialty.key}}" [checked]="specialty.checked"
+              (change)="checkSpecilatyTypeValue($event)" id="specialtytype-{{i}}">
+            <label class="facetKey" for="specialtytype-{{i}}">{{specialty.key}}</label>
+            <app-facetloader [value]="specialty.val" [contentLoaded]="contentLoaded"></app-facetloader>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<!-- <form class="form-inline md-form form-sm form-group shadow p-3 bg-white rounded">
+    <div class="input-group">
+        <input class="form-control"  type="text" placeholder="Search Region" aria-label="Search">
+        <button class="btn btn-info btn-md" type="button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</form>
+<br><br> -->
+<div class="bg-white p-3">
+    <h3 class="d-inline">Lookup Data - Comment Types </h3>
+    <a class=" btn btn-primary pull-right disabled" routerLink="/create-comment-type"
+    routerLinkActive="active">Create Comment Type</a>
+</div>
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>Display Text</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Reference</th>             
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="items.length > 0">
+        <tr *ngFor="let item of items | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+    let i = index;">
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="ms-3">
+                        <p class="fw-bold mb-1">{{item.display}}</p>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item.code}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item.description}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item.reference}}</p>
+            </td>            
+            <td>
+                <a class="btn btn-primary"  routerLink="/edit-comment-type/{{item.commentTypeId}}"><i class="fa fa-pencil"></i></a>&nbsp;
+                <a class="btn btn-danger disabled" (click)="delete(item.commentTypeId)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="items.length == 0">
+        <tr>
+            <th colspan="6" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="items.length > 0">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (pageChange)="onTableDataChange($event)"
+    >
+</pagination-controls>
+</div>

@@ -1,0 +1,136 @@
+.card-header {
+  background-color: #0078bf;
+  color: #fff;
+  font-weight: 500;
+}
+
+.table {
+  margin-bottom: 0rem;
+}
+
+
+.nav-tabs button.active {
+  background-color: #0078bf;
+  color: #fff;
+}
+
+#myTabContent {
+  padding-top: 10px;
+}
+
+.comments_thead th {
+  background-color: #0078bf !important;
+  color: #fff;
+  font-weight: 500;
+}
+
+
+.label {
+  display: inline;
+  padding: 0.2em 0.6em 0.3em;
+  font-size: 75%;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25em;
+}
+
+.label-default {
+  background-color: #777777;
+}
+
+.label-default[href]:hover,
+.label-default[href]:focus {
+  background-color: #5e5e5e;
+}
+
+.label-primary {
+  background-color: #337ab7;
+}
+
+.label-primary[href]:hover,
+.label-primary[href]:focus {
+  background-color: #286090;
+}
+
+.label-success {
+  background-color: #5cb85c;
+}
+
+.label-success[href]:hover,
+.label-success[href]:focus {
+  background-color: #449d44;
+}
+
+.label-info {
+  background-color: #5bc0de;
+}
+
+.label-info[href]:hover,
+.label-info[href]:focus {
+  background-color: #31b0d5;
+}
+
+.label-warning {
+  background-color: #f0ad4e;
+}
+
+.label-warning[href]:hover,
+.label-warning[href]:focus {
+  background-color: #ec971f;
+}
+
+.label-danger {
+  background-color: #d9534f;
+}
+
+
+.btn-1 {
+  background-color: var(--bs-btn-bg);
+}
+
+.text-white {
+  color: white;
+}
+
+.nav-specimen .navbar-nav a.active {
+  /* background-color: #d1d1d4; */
+  color: gray;
+  font-weight: 700;
+}
+
+.nav-specimen .navbar-nav {
+  width: 100%;
+}
+
+.nav-specimen .navbar-nav a {
+  border-bottom: 1px solid gray;
+  /* border-top: 1px solid gray; */
+  padding-left: 10px;
+  color: gray;
+  font-weight: 500;
+  font-size: smaller;
+}
+
+.q-input-control {
+  display: inline-block;
+  padding: 5px 8px;
+  color: #555;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  width: auto;
+}
+
+
+.btn-block {
+  outline: 0;
+  box-shadow:
+    0 0 0 .1rem #fff,
+    0 0 0 .3rem #f0ad4e;
+}

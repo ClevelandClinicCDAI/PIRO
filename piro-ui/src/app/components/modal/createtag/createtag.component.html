@@ -1,0 +1,71 @@
+
+<div class="modal-header">
+    <h4 class="modal-title">Create Tag</h4>
+    <button type="button" class="close btn-close" aria-label="Close"
+      (click)="closeModal()"></button>
+  </div>
+  
+
+    <div class="modal-body">
+        <form (ngSubmit)="submitForm(formDirective)" [formGroup]="saveCreateTagForm" #formDirective="ngForm">
+        <div class="form-group">
+          <label for="exampleInputEmail1">Name <span class="asterisk-danger">*</span></label>
+          <input type="text" class="form-control" id="name" aria-describedby="emailHelp" placeholder="Enter Name" formControlName="name" [ngClass]="{ 'is-invalid': submitted && f.name.errors }">
+          <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
+              <div *ngIf="f.name.errors.required">Name is required</div>
+          </div>         
+        </div>
+        <div class="form-group" >
+          <label for="exampleInputEmail1">Description <span class="asterisk-danger"></span></label>
+          <textarea formControlName="description" placeholder="Enter Description" class="form-control" ></textarea>
+        </div>
+        <br />
+        <button type="submit" class="btn btn-success">Add New</button>
+   
+  </form>
+  <br />
+        <b>Saved Tags</b>
+        <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody >
+              <tbody *ngIf="items.length > 0">
+                <tr *ngFor="let item of items | paginate
+                : {
+                    id:'load_tag',
+                    itemsPerPage: tableSize,
+                    currentPage: page,
+                    totalItems: count
+                  };">
+                    <td>
+                        <div class="d-flex">
+                            <div class="">
+                                <p class="fw-bold mb-1">{{item.name}}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{item.description}}</td>
+                    <td>
+                      <a class="btn btn-danger" (click)="deleteTag(item.tagid)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+                    </td>
+                </tr>
+            </tbody>
+            <tbody *ngIf="items.length == 0">
+                <tr>
+                    <th colspan="3" class="text-center">No Record Found.</th>
+                </tr>
+            </tbody>
+        </table>
+        <div class="d-flex justify-content-center mt-5" *ngIf="items.length> 0">
+          <pagination-controls id="load_tag"
+            previousLabel="Prev"
+            nextLabel="Next"
+            (pageChange)="onTableDataChange($event)">
+          </pagination-controls>
+        </div>
+      </div>

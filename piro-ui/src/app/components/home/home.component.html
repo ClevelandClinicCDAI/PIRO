@@ -1,0 +1,60 @@
+<main role="main" class="container">
+  <div class="container border py-3 my-3">
+    <h1>Welcome! PIRO Beta Release</h1>
+    <p>Pathology Information Retrieval Optimizer (PIRO ) provides full text search capability on the anatomic pathology
+      reports for
+      Cleveland Clinic Hospitals, improving the ability to query anatomic pathology reports for clinical, operational,
+      research,
+      and educational purposes. PIRO searches on approximately 7 Million case and patient records, across approximately
+      50 Million case comments in total. PIRO has additional features and integrations planned for future releases.</p>
+  </div>
+  <div class="spinner-border text-primary" role="status" *ngIf="!loaded">
+    <span class="sr-only">Loading...</span>
+  </div>
+  <nav class="nav nav-pills nav-fill">
+    <a class="nav-link" [ngClass]="{ 'active': isSearch}" (click)="isSearch=true;isAudit=false">Search History</a>
+    <a class="nav-link" [ngClass]="{ 'active': isAudit}" (click)="isSearch=false;isAudit=true">Search Usage</a>
+  </nav>
+
+  <div class="tab-content">
+    <div id="search" class="tab-pane" [ngClass]="{'active': isSearch}" *ngIf="isSearch">
+      <h4 class="my-0 font-weight-normal">Search History - Latest 15 searches</h4><br />
+      <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+        <thead class="thead-dark">
+          <tr class="table-primary">
+            <th>Date</th>
+            <th>Total Cases</th>
+            <th>Query</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="items.length > 0">
+          <tr *ngFor="let item of items; let i =index; let first = first; let last = last" class="table-light">
+            <td>
+              <p class="text-muted mb-0 ">{{item?.createOn | date:'MM/dd/yyyy HH:mm:ss'}}</p>
+            </td>
+            <td>
+              <p class="text-muted mb-0">{{item?.count}} cases</p>
+            </td>
+            <td>              
+              <a (click)="assignAdvSearch(item?.advsearch, item?.mrn, item?.url)">
+                <div class="filtered-data" [innerHtml]="transform(item?.display, item?.advdisplay, item?.mrn)"></div>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="items.length == 0">
+          <tr>
+            <th colspan="3" class="text-center">No Record Found.</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="auditreport" class="tab-pane" [ngClass]="{'active': isAudit}" *ngIf="isAudit">
+      <h4 class="my-0 font-weight-normal float-end">Search/Case Requests</h4><br />
+      <app-audit-report [app-audit-report]="{title:''}"></app-audit-report>
+    </div>
+  </div>
+
+  <a *ngIf="!isLoginin" type="button" class="btn btn-lg btn-block btn-outline-primary" href="/login">Sign in</a>
+
+</main>

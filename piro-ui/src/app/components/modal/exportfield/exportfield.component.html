@@ -1,0 +1,95 @@
+<div class="modal-header">
+  <h4 class="modal-title">Select Export Fields</h4>
+  <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+
+
+<!-- <div class="modal-body" formArrayName="columns"> -->
+<div class="modal-body">
+  <div *ngIf="isCreate || isUpdate">
+    <div *ngIf="!contentLoaded">
+      <div class="" *ngFor="let item of skeltoncards">
+        <div class="result-group shadow p-3 bg-white card-skeleton">
+          <div class="animated-background">
+            <div class="card-skeleton-img"></div>
+            <div class="skel-mask-container category-box">
+              <fieldset>
+                <legend><button type="button" class="btn btn-primary category-check">
+                    <i class="fa fa-check-square-o" aria-hidden="true" title="Select All"></i>
+                  </button>
+                  ...............</legend>
+                <div class="container-fluid">
+                  <div class="row">
+                    <div class="col-4" *ngFor="let fields of [1, 2, 3, 4, 5, 6]; let indFieldGroup = index">
+                      <label>
+                        <input type="checkbox" class="selcolumn" disabled />&nbsp;
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-danger" role="alert" *ngIf="showError">
+      Please select one of the fields.
+    </div>
+    <div *ngIf="contentLoaded">
+      <div class="category-box" *ngFor="let category of categories; let indCat = index">
+        <fieldset>
+          <legend>
+            <button type="button" class="btn btn-primary hand category-check" (click)="oncategory(category)">
+              <!-- <i *ngIf="category.checkAll" class="fa fa-square-o" aria-hidden="true" title="Select All"></i> -->
+              <i *ngIf="!category.checkAll" class="fa fa-check-square-o" aria-hidden="true"
+                title="Select All/Clear All"></i>
+            </button>
+            {{category.categorydisplay}}
+          </legend>
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-{{12/category.fieldpartition}}"
+                *ngFor="let fields of category.fields; let indFieldGroup = index">
+                <div *ngFor="let field of fields; let indField = index">
+                  <label>
+                    <input type="checkbox" [value]="field.datafieldId" (change)="oncheck(field)"
+                      [checked]="checkSelected(field.datafieldId)" class="selcolumn" />&nbsp;{{field.display}}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="isReadonly" style="width: 100%;">
+    <h6>Approved Fields</h6>
+    <ul class="list-group list-group-horizontal flex-wrap field-ul">
+      <li *ngFor="let column of selectedFields;" class="list-group-item- field-li">
+        {{column.display}}
+      </li>
+    </ul>
+    <div class="alert alert-danger" style="width: 100%;" role="alert"
+      *ngIf="contentLoaded && selectedFields.length == 0">
+      No export fields selected.
+    </div>
+    <br />
+    <div *ngIf="contentLoaded && removedFields.length > 0">
+      <h6>Removed Fields</h6>
+      <ul class="list-group list-group-horizontal flex-wrap field-ul">
+        <li *ngFor="let column of removedFields;" class="list-group-item- field-li">
+          {{column.display}}
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div class="modal-footer" *ngIf="isCreate || isUpdate">
+    <button type="button" class="btn btn-danger" (click)="onclear()">Clear All</button>
+    <button type="submit" class="btn btn-success" (click)="onsubmit()">OK</button>
+  </div>
+  <div class="modal-footer" *ngIf="isReadonly">
+    <button type="submit" class="btn btn-danger" (click)="closeModal()">Close</button>
+  </div>
+</div>

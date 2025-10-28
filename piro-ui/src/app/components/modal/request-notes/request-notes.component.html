@@ -1,0 +1,22 @@
+<div class="modal-header">
+    <h4 class="modal-title">Data Request Notes</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+     
+    <div class="form-group">
+        <label for="dataInputDesc">Requester Notes</label>
+        <textarea  type="text" class="form-control" disabled="disabled" rows="4" [(ngModel)]="data.comment"></textarea>
+    </div>
+    <br/>
+    <div class="form-group">
+        <label for="dataInputName">Analyst Notes</label>
+        <textarea  type="text" class="form-control" [disabled]="isdisabled ? true : false" rows="4"
+         [(ngModel)]="data.approvalComment"></textarea>           
+    </div>    
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" [disabled]="isdisabled ? true : false" (click)="saveComment()">Save</button>
+    <button type="button" class="btn btn-danger" (click)="closeModal()">Close</button>
+</div>

@@ -1,0 +1,50 @@
+<div id="login" class="container">
+    <div class="row-fluid">
+        <div class="col-md-6" style="float:none;margin:auto;">
+            <div class="card shadow p-3 bg-white rounded">
+                <article class="card-body">
+                    <h4 class="card-title text-center mb-4 mt-1">Create User</h4>
+                     <hr>
+                    <form [formGroup]="userRequestForm" (ngSubmit)="onSubmit()">
+                        <div class="form-group">
+                            <label for="dataInputName">NUID<span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="nuid" [ngClass]="{ 'is-invalid': submitted && f.nuid.errors }">
+                            <div *ngIf="submitted && f.nuid.errors" class="invalid-feedback">
+                                <div *ngIf="f.nuid.errors.required">NUID is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">First Name <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="firstName" [ngClass]="{ 'is-invalid': submitted && f.firstName.errors }" >
+                            <div *ngIf="submitted && f.firstName.errors" class="invalid-feedback">
+                                <div *ngIf="f.firstName.errors.required">First Name is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Last Name <span class="asterisk-danger">*</span></label>
+                            <input type="text" class="form-control" id="dataInputName" formControlName="lastName" [ngClass]="{ 'is-invalid': submitted && f.lastName.errors }" >
+                            <div *ngIf="submitted && f.lastName.errors" class="invalid-feedback">
+                                <div *ngIf="f.lastName.errors.required">Last Name is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputName">Role <span class="asterisk-danger">*</span></label>
+                            <!-- <input type="text" class="form-control" id="dataInputName" formControlName="roleId" [ngClass]="{ 'is-invalid': submitted && f.roleId.errors }" > -->
+                            <select class="form-control" formControlName="roleId" [ngClass]="{ 'is-invalid': submitted && f.roleId.errors }" >
+                                <option value="">Select Role</option>
+                                <option value="{{role.value}}"  *ngFor="let role of roles.data" >{{role.text}}</option>
+                            </select>
+                            <div *ngIf="submitted && f.roleId.errors" class="invalid-feedback">
+                                <div *ngIf="f.roleId.errors.required">Role is required</div>
+                             </div>
+                        </div>
+                        <br>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>

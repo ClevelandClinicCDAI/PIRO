@@ -1,0 +1,6 @@
+node_modules
+.angular
+dist/piro/*
+dist/piro/index.html
+dist/piro/main.*
+dist/piro/3rdpartylicenses.txt

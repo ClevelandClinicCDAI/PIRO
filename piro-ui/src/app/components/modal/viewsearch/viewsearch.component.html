@@ -1,0 +1,26 @@
+<div class="modal-header">
+    <h4 class="modal-title">View Search</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+
+<div class="modal-body">
+    <div class="form-group">
+        <label for="dataInputName">Requester</label>
+        <input type="text" class="form-control" disabled="disabled" [ngModel]='data.firstname + " " + data.lastname' >        
+    </div>
+    <div class="form-group">
+        <label for="dataInputName">Name</label>
+        <input type="text" class="form-control" disabled="disabled" [(ngModel)]="data.name" >        
+    </div>
+    <div class="form-group">
+        <label for="dataInputDesc">Search Criteria</label>
+        <textarea  type="text" class="form-control" disabled="disabled" rows="4" [(ngModel)]="display"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="dataInputName">Search Query</label>
+        <textarea  type="text" class="form-control" disabled="disabled" rows="13" [(ngModel)]="data.description"></textarea>           
+    </div>    
+</div>
+<div class="modal-footer">   
+    <button type="button" class="btn btn-danger" (click)="closeModal()">Close</button>
+</div>

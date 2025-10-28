@@ -1,0 +1,112 @@
+<dataConfig>
+	<dataSource type="JdbcDataSource"
+		driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+		user="[username]"
+		password="[password]"
+		encryptKeyFile="[path]\dih-encryptionkey.txt"
+	/>
+
+	<document>
+		<entity name="piroCASE"
+			pk="caseid"
+			query=" SELECT TOP 10000 [CaseId], [RefRequisitionKey], [SpecimenYear], [CaseNumber], [AccessionDate], [ReceiveDate], [OverdueDate], [CollectionDate], [SignoutDate], [PatientName], [PatientDOB], [PatientEpi], [PatientMrn], [PatientLanguage], [PatientEthnicity], [PatientGender], [PatientDeathDate], [PatientIsDeceased], [PatientRace], [PatientCity], [PatientState], [PatientCountry], [Hospital], [Region], [CaseStatus], [CaseType], [CaseTypeCategory], [Specialty], [SpecialtyCode], [CreateDate], [UpdateDate], [CurrentDate] FROM [dbo].[V_SOLR_Case]"
+			deltaQuery="select CaseId from [dbo].[V_SOLR_Case] where [UpdateDate] > '${dataimporter.last_index_time}'">
+			<field column="CaseId" name="id" />
+			<field column="CaseId" name="caseid" />
+			<field column="SpecimenYear" name="specimenyear" />
+			<field column="CaseNumber" name="casenumber" />
+			<field column="AccessionDate" name="accessiondate" />
+			<field column="ReceiveDate" name="receivedate" />
+			<field column="OverdueDate" name="overduedate" />
+			<field column="CollectionDate" name="collectiondate" />
+			<field column="SignoutDate" name="signoutdate" />
+			<field column="PatientName" name="patientname" />
+			<field column="PatientDOB" name="dob" />
+			<field column="PatientEpi" name="epi" />
+			<field column="PatientMrn" name="mrn" />
+			<field column="PatientLanguage" name="language" />
+			<field column="PatientEthnicity" name="ethnicity" />
+			<field column="PatientGender" name="gender" />
+			<field column="PatientDeathDate" name="deathdate" />
+			<field column="PatientIsDeceased" name="isdeceased" />
+			<field column="PatientRace" name="race" />
+			<field column="Hospital" name="hospital" />
+			<field column="Region" name="region" />
+			<field column="CaseStatus" name="casestatus" />
+			<field column="CaseType" name="casetype" />
+			<field column="CaseTypeCategory" name="casetypecategory" />
+			<field column="Specialty" name="specialty" />
+			<field column="SpecialtyCode" name="specialtycode" />
+			<field column="CreateDate" name="createdate" />
+			<field column="UpdateDate" name="updatedate" />
+			<field column="ProcedureCategory" name="procedurecategory" />
+			<field column="CurrentDate" name="importDate" />
+
+
+			<entity name="piroADDEND"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_ADDEND] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_ADDEND] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroADDEND.CaseId}">
+				<field column="CommentText" name="addend" />
+			</entity>
+			<entity name="piroCOMMENT"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_COMMENT] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_COMMENT] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroCOMMENT.CaseId}">
+				<field column="CommentText" name="comment" />
+			</entity>
+			<entity name="piroFINAL"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_FINAL] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_FINAL] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroFINAL.CaseId}">
+				<field column="CommentText" name="final" />
+			</entity>
+			<entity name="piroGROSS"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_GROSS] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_GROSS] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroGROSS.CaseId}">
+				<field column="CommentText" name="gross" />
+			</entity>
+			<entity name="piroINTRAOP"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_INTRAOP] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_INTRAOP] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroINTRAOP.CaseId}">
+				<field column="CommentText" name="intraop" />
+			</entity>
+			<entity name="piroRESIDENT"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_RESIDENT] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_RESIDENT] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroRESIDENT.CaseId}">
+				<field column="CommentText" name="resident" />
+			</entity>
+			<entity name="piroSYNOPTIC"
+				query="SELECT [CaseCommentId], [CaseId], [CommentText] FROM [dbo].[V_SOLR_CaseComment_SYNOPTIC] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseCommentId, CaseId from [dbo].[V_SOLR_CaseComment_SYNOPTIC] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroSYNOPTIC.CaseId}">
+				<field column="CommentText" name="synoptic" />
+			</entity>
+			<entity name="piroInterpreter"
+				query="SELECT [InterpreterId], [CaseId], [Interpreter] FROM [dbo].[V_SOLR_Interpreter] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select InterpreterId, CaseId from [dbo].[V_SOLR_Interpreter] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroInterpreter.CaseId}">
+				<field column="Interpreter" name="interpreter" />
+			</entity>
+			<entity name="piroStaff"
+				query="SELECT [CaseStaffId], [CaseId], [StaffName] FROM [dbo].[V_SOLR_CaseStaff] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select CaseStaffId, CaseId from [dbo].[V_SOLR_CaseStaff] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroStaff.CaseId}">
+				<field column="StaffName" name="staffname" />
+			</entity>
+			<entity name="piroSpecimen"
+				query="SELECT [SpecimenId], [CaseId], [SpecimenNumber] FROM [dbo].[V_SOLR_Specimen] Where [CaseId]='${piroCASE.CaseId}'"
+				deltaQuery="select SpecimenId, CaseId from [dbo].[V_SOLR_Specimen] where UpdateDate > '${dataimporter.last_index_time}'"
+				parentDeltaQuery="select CaseId from [dbo].[V_SOLR_Case] where CaseId=${piroSpecimen.CaseId}">
+				<field column="StaffName" name="staffname" />
+			</entity>
+
+
+		</entity>
+
+	</document>
+</dataConfig>

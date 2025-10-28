@@ -1,0 +1,48 @@
+.btn-info {
+    background-color: rgb(204, 204, 223);
+    margin-right: 5px;
+}
+
+
+
+.btn-info {
+    border: none !important;
+}
+
+.btn-info:active {
+    border: none !important;
+    background: rgb(204, 204, 223) !important;
+}
+
+.table .thead-dark th {
+    color: #fff;
+    background-color: #0078bf;
+    border-color: #0078bf;
+}
+
+.rounded-pill {
+    text-transform: capitalize;
+}
+
+
+.btn {
+    --bs-btn-padding-x: 0.35rem;
+    --bs-btn-padding-y: 0.175rem;
+    padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+}
+
+.q-input-control {
+    display: inline-block;
+    padding: 5px 10px 5px 10px;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+table {
+    margin-top: 10px;
+}

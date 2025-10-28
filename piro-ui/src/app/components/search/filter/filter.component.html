@@ -1,0 +1,188 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="input-group">
+            <select class="q-field-control q-input-control" (change)="changeFilter($event)"
+                [(ngModel)]="filterDropdown">
+                <option value="{{item.value}}" *ngFor="let item of filterItems;">
+                    <pre>
+                       {{item.name}}
+                    </pre>
+                </option>
+            </select>
+
+            <input type="text" id="inputKeywordSearch" name="inputKeywordSearch" class="form-control input input-md"
+                placeholder="{{placeholder}}" *ngIf="showSearchInput" (keyup)="applyFilter($event);"
+                [(ngModel)]="searchKeyword" autocomplete="off">
+
+            <input type="text" id="inputKeywordText" name="inputKeywordText" class="form-control input input-md"
+                placeholder="{{placeholder}}" *ngIf="showTextInput" [(ngModel)]="searchKeyword" autocomplete="off">
+
+            <select class="q-field-control q-input-control " style="flex: 1 1 auto;" *ngIf="showDropdown"
+                (change)="selectCategoryOption($event)" [(ngModel)]="filterCatDropdown">
+                <option value="">Select Option</option>
+                <option value="{{option.value}}" *ngFor="let option of filterDropdownOptions;"> {{option.name}}
+                </option>
+            </select>
+
+            <ngx-slider [(value)]="minValue" [(highValue)]="maxValue" *ngIf="showRangeSlider" id="filterSlider"
+                [options]="options" (mouseup)="checkAgeValue()"></ngx-slider>
+
+            <app-date-range-selection class="form-control input input-md" *ngIf="showDateRange" [from]="defaultFrom"
+                [to]="defaultTo" (dateRangeSelection)="onDateRangeSelection($event)"></app-date-range-selection>
+
+            <button class="btn btn-info btn-md" type="button" *ngIf="showSearchInput || showTextInput"
+                (click)="applyFilterSubmit();" (window:keypress)="windowEvent($event)">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+        <app-autosuggest [hidden]="!showAutoSuggest"></app-autosuggest>
+    </div>
+    <div class="col-md-6 d-xl-block ">
+        <button class="btn btn-info btn-md {{clearFilterClass}}" type="button" title="Clear Filter"
+            (click)="clearFilter()">
+            Clear Filter <i class="bi bi-x-circle"></i>
+        </button>
+        <button class="btn btn-info btn-md" type="button" title="Save Search" (click)="openSaveSearch()">
+            Save <i class="bi bi-save"></i>
+        </button>
+        <button class="btn btn-info btn-md" type="button" title="Open Saved Search" (click)="openSavedSearchContent()">
+            Load <i class="bi bi-filter"></i>
+        </button>
+        <button class="btn btn-info btn-md d-none1" type="button" title="Advanced Search" (click)="openAdvancedSearch()">
+            Advanced <i class="bi bi-sliders2"></i>
+        </button>
+        <!-- <button class="btn btn-info btn-md d-none1" type="button" title="MRN Search" (click)="openMrnSearch()" *ngIf="!isMrn">
+            MRN <i class="bi bi-person"></i>
+        </button>
+        <button class="btn btn-info btn-md d-none1" type="button" title="MRN Search" (click)="openMrnSearch()" *ngIf="isMrn">
+            MRN <i class="bi bi-person-check"></i>
+        </button> -->
+        <span class="float-end">
+            <div class="dropdown">
+                <button class="btn btn-info btn-md sort-select" type="button" id="dropdownMenuButton"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{sortByText}}
+                    <i class="bi bi-sort-down-alt"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="sortOrder('accessiondate', 'Accession Date')">Accession Date</a>
+                    <a class="dropdown-item" (click)="sortOrder('casepatientageyears', 'Patient Age')">Patient Age</a>
+                </div>
+            </div>
+        </span>
+
+
+    </div>
+    <div class="col-md-6 d-block d-xl-none filter_btns">
+        <button class="btn btn-info btn-md" type="button" title="Clear Filter" (click)="clearFilter()">
+            <i class="bi bi-x-circle"></i>
+        </button>
+        <button class="btn btn-info btn-md" type="button" title="Save Search" (click)="openSaveSearch()">
+            <i class="bi bi-save"></i>
+        </button>
+        <button class="btn btn-info btn-md" type="button" title="Open Saved Search" (click)="openSavedSearchContent()">
+            <i class="bi bi-filter"></i>
+        </button>
+        <button class="btn btn-info btn-md" type="button" title="Advanced Search1" (click)="openAdvancedSearch()">
+            <i class="bi bi-sliders2"></i>
+        </button>
+        <!-- <button class="btn btn-info btn-md" type="button" title="MRN Search " (click)="openMrnSearch()">
+            <i class="bi bi-person"></i>
+        </button>     -->
+
+        <span class="float-end">
+            <div class="dropdown">
+                <button class="btn btn-info btn-md sort-select" type="button" id="dropdownMenuButton"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="bi bi-sort-down-alt"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="sortOrder('accessiondate', 'Accession Date')">Accession Date <i
+                            *ngIf="sortByText == 'Accession Date'" class="bi bi-sort-down-alt"></i></a>
+                    <a class="dropdown-item" (click)="sortOrder('casepatientageyears', 'Patient Age')">Patient Age <i
+                            *ngIf="sortByText == 'Patient Age'" class="bi bi-sort-down-alt"></i></a>
+                </div>
+            </div>
+        </span>
+    </div>
+</div>
+<div class="filtered-data" *ngIf="filter.length > 0">
+    <span class="f-by filterBy">FILTERED BY</span>
+    <span *ngFor="let filteredItem of filter">
+        <span *ngIf="filteredItem.field == 'isdeceased' &&  filteredItem.search == 'NA'; else elseBlock"
+            class="hide"></span>
+        <ng-template #elseBlock>
+            <span class="form-item">
+                <span class="bg-primary filteritem" [style.background-color]="filteredItem.color + '!important'">
+                    <span class="filterDisplayName" title="{{filteredItem.title}}">{{(filteredItem.field == 'collectiondate' || filteredItem.field ==
+                        'casepatientageyears') ? transformFilteredItem(filteredItem) : filteredItem.text}}</span>
+                    <i class="fa fa-close hide" (click)="removeFilter(filteredItem)"></i>
+                </span>
+            </span>
+        </ng-template>
+    </span>
+</div>
+<!-- <ng-template #content let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Advanced Search</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <form>
+            <app-advanced></app-advanced>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="modal.close('Save click')">Apply</button>
+        <button type="button" class="btn btn-outline-dark" (click)="modal.close('Save click')">Save</button>
+    </div>
+</ng-template> -->
+
+
+<ng-template #save let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Save Search</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <form>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Name</label>
+                <input type="text" class="form-control" id="name" aria-describedby="emailHelp"
+                    placeholder="Enter email">
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail1">Description</label>
+                <input type="text" class="form-control" id="desc" aria-describedby="descHelp" placeholder="Enter email">
+
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="modal.close('Save click')">Save</button>
+    </div>
+</ng-template>
+
+<ng-template #saved let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Saved Search</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <form>
+            <ul class="facet-group">
+                <li class="facet-group-item">
+                    <a href="#">Save - 1</a>
+                </li>
+                <li class="facet-group-item">
+                    <a href="#">Save - 2</a>
+                </li>
+                <li class="facet-group-item">
+                    <a href="#">Save - 3</a>
+                </li>
+            </ul>
+        </form>
+    </div>
+    <div class="modal-footer">
+    </div>
+</ng-template>

@@ -1,0 +1,21 @@
+.site-container {
+    width: 80%;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 10px 10px 10px 10px;
+    border: 1px blue solid;
+    min-height: 800px;
+    /* height: 400px;
+    
+    background: teal; */
+}
+
+.container {
+    max-width: 100%;
+}
+
+/* footer{
+    position:absolute;
+    bottom:0;
+    width:97%;
+} */

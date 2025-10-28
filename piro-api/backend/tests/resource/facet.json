@@ -1,0 +1,48 @@
+{
+    "gender": {
+      "facet_ranges": {},
+      "facets": [
+        {
+          "key": "Female",
+          "val": 23
+        },
+        {
+          "key": "Male",
+          "val": 2
+        }
+      ],
+      "field": ""
+    },
+    "region": {
+      "facet_ranges": {},
+      "facets": [
+        {
+          "key": "Ohio",
+          "val": 25
+        }
+      ],
+      "field": ""
+    },
+    "casepatientage": {
+      "facet_ranges": {},
+      "facets": [
+        {
+          "key": "Other",
+          "val": 11
+        },
+        {
+          "key": "Below 70",
+          "val": 9
+        },
+        {
+          "key": "Below 60",
+          "val": 3
+        },
+        {
+          "key": "Below 50",
+          "val": 2
+        }
+      ],
+      "field": ""
+    }
+  }

@@ -1,0 +1,39 @@
+Jinja2
+aiofiles
+aiohttp
+aiosqlite
+asyncpg
+bcrypt
+databases
+email-validator
+fastapi
+fastapi-pagination
+file:./_packages//python_ldap-3.4.0-cp311-cp311-win_amd64.whl; platform_system == "Windows"
+gunicorn; platform_system != "Windows"
+httptools
+httpx
+logger
+loguru
+mammoth
+openpyxl
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-sqlalchemy
+passlib
+psycopg2-binary; platform_system != "Windows"
+psycopg2; platform_system == "Windows"
+pyodbc
+pysolr
+pytest
+python-dateutil
+python-dotenv
+pyjwt
+python-ldap; platform_system != "Windows"
+python-multipart
+seedir
+solrq
+sqlalchemy
+sqlalchemy_utils
+striprtf
+uvicorn
+watchfiles
+websockets

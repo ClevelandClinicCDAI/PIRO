@@ -1,0 +1,184 @@
+<div *ngIf="!contentLoaded">
+    <div class="" *ngFor="let item of skeltoncards">
+        <div class="result-group shadow p-3 bg-white rounded card-skeleton">
+            <div class="animated-background">
+                <div class="card-skeleton-img"></div>
+                <div class="skel-mask-container">
+                    <div class="skel-mask skel-mask-1"></div>
+                    <div class="skel-mask skel-mask-2"></div>
+                    <div class="skel-mask skel-mask-3"></div>
+                    <div class="skel-mask skel-mask-4"></div>
+                    <div class="skel-mask skel-mask-5"></div>
+                    <div class="skel-mask skel-mask-6"></div>
+                    <div class="skel-mask skel-mask-7"></div>
+                    <div class="skel-mask skel-mask-8"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="contentLoaded">
+    <div class="container" *ngIf="content.length > 0">
+        <div class="row">
+            <div class="col-md-2">
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex justify-content-center" style="display: table-cell; vertical-align: middle;"
+                    *ngIf="content.length > 0">
+                    <pagination-controls previousLabel="Prev" nextLabel="Next" (pageChange)="onTableDataChange($event)">
+                    </pagination-controls>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <p class="float-end"><b>{{count}}</b> Cases</p>
+            </div>
+        </div>
+    </div>
+    <div class="result-group shadow p-3 bg-white rounded " *ngFor="let item of content | paginate
+: {
+    itemsPerPage: tableSize,
+    currentPage: page,
+    totalItems: countLimit
+  };
+let i = index;" [ngClass]="i != 0 ? 'mt-3' : ''">
+        <div class="row">
+            <div class="col-md-3">
+                <div><i class="bi bi-person-square"></i> {{item.patientname}} </div>
+                <span>
+                    {{item.age === 0 ? "-" : item.age}}/{{item.gender}} &nbsp;&nbsp;&nbsp;&nbsp; <i class="bold800"> <a
+                            routerLink="/search-detail/{{item.caseid}}" class="view-btn">{{item.casenumber === '' ?
+                            '__-____' : item.casenumber}}</a></i>
+
+                </span>
+            </div>
+            <div class="col-md-3">
+                <div class="middle">
+                    {{item.hospital}}
+                </div>
+                <div class="middle">
+                    {{item.region}}
+                </div>
+            </div>
+            <div class="col-md-4" *ngIf="item.staffnames.length > 0">
+                <div class="middle" *ngFor="let staff of item.staffnames; let i = index">
+                    <i class="bi bi-clipboard2-pulse" [hidden]="i>0"></i> {{staff}}
+                </div>
+            </div>
+
+            <div class="col-md-4" *ngIf="item.staffnames.length == 0 && item.interpreters.length > 0">
+                <div class="middle" *ngFor="let staff of item.interpreters; let i = index">
+                    <i class="bi bi-clipboard2-pulse" [hidden]="i>0"></i> {{staff}}
+                </div>
+            </div>
+            <div class="col-md-4" *ngIf="item.staffnames.length == 0 && item.interpreters.length == 0">
+                <div class="middle">
+                    <i class="bi bi-clipboard2-pulse"></i>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="bold500 right">
+                    <!-- {{getTags(item.caseid)}} -->
+                    <div appTagDisplay="toggleDirective" caseid="{{item.caseid}}"></div>
+                    <i *ngIf="item.ismalignant" class="bi bi-flag-fill" style = "color:red;;"   
+                    ngbPopover="Malignant Case (Filtered results based on AI-detected elements.)"
+                    triggers="mouseenter:mouseleave"></i>&nbsp; &nbsp;
+                    <i *ngIf="item.isconcentriq" class="bi bi-file-earmark-bar-graph-fill concentriq-btn" title="Open Concentriq Link" style = "color:blueviolet;;"   
+                    (click)="openConcentriqUrl(item.concentriqurl)"></i>&nbsp; &nbsp;
+                    <i class="bi bi-tags-fill tag-btn" title="Tag Case"
+                        (click)="openTag(item.caseid, item.casenumber)"></i>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div *ngIf="item.finaltexts?.length > 0"
+            [app-contenttext]="{heading:'Final Diagnosis: ',content:item.finaltexts }"></div>
+        <div *ngIf="item.commenttexts?.length > 0" [app-contenttext]="{heading:'Comment: ',content:item.commenttexts}">
+        </div>
+        <div *ngIf="item.addendtexts?.length > 0" [app-contenttext]="{heading:'Addendum: ',content:item.addendtexts}">
+        </div>
+        <!-- <div [app-contenttext]="{heading:'Gross: ',content:item.grosstexts}"></div> -->
+        <div *ngIf="item.intraoptexts.length > 0" [app-contenttext]="{heading:'IntraOp: ',content:item.intraoptexts}">
+        </div>
+        <div *ngIf="item.residenttexts?.length > 0"
+            [app-contenttext]="{heading:'Resident: ',content:item.residenttexts}"></div>
+        <div *ngIf="item.synoptictexts?.length > 0">
+            <b>
+                <a *ngIf="!item.synopticreport"  (click)="opensynopticCopathModal(item.caseid)"
+                    href="javascript:void(0);" title="Click to view the synoptic comments">View Synoptic Text</a>
+                <a *ngIf="item.synopticreport" (click)="opensynopticEpicModal(item.caseid)"
+                    href="javascript:void(0);" title="Click to view the synoptic comments">View Synoptic Text</a>
+            </b>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div *ngIf="item.collectiondate">
+                    <i>Collection Date:</i> {{convertDate(item.collectiondate) }}
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="right" *ngIf="item.signoutdate">
+                    <i>Signout Date:</i> {{ convertDate(item.signoutdate) }}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div *ngIf="item.signoutdate">
+                    <i>Receive Date:</i> {{convertDate(item.receivedate) }}
+                </div>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="right" *ngIf="item.signoutdate">
+                    <i>Accession Date:</i> {{ convertDate(item.accessiondate) }}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <!-- <div class="bold500">
+                <b>Import Date:</b> {{convertDate(item.importdate) }}
+            </div> -->
+            </div>
+            <div class="col-md-3">
+
+            </div>
+            <div class="col-md-3">
+
+            </div>
+            <div class="col-md-3">
+                <div class="right">
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <div class="container" *ngIf="content.length > 0">
+        <div class="row">
+            <div class="col-md-2">
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex justify-content-center" style="display: table-cell; vertical-align: middle;"
+                    *ngIf="content.length > 0">
+                    <pagination-controls previousLabel="Prev" nextLabel="Next" (pageChange)="onTableDataChange($event)">
+                    </pagination-controls>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <p class="float-end"><b>{{count}}</b> Cases</p>
+            </div>
+        </div>
+    </div>
+    <span class="f-by" *ngIf="noResults">No Results Found.</span>
+    <span class="f-by" *ngIf="filter.length == 0 && content.length == 0 && !noResults">Begin your search by entering your query
+        above or drilling down from the options on the left.</span>
+</div>

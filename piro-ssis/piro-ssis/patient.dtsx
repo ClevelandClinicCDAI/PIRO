@@ -1,0 +1,2106 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/1/2025 8:50:23 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{EB8F23B0-DC1D-4859-AE76-40BC71942FDF}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="patient"
+  DTS:PackageType="5"
+  DTS:VersionBuild="109"
+  DTS:VersionGUID="{E120ED20-F913-4FDE-9DFF-D2E9711D8D25}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:LogProviders>
+    <DTS:LogProvider
+      DTS:ConfigString="oledb-piro"
+      DTS:CreationName="Microsoft.LogProviderSQLServer"
+      DTS:Description="Writes log entries for events to a SQL Server database"
+      DTS:DTSID="{4D7D71C4-AD6E-4267-9710-F4F00AEA83EA}"
+      DTS:ObjectName="SSIS log provider for SQL Server">
+      <DTS:ObjectData>
+        <InnerObject />
+      </DTS:ObjectData>
+    </DTS:LogProvider>
+  </DTS:LogProviders>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{14E8D0FB-2867-4826-A216-A44A56CC56B4}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="end_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-05-01</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{2454596C-4D9E-4E0C-A750-B1247EBEAAD8}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'patient', '', '',
+        'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{15EC333A-C7EF-4D88-8B56-B82C0940D50E}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'patient', '', '',
+        'query', 'SELECT
+        P.PAT_ID,
+        PAT_MRN_ID,
+        EPIC_PAT_ID PAT_EPI_ID,
+        PAT_TITLE_C PAT_PREFIX_NM,
+        PAT_FIRST_NAME PAT_FIRST_NM,
+        PAT_MIDDLE_NAME PAT_MI_NM,
+        PAT_LAST_NAME PAT_LAST_NM,
+        PAT_NAME PAT_FULL_NM,
+        CITY PAT_CITY,
+        S.NAME PAT_STATE,
+        C.NAME PAT_COUNTRY,
+        BIRTH_DATE PAT_DOB,
+        DEATH_DATE PAT_DEATH_DATE,
+        CASE DEATH_DATE
+        WHEN NULL THEN 1
+        ELSE 0
+        END PAT_DECEASED_IND,
+        ETHNIC_GROUP_C PAT_ETHNIC_GROUP_CD,
+        SEX_C PAT_GENDER_CD,
+        LANGUAGE_C PAT_LANG_CD,
+        MARITAL_STATUS_C PAT_MARITAL_STATUS_CD,
+        PR.PATIENT_RACE_C PAT_RACE_CD,
+        REC_CREATE_DATE PAT_REC_CREATE_DT,
+        UPDATE_DATE, Y_OCCUPATION,
+        CASE EPICCARE_PAT_YN
+        WHEN ''Y'' THEN 1
+        ELSE 0
+        END IS_EPICCARE_PAT
+        FROM CLARITY.PATIENT P
+        LEFT JOIN CLARITY.PATIENT_RACE PR on P.PAT_ID = PR.PAT_ID AND PR.LINE = 1
+        LEFT JOIN CLARITY.ZC_STATE S on P.STATE_C = S.STATE_C
+        LEFT JOIN CLARITY.ZC_COUNTRY C on P.COUNTRY_C = C.COUNTRY_C
+        WHERE 1 = 1 AND ( P.REC_CREATE_DATE &gt;= TO_DATE(''2025-01-01'',''yyyy-mm-dd'') OR
+        P.UPDATE_DATE &gt;= TO_DATE(''2025-01-01'',''yyyy-mm-dd'')) AND ( P.REC_CREATE_DATE &lt;
+        TO_DATE(''2025-05-01'',''yyyy-mm-dd'') OR P.UPDATE_DATE &lt;
+        TO_DATE(''2025-05-01'',''yyyy-mm-dd'')) AND ROWNUM &lt; 10', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{43BE77E2-259F-43B7-B646-A2D97FA7A4CF}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'patient', '', '',
+        'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{7A45B3B9-5450-4F88-A8F5-E38CD08D55CB}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT &#xA;        P.PAT_ID,&#xA;        PAT_MRN_ID,&#xA;        EPIC_PAT_ID PAT_EPI_ID,&#xA;        PAT_TITLE_C PAT_PREFIX_NM,&#xA;        PAT_FIRST_NAME PAT_FIRST_NM,&#xA;        PAT_MIDDLE_NAME PAT_MI_NM,&#xA;        PAT_LAST_NAME PAT_LAST_NM,&#xA;        PAT_NAME PAT_FULL_NM,&#xA;        CITY PAT_CITY,&#xA;        S.NAME PAT_STATE,&#xA;        C.NAME PAT_COUNTRY,&#xA;        BIRTH_DATE PAT_DOB,&#xA;        DEATH_DATE PAT_DEATH_DATE,&#xA;        CASE DEATH_DATE&#xA;          WHEN NULL THEN 1&#xA;          ELSE 0 &#xA;        END PAT_DECEASED_IND,&#xA;        ETHNIC_GROUP_C PAT_ETHNIC_GROUP_CD,&#xA;        SEX_C PAT_GENDER_CD,&#xA;        LANGUAGE_C PAT_LANG_CD,&#xA;        MARITAL_STATUS_C PAT_MARITAL_STATUS_CD,&#xA;        PR.PATIENT_RACE_C PAT_RACE_CD,&#xA;        REC_CREATE_DATE PAT_REC_CREATE_DT,&#xA; UPDATE_DATE,     Y_OCCUPATION,&#xA;        CASE EPICCARE_PAT_YN&#xA;          WHEN 'Y' THEN 1&#xA;          ELSE 0 &#xA;        END IS_EPICCARE_PAT&#xA;        FROM CLARITY.PATIENT P&#xA;        LEFT JOIN CLARITY.PATIENT_RACE PR on P.PAT_ID = PR.PAT_ID AND PR.LINE = 1&#xA;        LEFT JOIN CLARITY.ZC_STATE S on P.STATE_C = S.STATE_C&#xA;        LEFT JOIN CLARITY.ZC_COUNTRY C on P.COUNTRY_C = C.COUNTRY_C&#xA;WHERE 1 = 1 &quot; + (@[User::start_date] == &quot;&quot; ?  &quot;&quot; : &quot; AND  ( P.REC_CREATE_DATE &gt;= TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd')  OR  P.UPDATE_DATE &gt;= TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd'))&quot;)    + (@[User::end_date] == &quot;&quot; ?  &quot;&quot; : &quot; AND ( P.REC_CREATE_DATE &lt; TO_DATE('&quot; + @[User::end_date] + &quot;','yyyy-mm-dd')   OR P.UPDATE_DATE &lt; TO_DATE('&quot; + @[User::end_date] + &quot;','yyyy-mm-dd'))&quot;)  + (@[User::row_num] == &quot;&quot; ?  &quot;&quot; : &quot; AND ROWNUM &lt; &quot; +  @[User::row_num])"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT
+        P.PAT_ID,
+        PAT_MRN_ID,
+        EPIC_PAT_ID PAT_EPI_ID,
+        PAT_TITLE_C PAT_PREFIX_NM,
+        PAT_FIRST_NAME PAT_FIRST_NM,
+        PAT_MIDDLE_NAME PAT_MI_NM,
+        PAT_LAST_NAME PAT_LAST_NM,
+        PAT_NAME PAT_FULL_NM,
+        CITY PAT_CITY,
+        S.NAME PAT_STATE,
+        C.NAME PAT_COUNTRY,
+        BIRTH_DATE PAT_DOB,
+        DEATH_DATE PAT_DEATH_DATE,
+        CASE DEATH_DATE
+        WHEN NULL THEN 1
+        ELSE 0
+        END PAT_DECEASED_IND,
+        ETHNIC_GROUP_C PAT_ETHNIC_GROUP_CD,
+        SEX_C PAT_GENDER_CD,
+        LANGUAGE_C PAT_LANG_CD,
+        MARITAL_STATUS_C PAT_MARITAL_STATUS_CD,
+        PR.PATIENT_RACE_C PAT_RACE_CD,
+        REC_CREATE_DATE PAT_REC_CREATE_DT,
+        UPDATE_DATE, Y_OCCUPATION,
+        CASE EPICCARE_PAT_YN
+        WHEN 'Y' THEN 1
+        ELSE 0
+        END IS_EPICCARE_PAT
+        FROM CLARITY.PATIENT P
+        LEFT JOIN CLARITY.PATIENT_RACE PR on P.PAT_ID = PR.PAT_ID AND PR.LINE = 1
+        LEFT JOIN CLARITY.ZC_STATE S on P.STATE_C = S.STATE_C
+        LEFT JOIN CLARITY.ZC_COUNTRY C on P.COUNTRY_C = C.COUNTRY_C
+        WHERE 1 = 1 AND ( P.REC_CREATE_DATE &gt;= TO_DATE('2025-01-01','yyyy-mm-dd') OR
+        P.UPDATE_DATE &gt;= TO_DATE('2025-01-01','yyyy-mm-dd')) AND ( P.REC_CREATE_DATE &lt;
+        TO_DATE('2025-05-01','yyyy-mm-dd') OR P.UPDATE_DATE &lt; TO_DATE('2025-05-01','yyyy-mm-dd'))
+        AND ROWNUM &lt; 10</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{BA8BDC67-DFA6-4175-B55A-09E39E604BF8}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="row_num">
+      <DTS:VariableValue
+        DTS:DataType="8">10</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{72B96C4F-7091-4035-8C13-7E3FB58B97DA}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="start_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-01-01</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:LoggingOptions
+    DTS:FilterKind="0"
+    DTS:LoggingMode="1">
+    <DTS:Property
+      DTS:DataType="8"
+      DTS:Name="EventFilter">
+      6,7,OnError,13,OnPostExecute,14,OnPostValidate,12,OnPreExecute,13,OnPreValidate,12,OnTaskFailed</DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnError"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnTaskFailed"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:SelectedLogProviders>
+      <DTS:SelectedLogProvider
+        DTS:InstanceID="{4D7D71C4-AD6E-4267-9710-F4F00AEA83EA}" />
+    </DTS:SelectedLogProviders>
+  </DTS:LoggingOptions>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{6f57f865-7693-4da8-9244-f4f903351520}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.P_SSIS_Load_Patient @Full_Load = 0"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{C1161FEE-5B62-4EF6-AC56-B3FA3F409F75}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{ACA3929B-995D-4A91-815A-18F029B48672}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{025C0746-6317-4CA6-8B20-A3B0A1415CC4}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Patient-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="PatientRace-Data Flow Task"
+      DTS:DTSID="{AF0F9143-3E8E-489F-8203-321B635474A5}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Patient-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:LoggingOptions
+        DTS:FilterKind="0" />
+      <DTS:PropertyExpression
+        DTS:Name="[Patient-Source].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\Patient-Data Flow Task\Patient-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="Patient-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_Patient"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Patient-Data Flow Task\Patient-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_ID]"
+                      cachedDataType="wstr"
+                      cachedLength="18"
+                      cachedName="PAT_ID"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_ID]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ID]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_MRN_ID]"
+                      cachedDataType="wstr"
+                      cachedLength="102"
+                      cachedName="PAT_MRN_ID"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MRN_ID]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MRN_ID]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_EPI_ID]"
+                      cachedDataType="wstr"
+                      cachedLength="18"
+                      cachedName="PAT_EPI_ID"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_EPI_ID]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_EPI_ID]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_PREFIX_NM]"
+                      cachedDataType="wstr"
+                      cachedLength="66"
+                      cachedName="PAT_PREFIX_NM"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_PREFIX_NM]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_PREFIX_NM]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_FIRST_NM]"
+                      cachedDataType="wstr"
+                      cachedLength="200"
+                      cachedName="PAT_FIRST_NM"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_FIRST_NM]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FIRST_NM]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_MI_NM]"
+                      cachedDataType="wstr"
+                      cachedLength="508"
+                      cachedName="PAT_MI_NM"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MI_NM]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MI_NM]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_LAST_NM]"
+                      cachedDataType="wstr"
+                      cachedLength="200"
+                      cachedName="PAT_LAST_NM"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_LAST_NM]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LAST_NM]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_FULL_NM]"
+                      cachedDataType="wstr"
+                      cachedLength="200"
+                      cachedName="PAT_FULL_NM"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_FULL_NM]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FULL_NM]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_CITY]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="PAT_CITY"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_CITY]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_CITY]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_STATE]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="PAT_STATE"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_STATE]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_STATE]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_COUNTRY]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="PAT_COUNTRY"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_COUNTRY]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_COUNTRY]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_DOB]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="PAT_DOB"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_DOB]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DOB]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_DEATH_DATE]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="PAT_DEATH_DATE"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[Pat_DEATH_DATE]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DEATH_DATE]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_DECEASED_IND]"
+                      cachedDataType="numeric"
+                      cachedName="PAT_DECEASED_IND"
+                      cachedPrecision="38"
+                      cachedScale="4"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_DECEASED_IND]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DECEASED_IND]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_ETHNIC_GROUP_CD]"
+                      cachedDataType="numeric"
+                      cachedName="PAT_ETHNIC_GROUP_CD"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_ETHNIC_GROUP_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ETHNIC_GROUP_CD]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_GENDER_CD]"
+                      cachedDataType="wstr"
+                      cachedLength="66"
+                      cachedName="PAT_GENDER_CD"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_GENDER_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_GENDER_CD]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_LANG_CD]"
+                      cachedDataType="wstr"
+                      cachedLength="66"
+                      cachedName="PAT_LANG_CD"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_LANG_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LANG_CD]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_RACE_CD]"
+                      cachedDataType="numeric"
+                      cachedName="PAT_RACE_CD"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_RACE_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_RACE_CD]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_REC_CREATE_DT]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="PAT_REC_CREATE_DT"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_REC_CREATE_DT]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_REC_CREATE_DT]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[Y_OCCUPATION]"
+                      cachedDataType="wstr"
+                      cachedLength="50"
+                      cachedName="Y_OCCUPATION"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[Y_OCCUPATION]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[Y_OCCUPATION]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[IS_EPICCARE_PAT]"
+                      cachedDataType="numeric"
+                      cachedName="IS_EPICCARE_PAT"
+                      cachedPrecision="38"
+                      cachedScale="4"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[IS_EPICCARE_PAT]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[IS_EPICCARE_PAT]" />
+                    <inputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].Columns[PAT_MARITAL_STATUS_CD]"
+                      cachedDataType="numeric"
+                      cachedName="PAT_MARITAL_STATUS_CD"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MARITAL_STATUS_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MARITAL_STATUS_CD]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_ID]"
+                      dataType="wstr"
+                      length="105"
+                      name="PAT_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MRN_ID]"
+                      dataType="wstr"
+                      length="105"
+                      name="PAT_MRN_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_EPI_ID]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_EPI_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_PREFIX_NM]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_PREFIX_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_FIRST_NM]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_FIRST_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_LAST_NM]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_LAST_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MI_NM]"
+                      dataType="wstr"
+                      length="508"
+                      name="PAT_MI_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_FULL_NM]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_FULL_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_CITY]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_CITY" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_STATE]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_STATE" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_COUNTRY]"
+                      dataType="wstr"
+                      length="256"
+                      name="PAT_COUNTRY" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_DOB]"
+                      dataType="dbTimeStamp"
+                      name="PAT_DOB" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[Pat_DEATH_DATE]"
+                      dataType="dbTimeStamp"
+                      name="Pat_DEATH_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_DECEASED_IND]"
+                      dataType="i4"
+                      name="PAT_DECEASED_IND" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_ETHNIC_GROUP_CD]"
+                      dataType="numeric"
+                      name="PAT_ETHNIC_GROUP_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_GENDER_CD]"
+                      dataType="wstr"
+                      length="105"
+                      name="PAT_GENDER_CD" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_LANG_CD]"
+                      dataType="wstr"
+                      length="105"
+                      name="PAT_LANG_CD" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_MARITAL_STATUS_CD]"
+                      dataType="numeric"
+                      name="PAT_MARITAL_STATUS_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_RACE_CD]"
+                      dataType="numeric"
+                      name="PAT_RACE_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[PAT_REC_CREATE_DT]"
+                      dataType="dbTimeStamp"
+                      name="PAT_REC_CREATE_DT" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[Y_OCCUPATION]"
+                      dataType="wstr"
+                      length="50"
+                      name="Y_OCCUPATION" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input].ExternalColumns[IS_EPICCARE_PAT]"
+                      dataType="i4"
+                      name="IS_EPICCARE_PAT" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Patient-Data Flow Task\Patient-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Patient-Data Flow Task\Patient-Source"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="Patient-Source"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
+                  P.PAT_ID,
+                  PAT_MRN_ID,
+                  EPIC_PAT_ID PAT_EPI_ID,
+                  PAT_TITLE_C PAT_PREFIX_NM,
+                  PAT_FIRST_NAME PAT_FIRST_NM,
+                  PAT_MIDDLE_NAME PAT_MI_NM,
+                  PAT_LAST_NAME PAT_LAST_NM,
+                  PAT_NAME PAT_FULL_NM,
+                  CITY PAT_CITY,
+                  S.NAME PAT_STATE,
+                  C.NAME PAT_COUNTRY,
+                  BIRTH_DATE PAT_DOB,
+                  DEATH_DATE PAT_DEATH_DATE,
+                  CASE DEATH_DATE
+                  WHEN NULL THEN 1
+                  ELSE 0
+                  END PAT_DECEASED_IND,
+                  ETHNIC_GROUP_C PAT_ETHNIC_GROUP_CD,
+                  SEX_C PAT_GENDER_CD,
+                  LANGUAGE_C PAT_LANG_CD,
+                  MARITAL_STATUS_C PAT_MARITAL_STATUS_CD,
+                  PR.PATIENT_RACE_C PAT_RACE_CD,
+                  REC_CREATE_DATE PAT_REC_CREATE_DT,
+                  UPDATE_DATE, Y_OCCUPATION,
+                  CASE EPICCARE_PAT_YN
+                  WHEN 'Y' THEN 1
+                  ELSE 0
+                  END IS_EPICCARE_PAT
+                  FROM CLARITY.PATIENT P
+                  LEFT JOIN CLARITY.PATIENT_RACE PR on P.PAT_ID = PR.PAT_ID AND PR.LINE = 1
+                  LEFT JOIN CLARITY.ZC_STATE S on P.STATE_C = S.STATE_C
+                  LEFT JOIN CLARITY.ZC_COUNTRY C on P.COUNTRY_C = C.COUNTRY_C
+                  WHERE 1 = 1 AND ( P.REC_CREATE_DATE &gt;= TO_DATE('2025-01-01','yyyy-mm-dd') OR
+                  P.UPDATE_DATE &gt;= TO_DATE('2025-01-01','yyyy-mm-dd')) AND ( P.REC_CREATE_DATE
+                  &lt; TO_DATE('2025-05-01','yyyy-mm-dd') OR P.UPDATE_DATE &lt;
+                  TO_DATE('2025-05-01','yyyy-mm-dd')) AND ROWNUM &lt; 10</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Patient-Data Flow Task\Patient-Source.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ID]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_ID]"
+                      length="18"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ID]"
+                      name="PAT_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MRN_ID]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MRN_ID]"
+                      length="102"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MRN_ID]"
+                      name="PAT_MRN_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_EPI_ID]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_EPI_ID]"
+                      length="18"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_EPI_ID]"
+                      name="PAT_EPI_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_PREFIX_NM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_PREFIX_NM]"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_PREFIX_NM]"
+                      name="PAT_PREFIX_NM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FIRST_NM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_FIRST_NM]"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FIRST_NM]"
+                      name="PAT_FIRST_NM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MI_NM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MI_NM]"
+                      length="508"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MI_NM]"
+                      name="PAT_MI_NM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LAST_NM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_LAST_NM]"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LAST_NM]"
+                      name="PAT_LAST_NM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FULL_NM]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_FULL_NM]"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_FULL_NM]"
+                      name="PAT_FULL_NM"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_CITY]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_CITY]"
+                      length="50"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_CITY]"
+                      name="PAT_CITY"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_STATE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_STATE]"
+                      length="254"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_STATE]"
+                      name="PAT_STATE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_COUNTRY]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_COUNTRY]"
+                      length="254"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_COUNTRY]"
+                      name="PAT_COUNTRY"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DOB]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DOB]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DOB]"
+                      name="PAT_DOB"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DEATH_DATE]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DEATH_DATE]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DEATH_DATE]"
+                      name="PAT_DEATH_DATE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DECEASED_IND]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DECEASED_IND]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_DECEASED_IND]"
+                      name="PAT_DECEASED_IND"
+                      precision="38"
+                      scale="4"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ETHNIC_GROUP_CD]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_ETHNIC_GROUP_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_ETHNIC_GROUP_CD]"
+                      name="PAT_ETHNIC_GROUP_CD"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_GENDER_CD]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_GENDER_CD]"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_GENDER_CD]"
+                      name="PAT_GENDER_CD"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LANG_CD]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_LANG_CD]"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_LANG_CD]"
+                      name="PAT_LANG_CD"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MARITAL_STATUS_CD]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MARITAL_STATUS_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_MARITAL_STATUS_CD]"
+                      name="PAT_MARITAL_STATUS_CD"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_RACE_CD]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_RACE_CD]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_RACE_CD]"
+                      name="PAT_RACE_CD"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_REC_CREATE_DT]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_REC_CREATE_DT]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[PAT_REC_CREATE_DT]"
+                      name="PAT_REC_CREATE_DT"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[Y_OCCUPATION]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[Y_OCCUPATION]"
+                      length="50"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[Y_OCCUPATION]"
+                      name="Y_OCCUPATION"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[IS_EPICCARE_PAT]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[IS_EPICCARE_PAT]"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].Columns[IS_EPICCARE_PAT]"
+                      name="IS_EPICCARE_PAT"
+                      precision="38"
+                      scale="4"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_ID]"
+                      dataType="wstr"
+                      length="18"
+                      name="PAT_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MRN_ID]"
+                      dataType="wstr"
+                      length="102"
+                      name="PAT_MRN_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_EPI_ID]"
+                      dataType="wstr"
+                      length="18"
+                      name="PAT_EPI_ID" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_PREFIX_NM]"
+                      dataType="wstr"
+                      length="66"
+                      name="PAT_PREFIX_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_FIRST_NM]"
+                      dataType="wstr"
+                      length="200"
+                      name="PAT_FIRST_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MI_NM]"
+                      dataType="wstr"
+                      length="508"
+                      name="PAT_MI_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_LAST_NM]"
+                      dataType="wstr"
+                      length="200"
+                      name="PAT_LAST_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_FULL_NM]"
+                      dataType="wstr"
+                      length="200"
+                      name="PAT_FULL_NM" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_CITY]"
+                      dataType="wstr"
+                      length="50"
+                      name="PAT_CITY" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_STATE]"
+                      dataType="wstr"
+                      length="254"
+                      name="PAT_STATE" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_COUNTRY]"
+                      dataType="wstr"
+                      length="254"
+                      name="PAT_COUNTRY" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DOB]"
+                      dataType="dbTimeStamp"
+                      name="PAT_DOB" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DEATH_DATE]"
+                      dataType="dbTimeStamp"
+                      name="PAT_DEATH_DATE" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_DECEASED_IND]"
+                      dataType="numeric"
+                      name="PAT_DECEASED_IND"
+                      precision="38"
+                      scale="4" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_ETHNIC_GROUP_CD]"
+                      dataType="numeric"
+                      name="PAT_ETHNIC_GROUP_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_GENDER_CD]"
+                      dataType="wstr"
+                      length="66"
+                      name="PAT_GENDER_CD" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_LANG_CD]"
+                      dataType="wstr"
+                      length="66"
+                      name="PAT_LANG_CD" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_MARITAL_STATUS_CD]"
+                      dataType="numeric"
+                      name="PAT_MARITAL_STATUS_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_RACE_CD]"
+                      dataType="numeric"
+                      name="PAT_RACE_CD"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[PAT_REC_CREATE_DT]"
+                      dataType="dbTimeStamp"
+                      name="PAT_REC_CREATE_DT" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[Y_OCCUPATION]"
+                      dataType="wstr"
+                      length="50"
+                      name="Y_OCCUPATION" />
+                    <externalMetadataColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output].ExternalColumns[IS_EPICCARE_PAT]"
+                      dataType="numeric"
+                      name="IS_EPICCARE_PAT"
+                      precision="38"
+                      scale="4" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_ID]"
+                      dataType="wstr"
+                      length="18"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_ID]"
+                      name="PAT_ID" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MRN_ID]"
+                      dataType="wstr"
+                      length="102"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MRN_ID]"
+                      name="PAT_MRN_ID" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_EPI_ID]"
+                      dataType="wstr"
+                      length="18"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_EPI_ID]"
+                      name="PAT_EPI_ID" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_PREFIX_NM]"
+                      dataType="wstr"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_PREFIX_NM]"
+                      name="PAT_PREFIX_NM" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_FIRST_NM]"
+                      dataType="wstr"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_FIRST_NM]"
+                      name="PAT_FIRST_NM" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MI_NM]"
+                      dataType="wstr"
+                      length="508"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MI_NM]"
+                      name="PAT_MI_NM" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_LAST_NM]"
+                      dataType="wstr"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_LAST_NM]"
+                      name="PAT_LAST_NM" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_FULL_NM]"
+                      dataType="wstr"
+                      length="200"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_FULL_NM]"
+                      name="PAT_FULL_NM" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_CITY]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_CITY]"
+                      name="PAT_CITY" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_STATE]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_STATE]"
+                      name="PAT_STATE" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_COUNTRY]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_COUNTRY]"
+                      name="PAT_COUNTRY" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DOB]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DOB]"
+                      name="PAT_DOB" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DEATH_DATE]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DEATH_DATE]"
+                      name="PAT_DEATH_DATE" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DECEASED_IND]"
+                      dataType="numeric"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_DECEASED_IND]"
+                      name="PAT_DECEASED_IND"
+                      precision="38"
+                      scale="4" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_ETHNIC_GROUP_CD]"
+                      dataType="numeric"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_ETHNIC_GROUP_CD]"
+                      name="PAT_ETHNIC_GROUP_CD"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_GENDER_CD]"
+                      dataType="wstr"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_GENDER_CD]"
+                      name="PAT_GENDER_CD" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_LANG_CD]"
+                      dataType="wstr"
+                      length="66"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_LANG_CD]"
+                      name="PAT_LANG_CD" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MARITAL_STATUS_CD]"
+                      dataType="numeric"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_MARITAL_STATUS_CD]"
+                      name="PAT_MARITAL_STATUS_CD"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_RACE_CD]"
+                      dataType="numeric"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_RACE_CD]"
+                      name="PAT_RACE_CD"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_REC_CREATE_DT]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[PAT_REC_CREATE_DT]"
+                      name="PAT_REC_CREATE_DT" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[Y_OCCUPATION]"
+                      dataType="wstr"
+                      length="50"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[Y_OCCUPATION]"
+                      name="Y_OCCUPATION" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[IS_EPICCARE_PAT]"
+                      dataType="numeric"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[IS_EPICCARE_PAT]"
+                      name="IS_EPICCARE_PAT"
+                      precision="38"
+                      scale="4" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\Patient-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\Patient-Data Flow Task\Patient-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\Patient-Data Flow Task\Patient-Source.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{D626A497-5FCE-4472-87E5-04DFBB31DF04}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="P_SSIS_TruncateTable_Patient"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Variables-Set"
+      DTS:CreationName="Microsoft.ScriptTask"
+      DTS:Description="Script Task"
+      DTS:DTSID="{34bf7fb4-3789-467a-98e0-3827d30e7ad3}"
+      DTS:ExecutableType="Microsoft.ScriptTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Variables-Set"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ScriptProject
+          Name="ST_21b12fb9e14d46c3bbbb668f7d756499"
+          VSTAMajorVersion="14"
+          VSTAMinorVersion="0"
+          Language="CSharp"
+          ReadOnlyVariables="start_date_main,row_num_main,end_date_main"
+          ReadWriteVariables="User::row_num,User::start_date,end_date">
+          <ProjectItem
+            Name="ST_21b12fb9e14d46c3bbbb668f7d756499.csproj"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup><ProjectTypeGuids>{30D016F9-3734-4E33-A861-5E7D899E18F3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids><Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration><Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform><ProductVersion>8.0.30703</ProductVersion><SchemaVersion>2.0</SchemaVersion><ProjectGuid>{1E7AEA78-F9EC-4063-8F0C-85107D1EEA8D}</ProjectGuid><OutputType>Library</OutputType><AppDesignerFolder>Properties</AppDesignerFolder><RootNamespace>ST_eb712b52076c41a2ab60a34b0214c004</RootNamespace><AssemblyName>ST_21b12fb9e14d46c3bbbb668f7d756499</AssemblyName><TargetFrameworkVersion>v4.5</TargetFrameworkVersion><FileAlignment>512</FileAlignment><ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Debug' "><DebugSymbols>true</DebugSymbols><DebugType>full</DebugType><Optimize>false</Optimize><OutputPath>.\bin\Debug\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>DEBUG;TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Release' "><DebugSymbols>false</DebugSymbols><Optimize>true</Optimize><OutputPath>.\bin\Release\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><ItemGroup><Reference Include="System" /><Reference Include="System.Data" /><Reference Include="System.Windows.Forms" /><Reference Include="System.Xml" /><Reference Include="Microsoft.SqlServer.ManagedDTS, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /><Reference Include="Microsoft.SqlServer.ScriptTask, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /></ItemGroup><ItemGroup><AppDesigner Include="Properties\" /><Compile Include="Properties\AssemblyInfo.cs"><SubType>Code</SubType></Compile><EmbeddedResource Include="Properties\Resources.resx"><Generator>ResXFileCodeGenerator</Generator><LastGenOutput>Resources.Designer.cs</LastGenOutput></EmbeddedResource><Compile Include="Properties\Resources.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Resources.resx</DependentUpon></Compile><None Include="Properties\Settings.settings"><Generator>SettingsSingleFileGenerator</Generator><LastGenOutput>Settings.Designer.cs</LastGenOutput></None><Compile Include="Properties\Settings.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Settings.settings</DependentUpon></Compile><Compile Include="ScriptMain.cs"><SubType>Code</SubType></Compile></ItemGroup><!-- Include the build rules for a C# project.--><Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" /><ProjectExtensions><VisualStudio><FlavorProperties GUID="{30D016F9-3734-4E33-A861-5E7D899E18F3}"><ProjectProperties HostName="VSTAHostName" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" /><Host Name="ScriptTask" /><ProjectClient><HostIdentifier>SSIS_ST130</HostIdentifier></ProjectClient></FlavorProperties></VisualStudio></ProjectExtensions></Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.resx"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.settings"
+            Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
+          <ProjectItem
+            Name="ScriptMain.cs"
+            Encoding="UTF8"><![CDATA[#region Help:  Introduction to the script task
+/* The Script Task allows you to perform virtually any operation that can be accomplished in
+ * a .Net application within the context of an Integration Services control flow.
+ *
+ * Expand the other regions which have "Help" prefixes for examples of specific ways to use
+ * Integration Services features within this script task. */
+#endregion
+
+
+#region Namespaces
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Runtime;
+using System.Windows.Forms;
+#endregion
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004
+{
+    /// <summary>
+    /// ScriptMain is the entry point class of the script.  Do not change the name, attributes,
+    /// or parent of this class.
+    /// </summary>
+	[Microsoft.SqlServer.Dts.Tasks.ScriptTask.SSISScriptTaskEntryPointAttribute]
+	public partial class ScriptMain : Microsoft.SqlServer.Dts.Tasks.ScriptTask.VSTARTScriptObjectModelBase
+	{
+        #region Help:  Using Integration Services variables and parameters in a script
+        /* To use a variable in this script, first ensure that the variable has been added to
+         * either the list contained in the ReadOnlyVariables property or the list contained in
+         * the ReadWriteVariables property of this script task, according to whether or not your
+         * code needs to write to the variable.  To add the variable, save this script, close this instance of
+         * Visual Studio, and update the ReadOnlyVariables and
+         * ReadWriteVariables properties in the Script Transformation Editor window.
+         * To use a parameter in this script, follow the same steps. Parameters are always read-only.
+         *
+         * Example of reading from a variable:
+         *  DateTime startTime = (DateTime) Dts.Variables["System::StartTime"].Value;
+         *
+         * Example of writing to a variable:
+         *  Dts.Variables["User::myStringVariable"].Value = "new value";
+         *
+         * Example of reading from a package parameter:
+         *  int batchId = (int) Dts.Variables["$Package::batchId"].Value;
+         *
+         * Example of reading from a project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].Value;
+         *
+         * Example of reading from a sensitive project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].GetSensitiveValue();
+         * */
+
+        #endregion
+
+        #region Help:  Firing Integration Services events from a script
+        /* This script task can fire events for logging purposes.
+         *
+         * Example of firing an error event:
+         *  Dts.Events.FireError(18, "Process Values", "Bad value", "", 0);
+         *
+         * Example of firing an information event:
+         *  Dts.Events.FireInformation(3, "Process Values", "Processing has started", "", 0, ref fireAgain)
+         *
+         * Example of firing a warning event:
+         *  Dts.Events.FireWarning(14, "Process Values", "No values received for input", "", 0);
+         * */
+        #endregion
+
+        #region Help:  Using Integration Services connection managers in a script
+        /* Some types of connection managers can be used in this script task.  See the topic
+         * "Working with Connection Managers Programatically" for details.
+         *
+         * Example of using an ADO.Net connection manager:
+         *  object rawConnection = Dts.Connections["Sales DB"].AcquireConnection(Dts.Transaction);
+         *  SqlConnection myADONETConnection = (SqlConnection)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Sales DB"].ReleaseConnection(rawConnection);
+         *
+         * Example of using a File connection manager
+         *  object rawConnection = Dts.Connections["Prices.zip"].AcquireConnection(Dts.Transaction);
+         *  string filePath = (string)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Prices.zip"].ReleaseConnection(rawConnection);
+         * */
+        #endregion
+
+
+		/// <summary>
+        /// This method is called when this script task executes in the control flow.
+        /// Before returning from this method, set the value of Dts.TaskResult to indicate success or failure.
+        /// To open Help, press F1.
+        /// </summary>
+		public void Main()
+		{
+            // TODO: Add your code here
+            Dts.Variables["start_date"].Value = Dts.Variables["start_date_main"].Value;
+            Dts.Variables["end_date"].Value = Dts.Variables["end_date_main"].Value;
+            Dts.Variables["row_num"].Value = Dts.Variables["row_num_main"].Value;
+            //MessageBox.Show(Dts.Variables["start_date"].Value.ToString());
+            Dts.TaskResult = (int)ScriptResults.Success;
+		}
+
+        #region ScriptResults declaration
+        /// <summary>
+        /// This enum provides a convenient shorthand within the scope of this class for setting the
+        /// result of the script.
+        ///
+        /// This code was generated automatically.
+        /// </summary>
+        enum ScriptResults
+        {
+            Success = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Success,
+            Failure = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Failure
+        };
+        #endregion
+
+	}
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Project"
+            Encoding="UTF16LE"><![CDATA[<?xml version="1.0" encoding="UTF-16" standalone="yes"?>
+<c:Project xmlns:c="http://schemas.microsoft.com/codeprojectml/2010/08/main" xmlns:msb="http://schemas.microsoft.com/developer/msbuild/2003" runtimeVersion="3.0" schemaVersion="1.0">
+	<msb:PropertyGroup>
+		<msb:CodeName>ST_eb712b52076c41a2ab60a34b0214c004</msb:CodeName>
+		<msb:Language>msBuild</msb:Language>
+		<msb:DisplayName>ST_eb712b52076c41a2ab60a34b0214c004</msb:DisplayName>
+		<msb:ProjectId>{F5728C75-71DE-4670-BB4B-1F18C64576BE}</msb:ProjectId>
+	</msb:PropertyGroup>
+	<msb:ItemGroup>
+		<msb:Project Include="ST_21b12fb9e14d46c3bbbb668f7d756499.csproj"/>
+		<msb:File Include="Properties\AssemblyInfo.cs"/>
+		<msb:File Include="Properties\Settings.settings"/>
+		<msb:File Include="Properties\Resources.resx"/>
+		<msb:File Include="Properties\Resources.Designer.cs"/>
+		<msb:File Include="Properties\Settings.Designer.cs"/>
+		<msb:File Include="ScriptMain.cs"/>
+	</msb:ItemGroup>
+</c:Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Settings.get_Default():ST_eb712b52076c41a2ab60a34b0214c004.Properties.Sett" +
+    "ings")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\AssemblyInfo.cs"
+            Encoding="UTF8"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
+//
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyCopyright("Copyright @  2025")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers
+// by using the '*' as shown below:
+
+[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_ResourceManager():System.Resources.Resou" +
+    "rceManager")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_Culture():System.Globalization.CultureIn" +
+    "fo")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.set_Culture(System.Globalization.CultureInfo" +
+    "):Void")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    /// <summary>
+    ///   A strongly-typed resource class, for looking up localized strings, etc.
+    /// </summary>
+    // This class was auto-generated by the StronglyTypedResourceBuilder
+    // class via a tool like ResGen or Visual Studio.
+    // To add or remove a member, edit your .ResX file then rerun ResGen
+    // with the /str option, or rebuild your VS project.
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    internal class Resources {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+
+        /// <summary>
+        ///   Returns the cached ResourceManager instance used by this class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if ((resourceMan == null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Overrides the current thread's CurrentUICulture property for all
+        ///   resource lookups using this strongly typed resource class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <BinaryItem
+            Name="ST_eb712b52076c41a2ab60a34b0214c004.dll">[binary item]</BinaryItem>
+        </ScriptProject>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{CBFB9EC0-A067-4EFB-A641-3CA2D98C5797}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Patient-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{35956DDD-AFCF-4979-9C34-E74471D6D254}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Variables-Set" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{306679B3-0788-45B8-B753-23634A0DFAF7}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{1EEFF093-C8DE-436E-8E40-A84FCBA091F1}"
+      DTS:From="Package\Patient-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{C2357324-5F8E-416B-8196-C2F513F8098B}"
+      DTS:From="Package\Variables-Set"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 5]"
+      DTS:CreationName=""
+      DTS:DTSID="{C8D0F1FB-BCFB-4EA6-8C32-1D58A02ACA7D}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 5"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="117,42"
+          Id="Package\Log End"
+          TopLeft="144.166666712198,470.733332869278" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Log Query"
+          TopLeft="127.166666712198,239.733332869278" />
+        <NodeLayout
+          Size="122,42"
+          Id="Package\Log Start"
+          TopLeft="154,6" />
+        <NodeLayout
+          Size="188,42"
+          Id="Package\Patient-Data Flow Task"
+          TopLeft="106.166666712198,306.733332869278" />
+        <NodeLayout
+          Size="150,42"
+          Id="Package\Truncate Table"
+          TopLeft="128.166666712198,149.733332869278" />
+        <NodeLayout
+          Size="141,42"
+          Id="Package\Variables-Set"
+          TopLeft="144.166658789748,70.199999511838" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="191.166666712198,281.733332869278">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="9,25"
+              Start="0,0"
+              End="9,17.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,8.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,8.5"
+                    Point2="0,12.5"
+                    Point3="4,12.5" />
+                  <mssgle:LineSegment
+                    End="5,12.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="5,12.5"
+                    Point2="9,12.5"
+                    Point3="9,16.5" />
+                  <mssgle:LineSegment
+                    End="9,17.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="214.683329394874,47.6">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,22.599999511838"
+              Start="0,0"
+              End="0,15.099999511838">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,15.099999511838" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="203.166666712198,191.733332869278">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-12,48"
+              Start="0,0"
+              End="-12,40.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20"
+                    Point2="0,24"
+                    Point3="-4,24" />
+                  <mssgle:LineSegment
+                    End="-8,24" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-8,24"
+                    Point2="-12,24"
+                    Point3="-12,28" />
+                  <mssgle:LineSegment
+                    End="-12,40.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="214.566658789748,111.799999511838">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-11.1999920775497,37.9333333574401"
+              Start="0,0"
+              End="-11.1999920775497,30.4333333574401">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,14.9666666787201" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,14.9666666787201"
+                    Point2="0,18.9666666787201"
+                    Point3="-4,18.9666666787201" />
+                  <mssgle:LineSegment
+                    End="-7.19999207754969,18.9666666787201" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-7.19999207754969,18.9666666787201"
+                    Point2="-11.1999920775497,18.9666666787201"
+                    Point3="-11.1999920775497,22.9666666787201" />
+                  <mssgle:LineSegment
+                    End="-11.1999920775497,30.4333333574401" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="161,42"
+          Id="Package\Load Main Table"
+          TopLeft="106.166666712198,389.733332869278" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="200.166666712198,348.733332869278">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-13.5,41"
+              Start="0,0"
+              End="-13.5,33.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,16.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,16.5"
+                    Point2="0,20.5"
+                    Point3="-4,20.5" />
+                  <mssgle:LineSegment
+                    End="-9.5,20.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-9.5,20.5"
+                    Point2="-13.5,20.5"
+                    Point3="-13.5,24.5" />
+                  <mssgle:LineSegment
+                    End="-13.5,33.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 5]"
+          TopLeft="186.666666712198,431.733332869278">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="16,39"
+              Start="0,0"
+              End="16,31.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,15.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,15.5"
+                    Point2="0,19.5"
+                    Point3="4,19.5" />
+                  <mssgle:LineSegment
+                    End="12,19.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="12,19.5"
+                    Point2="16,19.5"
+                    Point3="16,23.5" />
+                  <mssgle:LineSegment
+                    End="16,31.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\Patient-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="166.4,41.6"
+          Id="Package\Patient-Data Flow Task\Patient-Destination"
+          TopLeft="167,223" />
+        <NodeLayout
+          Size="147.2,41.6"
+          Id="Package\Patient-Data Flow Task\Patient-Source"
+          TopLeft="134.999992623926,61.5333329054382" />
+        <EdgeLayout
+          Id="Package\Patient-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="208.599992623926,103.133332905438">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="41.6000073760744,119.866667094562"
+              Start="0,0"
+              End="41.6000073760744,112.366667094562">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,55.9333335472809" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,55.9333335472809"
+                    Point2="0,59.9333335472809"
+                    Point3="4,59.9333335472809" />
+                  <mssgle:LineSegment
+                    End="37.6000073760744,59.9333335472809" />
+                  <mssgle:CubicBezierSegment
+                    Point1="37.6000073760744,59.9333335472809"
+                    Point2="41.6000073760744,59.9333335472809"
+                    Point3="41.6000073760744,63.9333335472809" />
+                  <mssgle:LineSegment
+                    End="41.6000073760744,112.366667094562" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Patient-Data Flow Task\Patient-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Patient-Data Flow Task\Patient-Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

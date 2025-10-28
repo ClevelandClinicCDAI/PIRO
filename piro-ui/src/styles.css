@@ -1,0 +1,147 @@
+/* You can add global styles to this file, and also import other style files */
+@import "font-awesome/css/font-awesome.css";
+@import "bootstrap/dist/css/bootstrap.css";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+a.disabled {
+  pointer-events: none;
+  border-color: #ccc;
+  background-color: #ccc;
+}
+
+/* .disabled {
+  pointer-events: none;
+  border-color: #ccc;
+  background-color: #ccc;
+} */
+
+/* Age SLider */
+.ngx-slider .ngx-slider-pointer {
+  background-color: #a61f56 !important;
+}
+
+
+.ngx-slider .ngx-slider-selection {
+  background-color: #a61f56 !important;
+  opacity: .4;
+}
+
+
+
+/* Filtered Badge */
+.filtered-data {
+  font-family: Muli, Arial, sans-serif;
+  color: #272b65;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 17px;
+  padding: 10px 15px 0;
+}
+
+.filtered-data .f-by {
+  display: inline-block;
+  padding-right: 12px;
+  vertical-align: middle;
+  letter-spacing: 2px;
+  color: #5c2161;
+  font-weight: 200;
+}
+
+.filtered-data .form-item {
+  display: inline-block;
+  margin-right: 3px;
+  margin-left: 3px;
+  text-transform: none;
+  letter-spacing: 1px;
+  /* margin-bottom: 6px; */
+}
+
+.filtered-data .form-item>span {
+  text-decoration: none;
+  border: 1px solid #ebebeb;
+  color: #fff;
+  display: inline-block;
+  background: #fff;
+  padding: 2px 7px 1px 8px;
+  white-space: nowrap;
+  transition: all .1s ease;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.filtered-data .form-item>span i {
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  transition: all .2s ease;
+  width: 6px;
+  /* display: inline-block; */
+  margin-left: 5px;
+}
+
+.filteritem {
+  background-color: #6082B6 !important;
+
+}
+
+.advfilteritem {
+  background-color: #0047AB !important;
+  color: white !important;
+}
+
+.mrnfilteritem {
+  background-color: #6495ED !important;
+  color: white !important;
+}
+
+
+.filterDisplayName {
+  /* color: #5c2161; */
+  color: #fff !important;
+}
+
+.hand {
+  cursor: pointer;
+}
+
+
+.pointer {
+  cursor: auto;
+}
+
+.modal-xxl {
+  max-width: 90%;
+}
+
+
+.q-remove-button {
+  color: #fff !important;
+  background-color: rgb(240, 116, 116);
+  text-align: center;
+  width: auto !important;
+} 
+
+.q-remove-button:hover {  
+  background-color: red;  
+}
+
+.remove-icon {   
+  font-size: 1em !important;
+}
+
+.q-switch-label {
+  background-color: white !important;
+  color:#0d6efd !important;
+  border: #0d6efd 1px solid !important;
+}
+
+.q-switch-radio:checked + .q-switch-label {
+  background-color: #0d6efd !important;
+  color:white !important;
+  border: #0d6efd 1px solid !important;
+}
+
+.disabledDiv {
+  pointer-events: none; 
+  opacity: 0.5;    
+}

@@ -1,0 +1,14 @@
+a.nav-link{
+    color:#fff;
+}
+a.nav-link.active {
+	color:#fff;
+    text-decoration: underline;
+}
+
+.navbar-brand{
+	color:#fff;
+}
+.navbar-dark {
+	background-color: #0078bf!important;
+}

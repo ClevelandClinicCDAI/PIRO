@@ -1,0 +1,63 @@
+<html>
+	<head>
+	<style>
+		table {
+		  border-collapse: collapse;
+		  width: 100%;
+		}
+
+		td, th {
+		  border: 1px solid #dddddd;
+		  text-align: left;
+		  padding: 8px;
+		}
+
+		tr:nth-child(even) {
+		  background-color: #dddddd;
+		}
+	</style>
+	</head>
+	<body style='font-family:Segoe UI'>
+		<center><h2>Data Extract Request</h2></center>
+
+		<h4>User Instructions</h4>
+		<ul>
+			<li>Please list the exact data elements you want in your data extract. For IRB-approved research, these must be listed in your IRB Data Collection Sheet.</li>
+			<li>Please list the exact date range of your data-set.</li>
+			<li>For the request name, please type in your last name, plus something relevant to your search, like "Goldblum sarcoma", or "Billings melanoma"</li>
+		</ul>
+		<br/>
+		<br/>
+		<table>
+			<tr>
+				<td width="20%"><b>Requester Name</b></td>
+				<td>{{RequestedBy}}</td>
+			</tr>
+			<tr>
+				<td><b>Data Request Name</b></td>
+				<td>{{RequestName}}</td>
+			</tr>
+			<tr>
+				<td><b>Data Request Type</b></td>
+				<td>{{SearchRequestReason}}</td>
+			</tr>
+			<tr>
+				<td><b>Data Elements Requested</b></td>
+				<td>{{RequestComment}}</td>
+			</tr>
+			<tr>
+				<td><b>Saved Search</b></td>
+				<td>{{SearchName}}</td>
+			</tr>
+			<tr>
+				<td><b>Date Range: From</b></td>
+				<td>{{FromDate}}</td>
+			</tr>
+			<tr>
+				<td><b>Date Range: To</b></td>
+				<td>{{ToDate}}</td>
+			</tr>
+		</table>
+
+	</body>
+</html>

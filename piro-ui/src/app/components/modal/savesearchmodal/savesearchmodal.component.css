@@ -1,0 +1,21 @@
+
+.form-control:focus{
+    border-color:#ced4da !important;
+    box-shadow: none !important;
+    background-image: none;
+}
+
+
+.invalid-feedback{
+    display: block;
+}
+
+.asterisk-danger{
+    color:rgb(202, 16, 16);
+}
+
+
+.modal-body {
+    height: 75vh;
+    overflow-y: auto !important;
+}

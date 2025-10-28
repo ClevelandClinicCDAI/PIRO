@@ -1,0 +1,52 @@
+<div class="modal-header">
+    <h4 class="modal-title">User Feedback ({{annotationName}}): {{casenum}}</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+    <div class="spinner-border text-primary" role="status" *ngIf="!loaded">
+        <span class="sr-only">Loading...</span>
+    </div>
+    <div *ngIf="items.length == 0">
+        <span class="text-center">No Record Found.</span>
+    </div>
+    <div class="tab-pane mrn-result" *ngIf="items.length > 0">
+        <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+            <thead class="thead-dark">
+                <tr class="table-primary">
+                    <!-- <th></th> -->
+                    <th>Name</th>
+                    <th>Feedback Comment</th>
+                    <th>Created on</th>
+                    <th>Feedback</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody *ngIf="items.length > 0">
+                <tr *ngFor="let item of items; let i =index; let first = first; let last = last" class="table-light">
+                    <td>
+                        <p class="text-muted mb-0 ">{{item?.user}}</p>
+                    </td>
+                    <td>
+                        <p class="text-muted mb-0">{{item?.comment | titlecase}}</p>
+                    </td>
+                    <td>
+                        <p class="text-muted mb-0">{{item?.created | date: 'MM/dd/yyyy hh:mm a' }}</p>
+                    </td>
+                    <td>
+                        <!-- <p class="text-muted mb-0"> {{item?.feedback === 1 ? 'Positive' : 'Negative'}}</p> -->
+                        <p *ngIf="item?.feedback === 1" class="badge badge-success">Positive</p>
+                        <p *ngIf="item?.feedback === -1" class="badge badge-danger">Negative</p>
+                    </td>
+                    <td>
+                        <p>
+                            <button *ngIf="item?.feedback === -1 && !item.reviewed" type="button"
+                                (click)="reviewFeedback(item.id)" class="btn btn-success">Review</button>
+                            <span *ngIf="item?.feedback === -1 && item.reviewed"
+                                class="badge badge-info">Reviewed</span>
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

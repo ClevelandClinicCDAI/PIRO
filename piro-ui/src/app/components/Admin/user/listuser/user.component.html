@@ -1,0 +1,75 @@
+<!-- <form class="form-inline md-form form-sm form-group shadow p-3 bg-white rounded">
+    <div class="input-group">
+        <input class="form-control"  type="text" placeholder="Search User" aria-label="Search">
+        <button class="btn btn-info btn-md" type="button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</form>
+<br><br> -->
+<div class="bg-white p-3">
+    <h3 class="d-inline">Users</h3>
+   <a class=" btn btn-primary pull-right" routerLink="/create-user"
+    routerLinkActive="active">Create User</a> 
+</div>
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>Name</th>
+            <th>NUID</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="users.length > 0">
+        <tr *ngFor="let user of users | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };">
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="ms-3">
+                        <p class="fw-bold mb-1">{{user.firstName+" "+user.lastName}}</p>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{user.nuid}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{user.role}}</p>
+            </td>
+            <td>
+                <span class="badge-success rounded-pill">{{user.active? 'Active':'Inactive'}}</span>
+            </td>
+            <td>
+                <!-- <button type="button" class="btn btn-link btn-sm btn-rounded" *ngIf="user.IsActive">
+                    Inactive
+                </button>
+                <button type="button" class="btn btn-link btn-sm btn-rounded" *ngIf="!user.IsActive">
+                    Active
+                </button> -->
+                <a class="btn btn-primary"  routerLink="/edit-user/{{user.userId}}"><i class="fa fa-pencil"></i></a>&nbsp;
+                <a class="btn btn-danger" (click)="deleteUser(user.userId)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="users.length == 0">
+        <tr>
+            <th colspan="5" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="users.length > 0">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (autoHide)="autoHideP"
+      (responsive)="responsiveP"
+      (pageChange)="onTableDataChange($event)"
+    >
+    </pagination-controls>
+</div>

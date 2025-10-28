@@ -1,0 +1,149 @@
+<div class="bg-white p-3">
+    <h3 class="d-inline">Data Requests</h3>
+    <br /><br />
+    <nav class="nav nav-pills">
+        <a class="nav-link" [ngClass]="{ 'active': isSubmit, 'hand' : !isSubmit}"
+            (click)="isSubmit=true;isApproved=false;isDenied=false;isClosed=false;recordStatus='SUBMIT';filterData(true)">Submitted</a>
+        <a class="nav-link" [ngClass]="{ 'active': isApproved, 'hand' : !isApproved}"
+            (click)="isSubmit=false;isApproved=true;isDenied=false;isClosed=false;recordStatus='APPROVE';filterData(true)">Approved</a>
+        <a class="nav-link" [ngClass]="{ 'active': isDenied, 'hand' : !isDenied}"
+            (click)="isSubmit=false;isApproved=false;isDenied=true;isClosed=false;recordStatus='DENY';filterData(true)">Denied</a>
+        <a class="nav-link" [ngClass]="{ 'active': isClosed, 'hand' : !isClosed}"
+            (click)="isSubmit=false;isApproved=false;isDenied=false;isClosed=true;recordStatus='CLOSE';filterData(true)">Closed</a>
+    </nav>
+
+    <div class="overlay show" *ngIf="!contentLoaded"></div>
+    <div class="spanner show" *ngIf="!contentLoaded">
+        <div class="loader"></div>
+        <p>{{contentText}}</p>
+    </div>
+    <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+        <thead class="thead-dark">
+            <tr>
+                <th>Requester</th>
+                <th width="10%">Request Name</th>
+                <th>Request Type</th>
+                <th>IRB#</th>
+                <th>Pediatric</th>
+                <th class="text-center">Notes</th>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Submitted Date</th>
+                <th *ngIf="isApproved || isClosed">Approved Date</th>
+                <th *ngIf="isDenied">Denied Date</th>
+                <th *ngIf="isClosed">Closed Date</th>
+                <th class="text-center">Export Fields</th>
+                <th class="text-center">Saved Search</th>
+                <th>IRB</th>
+                <th width="5%" class="text-center">Action</th>
+            </tr>
+        </thead>
+        <tbody *ngIf="items.length > 0">
+            <tr *ngFor="let item of items | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+            let i = index;">
+                <td>
+                    <p class="text-muted mb-0 ">{{item.requestedBy}}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0 ">{{item.name}}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0">{{item.reason}}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0">{{item.irb == undefined ? "-" : item.irb}}</p>
+                </td>
+                <td>
+                    <p class="text-muted mb-0">{{item.isPediatric == 1 ? "Yes" : item.isPediatric == 0 ? "No" : "-"}}</p>
+                </td>
+                <td class="text-center">
+                    <a class="btn btn-primary" (click)="opennotesModal(item.searchRequestId)"
+                        href="javascript:void(0);" title="Click to view the notes"><i
+                            class="fa fa-sticky-note"></i></a>
+                </td>
+                <td>
+                    <span class="badge-success">{{tcommon.formatDateTime(item.fromDate)}}</span>
+                </td>
+                <td>
+                    <span class="badge-success">{{tcommon.formatDateTime(item.toDate)}}</span>
+                </td>
+                <td>
+                    <span class="badge-success">{{tcommon.formatDateTime(item.submitDate)}}</span>
+                </td>
+                <td *ngIf="isApproved || isClosed">
+                    <span class="badge-success">{{tcommon.formatDateTime(item.approvedDate)}}</span>
+                </td>
+                <td *ngIf="isDenied">
+                    <span class="badge-success">{{tcommon.formatDateTime(item.approvedDate)}}</span>
+                </td>
+                <td *ngIf="isClosed">
+                    <span class="badge-success">{{tcommon.formatDateTime(item.closedDate)}}</span>
+                </td>
+                <td class="text-center">
+                    <!-- <p class="text-muted mb-0">{{item.searchName}}</p> -->
+                    <a class="btn btn-primary" (click)="openexportfieldModal(item.searchRequestId)"
+                        href="javascript:void(0);" title="Click to view the export fields"><i
+                            class="fa fa-list"></i></a>
+                </td>
+                <td class="text-center">
+                    <!-- <p class="text-muted mb-0">{{item.searchName}}</p> -->
+                    <a class="btn btn-primary" (click)="viewsearch(item.searchId)" href="javascript:void(0);"
+                        title="Click to view the saved search"><i class="fa fa-save"></i></a>
+                </td>
+                <td align="left">
+                    <a *ngIf="item.fileExtn" class="btn btn-success" (click)="filedownload(item.searchRequestId, item.fileExtn)"
+                        href="javascript:void(0);" title="Click to download the IRB form">
+                        <i [ngClass]="{'fa':true,
+                    'fa-file-excel-o':item.fileExtn==='.xlsx' || item.fileExtn==='.xls',                    
+                    'fa-file-pdf-o':item.fileExtn==='.pdf',
+                    'fa-file-image-o':item.fileExtn==='.jpg' || item.fileExtn==='.bpm' || item.fileExtn==='.png'                   
+                }"></i></a>
+                </td>
+                <td class="text-center">
+                    <table width="100%" style="margin-top:0px">
+                        <tr>
+                            <td *ngIf="isApproved || isClosed"><a class="btn btn-success"
+                                    (click)="onexcel(item.searchRequestId)" href="javascript:void(0);"
+                                    title="Click to export the data request"><i class="fa fa-file-excel-o"></i></a>
+                            </td>
+                            <td *ngIf="isSubmit">
+                                <a class="btn btn-success" (click)="onapprove(item.searchRequestId)"
+                                    href="javascript:void(0);" title="Approve the request"><i
+                                        class="fa fa-thumbs-up"></i></a>
+                            </td>
+                            <td *ngIf="isSubmit">
+                                <a class="btn btn-danger" (click)="ondeny(item.searchRequestId)"
+                                    href="javascript:void(0);" title="Deny the request"><i
+                                        class="fa fa-thumbs-down"></i></a>
+                            </td>
+                            <td *ngIf="isApproved">
+                                <a class="btn btn-success" (click)="onclose(item.searchRequestId)"
+                                    href="javascript:void(0);" title="Close the request"><i
+                                        class="fa fa-archive"></i></a>
+                            </td>
+                            <td *ngIf="isSubmit">
+                                <a class="btn btn-danger" (click)="ondelete(item.searchRequestId)"
+                                    href="javascript:void(0);" title="Delete the request"><i
+                                        class="fa fa-trash"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+        <tbody *ngIf="items.length == 0">
+            <tr>
+                <th colspan="5" class="text-left">No Record Found.</th>
+            </tr>
+        </tbody>
+    </table>
+    <div class="d-flex justify-content-center mt-5" *ngIf="items.length > 0">
+        <pagination-controls previousLabel="Prev" nextLabel="Next" (pageChange)="onTableDataChange($event)">
+        </pagination-controls>
+    </div>
+</div>

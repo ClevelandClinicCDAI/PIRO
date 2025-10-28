@@ -1,0 +1,68 @@
+<!-- <form class="form-inline md-form form-sm form-group shadow p-3 bg-white rounded">
+    <div class="input-group">
+        <input class="form-control"  type="text" placeholder="Search Role" aria-label="Search">
+        <button class="btn btn-info btn-md" type="button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</form>
+<br><br> -->
+<div class="bg-white p-3">
+    <h3 class="d-inline">Lookup Data - Roles </h3>
+    <a class=" btn btn-primary pull-right disabled" routerLink="/create-role"
+    routerLinkActive="active">Create Role</a>
+</div>
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>Display Text</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Reference</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="roles.length > 0">
+        <tr *ngFor="let role of roles | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+    let i = index;">
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="ms-3">
+                        <p class="fw-bold mb-1">{{role.display}}</p>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{role.code}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{role.description}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{role.reference}}</p>
+            </td>
+            <td>
+                <a class="btn btn-primary"  routerLink="/edit-role/{{role.roleId}}"><i class="fa fa-pencil"></i></a>&nbsp;
+                <a class="btn btn-danger disabled" (click)="deleteRole(role.roleId)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="roles.length == 0">
+        <tr>
+            <th colspan="5" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="roles.length > 0">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (pageChange)="onTableDataChange($event)"
+    >
+</pagination-controls>
+</div>

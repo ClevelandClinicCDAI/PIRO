@@ -1,0 +1,79 @@
+<app-toaster></app-toaster>
+<nav class=" navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid" style="vertical-align: middle;">
+    <a class="navbar-brand" style="display: flex;" routerLink="home"><img src="/assets/images/cc-logo.png" alt="logo" style="margin-right: 8px">
+      <span class="d-none d-md-block">Pathology Information Retrieval Optimizer (PIRO)</span>
+      <span class="d-block d-sm-none">PIRO</span>
+    </a>
+    <span></span>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0" *ngIf="isAuthenticated">
+        <li class="nav-item">
+          <a routerLink="home" class="nav-link" routerLinkActive="active">Home</a>
+        </li>
+        <li class="nav-item" *ngIf="isSearch">
+          <a href="javascript:void(0);" (click)="searchPage()" class="nav-link" routerLinkActive="active">Search</a>
+        </li>
+        <li class="nav-item" *ngIf="isSearch">
+          <a routerLink="cohort" class="nav-link" routerLinkActive="active">Cohort</a>
+        </li>
+        <li class="nav-item" *ngIf="isAdminSecurity">
+          <a routerLink="adminuser" class="nav-link" routerLinkActive="active">User Management</a>
+        </li>
+        <li class="nav-item dropdown"  *ngIf="isAdmin">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Admin
+          </a>
+          <ul class="dropdown-menu " aria-labelledby="navbarDropdown">
+            <li class="border-bottom"><a class="dropdown-item" routerLink="adminuser"
+                routerLinkActive="active">Users</a>
+            </li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="sex"
+                routerLinkActive="active">Sex</a>
+            </li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="roles" routerLinkActive="active">Roles</a>
+            </li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="specimen-types"
+                routerLinkActive="active">Specimen Types</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="specimen-sources"
+                routerLinkActive="active">Specimen Sources</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="search-request-status"
+                routerLinkActive="active">Search Request Status</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="regions"
+                routerLinkActive="active">Regions</a>
+            </li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="race" routerLinkActive="active">Race</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="hospitals"
+                routerLinkActive="active">Hospitals</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="ethnicity"
+                routerLinkActive="active">Ethnicity</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="comment-types"
+                routerLinkActive="active">Comment Types</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="etl-logs" routerLinkActive="active">ETL Logs</a></li>
+            <li><a class="dropdown-item" routerLink="ai-reviews" routerLinkActive="active">AI Annotation Feedback</a></li>
+          </ul>
+        </li>
+        <li class="nav-item" *ngIf="isRequestForm">
+          <a href="#" routerLink="extractrequest" class="nav-link" routerLinkActive="active">Data Request Form</a>
+        </li>
+        <li class="nav-item" *ngIf="isRequestReview">
+          <a href="#" routerLink="my-requests" class="nav-link" routerLinkActive="active">Data Request Inbox</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown"
+            aria-expanded="false"><i class="fa fa-user"></i></a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+            <li  *ngIf="isMyHistory"><a class="dropdown-item" routerLink="my-history" routerLinkActive="active">My History</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0);" (click)="logout()">Logout</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

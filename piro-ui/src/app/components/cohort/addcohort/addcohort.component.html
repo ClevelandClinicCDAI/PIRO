@@ -1,0 +1,67 @@
+<div class="modal-header">
+    <h4 class="modal-title">Add Cohort</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+  </div>
+  <div class="modal-body">    
+    <form (ngSubmit)="submitForm()" [formGroup]="saveForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="name">Name <span class="asterisk-danger">*</span></label>
+        <input type="text" class="form-control" id="name" aria-describedby="emailHelp" placeholder="Enter Name"
+          formControlName="name" [ngClass]="{ 'is-invalid': submitted && f.name.errors }">
+        <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
+          <div *ngIf="f.name.errors.required">Name is required</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="description">Description <span class="asterisk-danger">*</span></label>
+        <textarea formControlName="desc" id="description" rows="5" placeholder="Enter Description"
+          class="form-control" [ngClass]="{ 'is-invalid': submitted && f.desc.errors }"></textarea>
+          <div *ngIf="submitted && f.desc.errors" class="invalid-feedback">
+            <div *ngIf="f.desc.errors.required">Description is required</div>
+          </div>
+      </div>
+      <div class="form-group">
+        <label for="display">Display on Search <span class="asterisk-danger"></span></label> &nbsp;&nbsp;
+        <input type="checkbox" formControlName="display" id="display"  title="Check to display the cohort in the Search"
+          />
+      </div>
+      <div class="form-group">
+        <label for="dataType">Cohort Type<span class="asterisk-danger">*</span></label>
+        <br>
+        <select class="q-input-control"  formControlName="dataType" id="dataType"
+            [ngClass]="{ 'is-invalid': submitted && f.dataType.errors }">
+            <option value="">Select Option</option>
+            <option value="{{dataType.value}}" *ngFor="let dataType of dataTypes">{{dataType.text}}
+            </option>
+        </select>
+        <div *ngIf="submitted && f.dataType.errors" class="invalid-feedback">
+            <div *ngIf="f.dataType.errors.required">Please select a option</div>
+        </div>
+    </div>
+      <div class="form-group">
+        <label for="disease">Disease <span class="asterisk-danger"></span></label>
+        <input type="text" formControlName="disease" id="disease" placeholder="Enter Disease"
+          class="form-control" [ngClass]="{ 'is-invalid': submitted && f.disease.errors }" />
+          <div *ngIf="submitted && f.disease.errors" class="invalid-feedback">
+            <div *ngIf="f.disease.errors.required">Disease is required</div>
+          </div>
+      </div>
+      <div class="form-group" >
+        <label for="exampleInputEmail1">Upload Excel <span class="asterisk-danger">*</span></label>
+        <br />
+        <input type="file" class="" formControlName="request_file"
+            [ngClass]="{ 'is-invalid': submitted && !isfileValid }" (change)="uploadFile($event)">
+        <!-- </div> -->
+        <div *ngIf="submitted && !isfileValid" class="invalid-feedback">
+            <div *ngIf="!isfileValid">Please select a file</div>
+        </div>
+    </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary" (click)="submitForm()" *ngIf="contentLoaded">Save</button>
+    <button class="btn btn-primary" type="button" *ngIf="!contentLoaded" disabled>
+        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+        Saving...
+    </button>
+  </div>

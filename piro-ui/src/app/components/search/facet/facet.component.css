@@ -1,0 +1,78 @@
+ul, li {list-style-type: none;}
+
+li {
+    padding-left: 0px;
+    /* text-indent: -2em; */
+}
+
+
+.facet{
+ border-radius: 5px;
+ border: 1px solid #ccc;
+ padding: 10px;
+}
+
+.form-check-input {
+    padding-right: 10px;
+}
+
+.facetKey {
+    /* font-size: 11px; */
+    padding: 0px 4px;
+    max-width: 72%;
+}
+
+.badge {
+    display: inline-block;
+    min-width: 10px;
+    padding: 3px 7px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #ffffff;
+    line-height: 1;
+    vertical-align: middle;
+    white-space: nowrap;
+    text-align: right;
+    background-color: #a61f56;
+    border-radius: 5px;
+    float: right;
+}
+
+
+.form-check-label {
+    width: 100%;
+}
+
+.accordion-button{
+    background-color: #0078bf;
+    color:#fff;
+    box-shadow: none;
+    font-weight: 500;
+}
+
+.accordion-button:after {
+	background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 [width] [height]' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z' width='7' height='12'/></svg>") !important;
+}
+
+.ol, ul{
+    padding-left: 0rem !important;
+}
+
+.ngx-slider{
+    width: 100%;
+}
+
+input[type="radio"]{
+    visibility: hidden;
+    height: 0;
+    width: 0;
+  }
+
+
+input[type="radio"]:checked + label{
+background-color: #58ba83;
+}
+
+.pencil_anchor {
+    color: #fff;
+}

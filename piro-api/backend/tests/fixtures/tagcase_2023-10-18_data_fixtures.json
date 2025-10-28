@@ -1,0 +1,252 @@
+[
+    {
+        "CaseId": 185,
+        "CreateBy": "Jacqueline Brown",
+        "CreateDate": "2002-10-16 17:25:47.000000",
+        "IsActive": 0,
+        "TagCaseId": 0,
+        "TagId": 0,
+        "UpdateBy": "Jacqueline Brown",
+        "UpdateDate": "2016-05-03 00:00:00.000000"
+    },
+    {
+        "CaseId": 29,
+        "CreateBy": "Shawn Williamson",
+        "CreateDate": "1988-07-26 01:24:33.000000",
+        "IsActive": 0,
+        "TagCaseId": 1,
+        "TagId": 1,
+        "UpdateBy": "Shawn Williamson",
+        "UpdateDate": "1999-03-27 00:00:00.000000"
+    },
+    {
+        "CaseId": 126,
+        "CreateBy": "Tara Bennett",
+        "CreateDate": "2022-09-02 15:03:29.000000",
+        "IsActive": 1,
+        "TagCaseId": 2,
+        "TagId": 2,
+        "UpdateBy": "Tara Bennett",
+        "UpdateDate": "2023-03-09 00:00:00.000000"
+    },
+    {
+        "CaseId": 94,
+        "CreateBy": "Paul Allen",
+        "CreateDate": "2007-07-09 10:10:03.000000",
+        "IsActive": 1,
+        "TagCaseId": 3,
+        "TagId": 3,
+        "UpdateBy": "Paul Allen",
+        "UpdateDate": "2020-11-07 00:00:00.000000"
+    },
+    {
+        "CaseId": 191,
+        "CreateBy": "David Davis",
+        "CreateDate": "1985-10-10 09:58:10.000000",
+        "IsActive": 0,
+        "TagCaseId": 4,
+        "TagId": 4,
+        "UpdateBy": "David Davis",
+        "UpdateDate": "1989-04-05 00:00:00.000000"
+    },
+    {
+        "CaseId": 197,
+        "CreateBy": "Andrew Grant",
+        "CreateDate": "1990-11-15 14:18:22.000000",
+        "IsActive": 0,
+        "TagCaseId": 5,
+        "TagId": 5,
+        "UpdateBy": "Andrew Grant",
+        "UpdateDate": "2017-03-04 00:00:00.000000"
+    },
+    {
+        "CaseId": 58,
+        "CreateBy": "Stephen Garrett",
+        "CreateDate": "1995-09-17 21:57:57.000000",
+        "IsActive": 1,
+        "TagCaseId": 6,
+        "TagId": 6,
+        "UpdateBy": "Stephen Garrett",
+        "UpdateDate": "1999-02-10 00:00:00.000000"
+    },
+    {
+        "CaseId": 89,
+        "CreateBy": "Kevin Vazquez",
+        "CreateDate": "1988-03-27 12:54:57.000000",
+        "IsActive": 1,
+        "TagCaseId": 7,
+        "TagId": 7,
+        "UpdateBy": "Kevin Vazquez",
+        "UpdateDate": "1989-07-08 00:00:00.000000"
+    },
+    {
+        "CaseId": 46,
+        "CreateBy": "Andrew Kim",
+        "CreateDate": "1995-09-19 11:27:45.000000",
+        "IsActive": 0,
+        "TagCaseId": 8,
+        "TagId": 8,
+        "UpdateBy": "Andrew Kim",
+        "UpdateDate": "2013-08-30 00:00:00.000000"
+    },
+    {
+        "CaseId": 39,
+        "CreateBy": "Donna Blackburn",
+        "CreateDate": "2009-05-28 22:15:57.000000",
+        "IsActive": 0,
+        "TagCaseId": 9,
+        "TagId": 9,
+        "UpdateBy": "Donna Blackburn",
+        "UpdateDate": "2020-11-21 00:00:00.000000"
+    },
+    {
+        "CaseId": 118,
+        "CreateBy": "Kenneth Weaver MD",
+        "CreateDate": "1993-05-18 21:48:30.000000",
+        "IsActive": 1,
+        "TagCaseId": 10,
+        "TagId": 10,
+        "UpdateBy": "Kenneth Weaver MD",
+        "UpdateDate": "2019-12-01 00:00:00.000000"
+    },
+    {
+        "CaseId": 60,
+        "CreateBy": "Franklin Hicks",
+        "CreateDate": "1996-07-26 13:35:29.000000",
+        "IsActive": 1,
+        "TagCaseId": 11,
+        "TagId": 11,
+        "UpdateBy": "Franklin Hicks",
+        "UpdateDate": "2020-05-29 00:00:00.000000"
+    },
+    {
+        "CaseId": 112,
+        "CreateBy": "Julian Castro",
+        "CreateDate": "1982-03-01 01:03:11.000000",
+        "IsActive": 1,
+        "TagCaseId": 12,
+        "TagId": 12,
+        "UpdateBy": "Julian Castro",
+        "UpdateDate": "1994-12-17 00:00:00.000000"
+    },
+    {
+        "CaseId": 142,
+        "CreateBy": "Jasmine Giles",
+        "CreateDate": "2003-05-01 04:11:06.000000",
+        "IsActive": 0,
+        "TagCaseId": 13,
+        "TagId": 13,
+        "UpdateBy": "Jasmine Giles",
+        "UpdateDate": "2012-10-18 00:00:00.000000"
+    },
+    {
+        "CaseId": 182,
+        "CreateBy": "Krista Santiago",
+        "CreateDate": "2016-06-14 03:40:53.000000",
+        "IsActive": 0,
+        "TagCaseId": 14,
+        "TagId": 14,
+        "UpdateBy": "Krista Santiago",
+        "UpdateDate": "2018-03-22 00:00:00.000000"
+    },
+    {
+        "CaseId": 42,
+        "CreateBy": "Reginald Smith",
+        "CreateDate": "1989-01-29 02:25:15.000000",
+        "IsActive": 0,
+        "TagCaseId": 15,
+        "TagId": 15,
+        "UpdateBy": "Reginald Smith",
+        "UpdateDate": "2022-03-14 00:00:00.000000"
+    },
+    {
+        "CaseId": 39,
+        "CreateBy": "Ethan Rogers",
+        "CreateDate": "1976-07-03 23:39:21.000000",
+        "IsActive": 1,
+        "TagCaseId": 16,
+        "TagId": 16,
+        "UpdateBy": "Ethan Rogers",
+        "UpdateDate": "1979-09-29 00:00:00.000000"
+    },
+    {
+        "CaseId": 185,
+        "CreateBy": "Justin Olson",
+        "CreateDate": "1989-09-01 01:42:59.000000",
+        "IsActive": 1,
+        "TagCaseId": 17,
+        "TagId": 17,
+        "UpdateBy": "Justin Olson",
+        "UpdateDate": "2021-01-06 00:00:00.000000"
+    },
+    {
+        "CaseId": 105,
+        "CreateBy": "Geoffrey Smith",
+        "CreateDate": "2006-07-08 10:16:36.000000",
+        "IsActive": 1,
+        "TagCaseId": 18,
+        "TagId": 18,
+        "UpdateBy": "Geoffrey Smith",
+        "UpdateDate": "2023-06-13 00:00:00.000000"
+    },
+    {
+        "CaseId": 83,
+        "CreateBy": "Mr. Jason Hess III",
+        "CreateDate": "2006-07-18 10:52:38.000000",
+        "IsActive": 0,
+        "TagCaseId": 19,
+        "TagId": 19,
+        "UpdateBy": "Mr. Jason Hess III",
+        "UpdateDate": "2010-05-22 00:00:00.000000"
+    },
+    {
+        "CaseId": 40,
+        "CreateBy": "Donna Kaufman",
+        "CreateDate": "1997-06-15 06:04:37.000000",
+        "IsActive": 0,
+        "TagCaseId": 20,
+        "TagId": 20,
+        "UpdateBy": "Donna Kaufman",
+        "UpdateDate": "2000-10-05 00:00:00.000000"
+    },
+    {
+        "CaseId": 64,
+        "CreateBy": "Holly Hansen",
+        "CreateDate": "1981-06-12 11:20:47.000000",
+        "IsActive": 1,
+        "TagCaseId": 21,
+        "TagId": 21,
+        "UpdateBy": "Holly Hansen",
+        "UpdateDate": "2012-03-14 00:00:00.000000"
+    },
+    {
+        "CaseId": 51,
+        "CreateBy": "James Bryant",
+        "CreateDate": "1997-08-19 13:53:09.000000",
+        "IsActive": 0,
+        "TagCaseId": 22,
+        "TagId": 22,
+        "UpdateBy": "James Bryant",
+        "UpdateDate": "2019-04-18 00:00:00.000000"
+    },
+    {
+        "CaseId": 133,
+        "CreateBy": "Tyler Alvarado",
+        "CreateDate": "1980-10-02 11:28:28.000000",
+        "IsActive": 0,
+        "TagCaseId": 23,
+        "TagId": 23,
+        "UpdateBy": "Tyler Alvarado",
+        "UpdateDate": "1996-02-18 00:00:00.000000"
+    },
+    {
+        "CaseId": 11,
+        "CreateBy": "Anita Aguirre",
+        "CreateDate": "1980-10-07 04:31:17.000000",
+        "IsActive": 1,
+        "TagCaseId": 24,
+        "TagId": 24,
+        "UpdateBy": "Anita Aguirre",
+        "UpdateDate": "1994-06-19 00:00:00.000000"
+    }
+]

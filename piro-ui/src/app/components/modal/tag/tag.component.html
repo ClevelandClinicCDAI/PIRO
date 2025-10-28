@@ -1,0 +1,64 @@
+
+<div class="modal-header">
+    <h4 class="modal-title">Tags: {{CaseNum}}</h4>
+    <button type="button" class="btn btn-primary create-tag" aria-label="Close"
+      (click)="openCreateTag()">Create Tag</button>
+    <button type="button" class="close btn-close" aria-label="Close"
+      (click)="closeModal()"></button>
+  </div>
+  
+
+<div class="modal-body">
+    
+    <form (ngSubmit)="submitForm(formDirective)" [formGroup]="saveTagForm" #formDirective="ngForm">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="form-group">
+                <select formControlName="tagid" class="q-field-control q-input-control"  [ngClass]="{ 'is-invalid': submitted && f.tagid.errors }">
+                    <option value="">Select Tag</option>
+                    <option value="{{v.value}}" *ngFor="let v of tagsDropdown">{{v.text}}</option>
+                </select>
+                <div *ngIf="submitted && f.tagid.errors" class="invalid-feedback">
+                    <div *ngIf="f.tagid.errors.required">Please select a tag</div>
+                </div>         
+            </div>  
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-success">Add New</button>
+        </div>
+    </div>
+    </form> 
+    <br />
+        
+        <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody >
+              <tbody *ngIf="items.length > 0;">
+                <tr *ngFor="let item of items;">
+                    <td>
+                        <div class="d-flex">
+                            <div class="">
+                                <p class="mb-1">{{item.tag}}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{item.desc}}</td>
+                    <td>
+                      <a class="btn btn-danger" (click)="deleteTag(item.tagcaseid)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+                    </td>
+                </tr>
+            </tbody>
+            <tbody *ngIf="items.length == 0">
+                <tr>
+                    <th colspan="3" class="text-center">No Record Found.</th>
+                </tr>
+            </tbody>
+        </table>
+        
+</div>

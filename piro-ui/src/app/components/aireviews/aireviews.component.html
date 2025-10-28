@@ -1,0 +1,117 @@
+<div class="bg-white">
+    <h3 class="d-inline">AI Annotation Feedback</h3>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <form [formGroup]="aiReviewFilterForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="row">
+                        <div class="form-group col">
+                            <label>Annotation</label>
+                            <select class="form-select" formControlName="annotationConfigurationId">
+                                <option value="-1">Select AI Value</option>
+                                <option value="{{item.annotationConfigurationId}}"
+                                    *ngFor="let item of annotationConfig;">
+                                    <pre>{{item.display}}</pre>
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group col">
+                            <label>Case</label>
+                            <input type="text" id="inputKeywordSearch" formControlName="casenum"
+                                name="inputKeywordSearch" class="form-control input input-md" placeholder="Case Number"
+                                autocomplete="off">
+                        </div>
+                        <div class="form-group col">
+                            <label>Feedback</label>
+                            <!-- <select class="form-select" (change)="changeFeedbackFilter($event)" [(ngModel)]="feedbackDropdown"> -->
+                            <select class="form-select" formControlName="feedback">
+                                <option value="0">All</option>
+                                <option value="1">Approve</option>
+                                <option value="-1">Reject</option>
+                            </select>
+                        </div>
+                        <div class="form-check col mt-50">
+                            <input class="form-check-input" type="checkbox" value="1" formControlName="pending"
+                                id="defaultCheck1">
+                            <label class="form-check-label" for="defaultCheck1">
+                                Pending Review
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 d-xl-block  mt-40">
+                    <button class="btn btn-info btn-md" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                    <button class="btn btn-info btn-md" type="button" title="Clear Filter" (click)="clearFilter()">
+                        Clear Filter <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<br />
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>User</th>
+            <th>Case</th>
+            <th>Annotation Name</th>
+            <th>Feedback</th>
+            <th>Feedback Comment</th>
+            <th>Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="items.length > 0">
+        <tr *ngFor="let item of items | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+            let i = index;">
+            <td>
+                <p class="text-muted mb-0">{{item.user}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0 "><a href="javascript:void(0);"
+                        (click)="openCaseDetail(item.caseid, item.casenum)">{{item.casenum}}</a></p>
+            </td>
+            <td>
+                <p class="text-muted mb-0 ">{{item.annotationConfigurationName}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">
+                    <span *ngIf="item?.feedback === 1" class="badge badge-success">Positive</span>
+                    <span *ngIf="item?.feedback === -1" class="badge badge-danger">Negative</span>
+                </p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{item?.comment | titlecase}}</p>
+            </td>
+            <td>
+                <span>{{item.created | date: 'MM/dd/yyyy hh:mm a' }}</span>
+            </td>
+            <td>
+                <p class="text-muted mb-0">
+                    <button *ngIf="item?.feedback === -1 && !item.reviewed" type="button"
+                        (click)="reviewFeedback(item.id)" class="btn btn-success">Review</button>
+                    <span *ngIf="item?.feedback === -1 && item.reviewed" class="badge badge-info">Reviewed</span>
+                </p>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="items.length == 0">
+        <tr>
+            <th colspan="6" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="items.length > 0">
+    <pagination-controls previousLabel="Prev" nextLabel="Next" (pageChange)="onTableDataChange($event)">
+    </pagination-controls>
+</div>

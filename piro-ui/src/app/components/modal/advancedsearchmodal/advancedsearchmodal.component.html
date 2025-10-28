@@ -1,0 +1,16 @@
+<div class="modal-header">
+  <h4 class="modal-title">Advanced Search</h4>
+  <button type="button" class="close btn-close" aria-label="Close"
+    (click)="closeModal()"></button>
+</div> 
+<div class="modal-body">
+  <div [ngClass]="{'disabledDiv': isDisabled }">
+    <query-builder *ngIf="dataloaded" [(ngModel)]='query' [config]='config' [classNames]='classNames' [emptyMessage]="'Add Ruleset or Rule'"></query-builder>
+  </div>
+</div>
+<div class="modal-footer">
+  <!-- <button type="button" *ngIf="!isValid" class="btn btn-success" (click)="validateModal()">Validate</button> -->
+  <button type="button" class="btn btn-success" (click)="validateModal()" (window:keypress)="windowEvent($event)">Search</button>
+  <button type="button" class="btn btn-outline-dark" (click)="closeModal()">Close</button>
+</div>
+ 

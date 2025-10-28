@@ -1,0 +1,51 @@
+<div id="login" class="container">
+    <div class="row-fluid">
+        <div class="col-md-6" style="float:none;margin:auto;">
+            <div class="card shadow p-3 bg-white rounded">
+                <article class="card-body">
+                    <h4 class="card-title text-center mb-4 mt-1">My Preference</h4>
+                     <hr>
+                     <form [formGroup]="preferenceForm" (ngSubmit)="onSubmit()">
+                        <div class="form-group">
+                            <label for="dataInputName">Name</label>
+                            <input type="text" class="form-control" id="dataInputName" aria-describedby="nameHelp"
+                                placeholder="Enter Name" formControlName="name" [ngClass]="{ 'is-invalid': submitted && f.name.errors }" >
+                            <div *ngIf="submitted && f.name.errors" class="invalid-feedback">
+                                <div *ngIf="f.name.errors.required">Name is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleInputEmail2">Email</label>
+                            <input type="email" class="form-control" id="exampleInputEmail2" aria-describedby="emailHelp"
+                            placeholder="Enter Email" formControlName="email" [ngClass]="{ 'is-invalid': submitted && f.email.errors }">
+                            <div *ngIf="submitted && f.email.errors" class="invalid-feedback">
+                                <div *ngIf="f.email.errors.required">Email is required</div>
+                                <div *ngIf="f.email.errors.email">Please enter valid email</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="dataInputDepartment">Department</label>
+                            <input type="text" class="form-control" id="dataInputDepartment" aria-describedby="departmentHelp"
+                                placeholder="Enter Department" formControlName="department" [ngClass]="{ 'is-invalid': submitted && f.department.errors }" >
+                            <div *ngIf="submitted && f.department.errors" class="invalid-feedback">
+                                <div *ngIf="f.department.errors.required">Department is required</div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleCheck1">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="exampleCheck1" formControlName="is_persist"> Persist Search Selection
+                                </div>
+                           </label>
+                            
+                        </div>
+                        <br>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>

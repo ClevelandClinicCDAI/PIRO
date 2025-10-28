@@ -1,0 +1,63 @@
+<div class="bg-white p-3">
+    <h3 class="d-inline">Lookup Data - Specimen Sources </h3>
+    <a class=" btn btn-primary pull-right disabled" routerLink="/create-specimen-source"
+    routerLinkActive="active">Create Specimen Source</a>
+</div>
+<table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+        <tr>
+            <th>Display Text</th>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Score</th>
+            <th>Reference</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody *ngIf="specimenSources.length > 0">
+        <tr *ngFor="let specimenSource of specimenSources | paginate
+        : {
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };
+    let i = index;">
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="ms-3">
+                        <p class="fw-bold mb-1">{{specimenSource.display}}</p>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{specimenSource.code}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{specimenSource.description}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{specimenSource.score}}</p>
+            </td>
+            <td>
+                <p class="text-muted mb-0">{{specimenSource.reference}}</p>
+            </td>
+            <td>
+                <a class="btn btn-primary"  routerLink="/edit-specimen-source/{{specimenSource.specimenSourceId}}"><i class="fa fa-pencil"></i></a>&nbsp;
+                <a class="btn btn-danger disabled" (click)="deleteSpecimenSource(specimenSource.specimenSourceId)" href="javascript:void(0);"><i class="fa fa-trash-o"></i></a>
+            </td>
+        </tr>
+    </tbody>
+    <tbody *ngIf="specimenSources.length == 0">
+        <tr>
+            <th colspan="5" class="text-center">No Record Found.</th>
+        </tr>
+    </tbody>
+</table>
+<div class="d-flex justify-content-center mt-5" *ngIf="specimenSources.length > 0">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (pageChange)="onTableDataChange($event)"
+    >
+</pagination-controls>
+</div>

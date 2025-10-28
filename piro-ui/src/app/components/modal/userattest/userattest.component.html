@@ -1,0 +1,9 @@
+<div class="modal-body">
+    <div class="tab-pane user-attest">
+        <p><span [innerHTML]="textAttest"></span></p>
+        <div class="text-center">
+            <button type="button" class="btn btn-success" (click)="attest('yes')">Yes</button>
+            <button *ngIf="!requireAttest" type="button" class="btn btn-danger ml-10" (click)="attest('no')">No</button>
+        </div>
+    </div>
+</div>

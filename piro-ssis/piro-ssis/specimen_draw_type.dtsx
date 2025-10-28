@@ -1,0 +1,919 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/1/2025 8:50:23 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{879D46D1-F338-45BC-AE14-92A5FA1B8598}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="specimen_draw_type"
+  DTS:PackageType="5"
+  DTS:VersionBuild="61"
+  DTS:VersionGUID="{34EB75F5-A260-4AF4-952A-F5FCDB031877}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:LogProviders>
+    <DTS:LogProvider
+      DTS:ConfigString="oledb-piro"
+      DTS:CreationName="Microsoft.LogProviderSQLServer"
+      DTS:Description="Writes log entries for events to a SQL Server database"
+      DTS:DTSID="{170F69B0-B798-4FAA-8709-F4C82AFC3FE2}"
+      DTS:ObjectName="SSIS log provider for SQL Server">
+      <DTS:ObjectData>
+        <InnerObject />
+      </DTS:ObjectData>
+    </DTS:LogProvider>
+  </DTS:LogProviders>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{B1D3F4C7-24B6-4C36-A538-511AC843C025}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'specimen_draw_type', '', '', 'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{9357C91B-F9C0-4BA4-965D-922363D99722}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'specimen_draw_type', '', '', 'query', 'SELECT * FROM CLARITY.ZC_SPEC_DRAW_TYPE', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{5776B085-CF58-4EFE-ADD6-F2226F8208C8}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'specimen_draw_type', '', '', 'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{CC50C4E9-1E22-47B6-9E5E-67F9340B0267}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT * FROM CLARITY.ZC_SPEC_DRAW_TYPE&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT * FROM CLARITY.ZC_SPEC_DRAW_TYPE</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:LoggingOptions
+    DTS:FilterKind="0"
+    DTS:LoggingMode="1">
+    <DTS:Property
+      DTS:DataType="8"
+      DTS:Name="EventFilter">
+      6,7,OnError,13,OnPostExecute,14,OnPostValidate,12,OnPreExecute,13,OnPreValidate,12,OnTaskFailed</DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnError"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnTaskFailed"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:SelectedLogProviders>
+      <DTS:SelectedLogProvider
+        DTS:InstanceID="{170F69B0-B798-4FAA-8709-F4C82AFC3FE2}" />
+    </DTS:SelectedLogProviders>
+  </DTS:LoggingOptions>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{6335e285-9587-49f9-b191-b8733805b797}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.P_SSIS_Load_Lookup_SpecimenDrawType"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{e096530a-cacf-4e67-a2c8-cf404db15d69}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{4e6bc182-36f0-4be1-a3b2-f05a64c30f2c}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{99a9091f-df6f-4e5f-ae37-7f00d812f47a}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\SpecimenDrawType-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="SpecimenDrawType-Data Flow Task"
+      DTS:DTSID="{2645B3E4-7062-4FF3-9CDD-44E900F661DB}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="SpecimenDrawType-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:LoggingOptions
+        DTS:FilterKind="0" />
+      <DTS:PropertyExpression
+        DTS:Name="[SpecimenDrawType-Source-ADO].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="SpecimenDrawType-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_SpecimenDrawType"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].Columns[NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="NAME"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]" />
+                    <inputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].Columns[TITLE]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="TITLE"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]" />
+                    <inputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].Columns[ABBR]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="ABBR"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]" />
+                    <inputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].Columns[INTERNAL_ID]"
+                      cachedDataType="numeric"
+                      cachedName="INTERNAL_ID"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]" />
+                    <inputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].Columns[SPEC_DRAW_TYPE_C]"
+                      cachedDataType="numeric"
+                      cachedName="SPEC_DRAW_TYPE_C"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_DRAW_TYPE_C]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[SPEC_DRAW_TYPE_C]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPEC_DRAW_TYPE_C]"
+                      dataType="numeric"
+                      name="SPEC_DRAW_TYPE_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="SpecimenDrawType-Source-ADO"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
+                  * FROM CLARITY.ZC_SPEC_DRAW_TYPE</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[SPEC_DRAW_TYPE_C]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[SPEC_DRAW_TYPE_C]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[SPEC_DRAW_TYPE_C]"
+                      name="SPEC_DRAW_TYPE_C"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[NAME]"
+                      name="NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      name="TITLE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      name="ABBR"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[SPEC_DRAW_TYPE_C]"
+                      dataType="numeric"
+                      name="SPEC_DRAW_TYPE_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[SPEC_DRAW_TYPE_C]"
+                      dataType="numeric"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[SPEC_DRAW_TYPE_C]"
+                      name="SPEC_DRAW_TYPE_C"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      name="NAME" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      name="TITLE" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      name="ABBR" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\SpecimenDrawType-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{1383f58b-5371-43e4-bd07-e11c8387ae4b}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="P_SSIS_TruncateTable_SpecimenDrawType"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{96A0F141-D9D8-4682-AC31-076A7B3329D9}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\SpecimenDrawType-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{210E3910-22A5-40D4-BDCB-F5C44B26594B}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{1093B757-24E0-4EFE-83E3-7D368C59D938}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{B56AB4AF-F823-4D4A-8687-9DF107B93E52}"
+      DTS:From="Package\SpecimenDrawType-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{2141DF56-6C04-4266-A220-F44A9C7B2DFD}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="117,42"
+          Id="Package\Log End"
+          TopLeft="130,421" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Log Query"
+          TopLeft="125,191" />
+        <NodeLayout
+          Size="122,42"
+          Id="Package\Log Start"
+          TopLeft="121,16" />
+        <NodeLayout
+          Size="178,42"
+          Id="Package\SpecimenDrawType-Data Flow Task"
+          TopLeft="99,276" />
+        <NodeLayout
+          Size="150,42"
+          Id="Package\Truncate Table"
+          TopLeft="120,101" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="188.5,233">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,43"
+              Start="0,0"
+              End="0,35.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,35.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="182,58">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="13,43"
+              Start="0,0"
+              End="13,35.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,17.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,17.5"
+                    Point2="0,21.5"
+                    Point3="4,21.5" />
+                  <mssgle:LineSegment
+                    End="9,21.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="9,21.5"
+                    Point2="13,21.5"
+                    Point3="13,25.5" />
+                  <mssgle:LineSegment
+                    End="13,35.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="192,143">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,48"
+              Start="0,0"
+              End="0,40.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,40.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="161,42"
+          Id="Package\Load Main Table"
+          TopLeft="111,352" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="189.75,318">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,34"
+              Start="0,0"
+              End="0,26.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,26.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="190,394">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,27"
+              Start="0,0"
+              End="0,19.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,19.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\SpecimenDrawType-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="184,41.6"
+          Id="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination"
+          TopLeft="167,223" />
+        <NodeLayout
+          Size="234.4,41.6"
+          Id="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO"
+          TopLeft="119.166660155687,71.066666172478" />
+        <EdgeLayout
+          Id="Package\SpecimenDrawType-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="236.366660155687,112.666666172478">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="22.6333398443126,110.333333827522"
+              Start="0,0"
+              End="22.6333398443126,102.833333827522">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,51.166666913761" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,51.166666913761"
+                    Point2="0,55.166666913761"
+                    Point3="4,55.166666913761" />
+                  <mssgle:LineSegment
+                    End="18.6333398443126,55.166666913761" />
+                  <mssgle:CubicBezierSegment
+                    Point1="18.6333398443126,55.166666913761"
+                    Point2="22.6333398443126,55.166666913761"
+                    Point3="22.6333398443126,59.166666913761" />
+                  <mssgle:LineSegment
+                    End="22.6333398443126,102.833333827522" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\SpecimenDrawType-Data Flow Task\SpecimenDrawType-Source-ADO">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

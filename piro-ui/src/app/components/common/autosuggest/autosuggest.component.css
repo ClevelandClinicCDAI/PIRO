@@ -1,0 +1,29 @@
+
+.suggestions-container {
+    position: absolute;
+    width: 36%;
+    background: #fff;
+    height: 200px;
+    box-shadow: 0 2px 5px rgb(0 0 0 / 25%);
+    box-sizing: border-box;
+    z-index: 99;
+    margin-left: 12.4%;
+    overflow: auto;
+}
+
+
+ul, li {list-style-type: none;}
+
+a{
+    cursor: pointer;
+}
+
+#backgroundOverlay{
+    background-color:transparent;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    display:block;
+}

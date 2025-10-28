@@ -1,0 +1,4 @@
+<div *ngFor="let comment of inData.textComments || []">
+    <span><h6>{{toPascalCase(comment?.type)}} ({{toPascalCase(comment?.sourcetype)}}) </h6></span>    
+    <p *ngFor="let text of (comment?.text || '').split('   ||||   ')" [innerHTML]="text | rtfPipe | async" class="result-comment"></p>
+</div>  

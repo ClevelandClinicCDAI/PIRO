@@ -1,0 +1,57 @@
+<div class="modal-header">
+  <h4 class="modal-title">Saved Search</h4>
+  <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+  <table class="table align-middle mb-0 bg-white shadow p-3 bg-white rounded">
+    <thead class="thead-dark">
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Created On</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody *ngIf="items.length > 0">
+      <tr *ngFor="let item of items | paginate
+        : {
+            id:'load_search_pagination',
+            itemsPerPage: tableSize,
+            currentPage: page,
+            totalItems: count
+          };">
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="ms-3">
+              <p class="fw-bold mb-1"><a [href]="item.query"
+                  (click)="assignAdvSearch(item?.advsearch, item?.mrn)">{{item.name}}</a></p>
+            </div>
+          </div>
+        </td>
+        <td>
+          <p class="text-muted mb-0">{{item.description | slice :0:30 }}</p>
+        </td>
+        <td>
+          <p class="text-muted mb-0">{{formatDateTime(item.createOn)}}</p>
+        </td>
+        <td>
+          <a class="btn btn-danger" (click)="deleteSearch(item.searchId)" href="javascript:void(0);"><i
+              class="fa fa-trash-o"></i></a>
+        </td>
+      </tr>
+    </tbody>
+    <tbody *ngIf="items.length == 0">
+      <tr>
+        <th colspan="5" class="text-center">No Record Found.</th>
+      </tr>
+    </tbody>
+  </table>
+  <div class="d-flex justify-content-center mt-5" *ngIf="items.length> 0">
+    <pagination-controls id="load_search_pagination" previousLabel="Prev" nextLabel="Next"
+      (pageChange)="onTableDataChange($event)">
+    </pagination-controls>
+  </div>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-success" (click)="closeModal()">Close</button>
+</div>

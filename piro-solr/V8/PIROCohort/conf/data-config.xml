@@ -1,0 +1,20 @@
+<dataConfig>
+
+  <dataSource type="JdbcDataSource"
+    driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+    user="[username]"
+    password="[password]"
+    encryptKeyFile="[path]/dih-encryptionkey"
+  />
+
+  <document>
+    <entity name="PIROCohort"
+      pk="id"
+      query="select CohortCaseId, CohortId, CaseId from dbo.[V_SOLR_Cohort_Case_Load] where CohortId = CASE '${dataimporter.request.cohortId}' WHEN '' THEN -1   WHEN '0' THEN CohortId   ELSE '${dataimporter.request.cohortId}' End">
+      <field column="CohortCaseId" name="id" />
+      <field column="CohortId" name="cohortid" />
+      <field column="CaseId" name="caseid" />
+    </entity>
+  </document>
+</dataConfig>

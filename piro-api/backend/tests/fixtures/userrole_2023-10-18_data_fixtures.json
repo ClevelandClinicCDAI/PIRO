@@ -1,0 +1,252 @@
+[
+    {
+        "CreateBy": "William Farmer",
+        "CreateDate": "1991-01-28 11:11:15.000000",
+        "IsActive": 1,
+        "RoleId": 0,
+        "UpdateBy": "William Farmer",
+        "UpdateDate": "2022-10-09 00:00:00.000000",
+        "UserId": 0,
+        "UserRoleId": 0
+    },
+    {
+        "CreateBy": "Jerry Stephenson",
+        "CreateDate": "2002-01-23 04:48:46.000000",
+        "IsActive": 1,
+        "RoleId": 1,
+        "UpdateBy": "Jerry Stephenson",
+        "UpdateDate": "2020-10-21 00:00:00.000000",
+        "UserId": 2,
+        "UserRoleId": 1
+    },
+    {
+        "CreateBy": "Anthony Malone",
+        "CreateDate": "1979-03-16 23:49:20.000000",
+        "IsActive": 1,
+        "RoleId": 2,
+        "UpdateBy": "Anthony Malone",
+        "UpdateDate": "1993-01-24 00:00:00.000000",
+        "UserId": 4,
+        "UserRoleId": 2
+    },
+    {
+        "CreateBy": "Laura Baker",
+        "CreateDate": "1975-10-20 11:08:39.000000",
+        "IsActive": 1,
+        "RoleId": 3,
+        "UpdateBy": "Laura Baker",
+        "UpdateDate": "2015-05-07 00:00:00.000000",
+        "UserId": 6,
+        "UserRoleId": 3
+    },
+    {
+        "CreateBy": "Shelby Briggs",
+        "CreateDate": "2007-03-01 08:49:29.000000",
+        "IsActive": 0,
+        "RoleId": 4,
+        "UpdateBy": "Shelby Briggs",
+        "UpdateDate": "2012-09-23 00:00:00.000000",
+        "UserId": 8,
+        "UserRoleId": 4
+    },
+    {
+        "CreateBy": "Keith Taylor",
+        "CreateDate": "1984-02-14 18:18:35.000000",
+        "IsActive": 0,
+        "RoleId": 5,
+        "UpdateBy": "Keith Taylor",
+        "UpdateDate": "1991-12-14 00:00:00.000000",
+        "UserId": 10,
+        "UserRoleId": 5
+    },
+    {
+        "CreateBy": "Kelly Bailey",
+        "CreateDate": "1974-09-21 08:18:13.000000",
+        "IsActive": 0,
+        "RoleId": 6,
+        "UpdateBy": "Kelly Bailey",
+        "UpdateDate": "1984-05-25 00:00:00.000000",
+        "UserId": 12,
+        "UserRoleId": 6
+    },
+    {
+        "CreateBy": "Ms. Kathleen Rodriguez",
+        "CreateDate": "2015-10-31 03:22:35.000000",
+        "IsActive": 0,
+        "RoleId": 7,
+        "UpdateBy": "Ms. Kathleen Rodriguez",
+        "UpdateDate": "2021-12-26 00:00:00.000000",
+        "UserId": 14,
+        "UserRoleId": 7
+    },
+    {
+        "CreateBy": "Carlos Bell",
+        "CreateDate": "2014-08-26 21:35:20.000000",
+        "IsActive": 1,
+        "RoleId": 8,
+        "UpdateBy": "Carlos Bell",
+        "UpdateDate": "2020-01-04 00:00:00.000000",
+        "UserId": 16,
+        "UserRoleId": 8
+    },
+    {
+        "CreateBy": "Evelyn Smith",
+        "CreateDate": "2000-09-17 11:30:34.000000",
+        "IsActive": 1,
+        "RoleId": 9,
+        "UpdateBy": "Evelyn Smith",
+        "UpdateDate": "2004-11-01 00:00:00.000000",
+        "UserId": 18,
+        "UserRoleId": 9
+    },
+    {
+        "CreateBy": "Adrienne Williams",
+        "CreateDate": "1974-05-14 21:31:47.000000",
+        "IsActive": 0,
+        "RoleId": 10,
+        "UpdateBy": "Adrienne Williams",
+        "UpdateDate": "1996-06-10 00:00:00.000000",
+        "UserId": 20,
+        "UserRoleId": 10
+    },
+    {
+        "CreateBy": "Stephen Simpson",
+        "CreateDate": "2000-01-02 20:40:06.000000",
+        "IsActive": 0,
+        "RoleId": 11,
+        "UpdateBy": "Stephen Simpson",
+        "UpdateDate": "2009-05-20 00:00:00.000000",
+        "UserId": 22,
+        "UserRoleId": 11
+    },
+    {
+        "CreateBy": "Michael Anderson",
+        "CreateDate": "1973-11-23 08:27:49.000000",
+        "IsActive": 1,
+        "RoleId": 12,
+        "UpdateBy": "Michael Anderson",
+        "UpdateDate": "2001-04-16 00:00:00.000000",
+        "UserId": 24,
+        "UserRoleId": 12
+    },
+    {
+        "CreateBy": "Kelly Leonard",
+        "CreateDate": "2017-06-26 11:54:21.000000",
+        "IsActive": 0,
+        "RoleId": 13,
+        "UpdateBy": "Kelly Leonard",
+        "UpdateDate": "2020-04-16 00:00:00.000000",
+        "UserId": 26,
+        "UserRoleId": 13
+    },
+    {
+        "CreateBy": "Kyle Mosley",
+        "CreateDate": "1974-03-05 11:00:00.000000",
+        "IsActive": 1,
+        "RoleId": 14,
+        "UpdateBy": "Kyle Mosley",
+        "UpdateDate": "2018-09-27 00:00:00.000000",
+        "UserId": 28,
+        "UserRoleId": 14
+    },
+    {
+        "CreateBy": "Veronica Walker",
+        "CreateDate": "2020-07-23 20:45:34.000000",
+        "IsActive": 1,
+        "RoleId": 15,
+        "UpdateBy": "Veronica Walker",
+        "UpdateDate": "2023-06-26 00:00:00.000000",
+        "UserId": 30,
+        "UserRoleId": 15
+    },
+    {
+        "CreateBy": "Joshua Mccormick",
+        "CreateDate": "2004-05-22 07:43:38.000000",
+        "IsActive": 1,
+        "RoleId": 16,
+        "UpdateBy": "Joshua Mccormick",
+        "UpdateDate": "2005-10-30 00:00:00.000000",
+        "UserId": 32,
+        "UserRoleId": 16
+    },
+    {
+        "CreateBy": "Rebecca Gonzalez",
+        "CreateDate": "1987-01-15 11:37:44.000000",
+        "IsActive": 1,
+        "RoleId": 17,
+        "UpdateBy": "Rebecca Gonzalez",
+        "UpdateDate": "2019-03-12 00:00:00.000000",
+        "UserId": 34,
+        "UserRoleId": 17
+    },
+    {
+        "CreateBy": "Bobby Jones",
+        "CreateDate": "1996-04-14 05:16:01.000000",
+        "IsActive": 0,
+        "RoleId": 18,
+        "UpdateBy": "Bobby Jones",
+        "UpdateDate": "2018-04-15 00:00:00.000000",
+        "UserId": 36,
+        "UserRoleId": 18
+    },
+    {
+        "CreateBy": "Bill Green",
+        "CreateDate": "2013-10-29 19:07:21.000000",
+        "IsActive": 0,
+        "RoleId": 19,
+        "UpdateBy": "Bill Green",
+        "UpdateDate": "2023-06-03 00:00:00.000000",
+        "UserId": 38,
+        "UserRoleId": 19
+    },
+    {
+        "CreateBy": "Zachary Villanueva",
+        "CreateDate": "2001-11-07 12:51:13.000000",
+        "IsActive": 0,
+        "RoleId": 20,
+        "UpdateBy": "Zachary Villanueva",
+        "UpdateDate": "2019-10-10 00:00:00.000000",
+        "UserId": 40,
+        "UserRoleId": 20
+    },
+    {
+        "CreateBy": "Anna Knight",
+        "CreateDate": "2006-04-04 08:27:41.000000",
+        "IsActive": 0,
+        "RoleId": 21,
+        "UpdateBy": "Anna Knight",
+        "UpdateDate": "2007-06-20 00:00:00.000000",
+        "UserId": 42,
+        "UserRoleId": 21
+    },
+    {
+        "CreateBy": "Sarah Rodriguez",
+        "CreateDate": "2023-01-22 20:03:03.000000",
+        "IsActive": 1,
+        "RoleId": 22,
+        "UpdateBy": "Sarah Rodriguez",
+        "UpdateDate": "2023-02-24 00:00:00.000000",
+        "UserId": 44,
+        "UserRoleId": 22
+    },
+    {
+        "CreateBy": "Andrea Wells",
+        "CreateDate": "2021-06-03 15:22:04.000000",
+        "IsActive": 0,
+        "RoleId": 23,
+        "UpdateBy": "Andrea Wells",
+        "UpdateDate": "2023-05-04 00:00:00.000000",
+        "UserId": 46,
+        "UserRoleId": 23
+    },
+    {
+        "CreateBy": "Emily Brown",
+        "CreateDate": "1978-11-15 14:04:53.000000",
+        "IsActive": 1,
+        "RoleId": 24,
+        "UpdateBy": "Emily Brown",
+        "UpdateDate": "1989-01-17 00:00:00.000000",
+        "UserId": 48,
+        "UserRoleId": 24
+    }
+]

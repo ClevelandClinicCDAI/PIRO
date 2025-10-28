@@ -1,0 +1,5 @@
+UpgradeLog.htm
+.vs/*
+
+piro-ssis/bin/*
+piro-ssis/obj/*

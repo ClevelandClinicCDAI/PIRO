@@ -1,0 +1,157 @@
+.result-group{
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    /* margin-top:20px; */
+}
+
+.bold300{
+    font-weight: 300;
+}
+
+.bold500{
+    font-weight: 500;
+}
+
+
+.bold800{
+    font-weight: 700;
+}
+
+.right{
+    float: right;
+}
+
+.middle{
+    text-align: center;
+}
+.view-btn{
+    text-decoration: none;
+    color:#0078bf !important;
+}
+
+.tag-btn{
+    float: right;
+    cursor: pointer;
+}
+
+.concentriq-btn{    
+    cursor: pointer;
+}
+
+/* LOADING */
+
+.card-skeleton {
+    width: 100%;
+    height:435px;
+    margin-bottom: 10px;
+    /* position: relative;
+     float: left;
+    top: 0;
+    left: 0; */
+    transition: all .3s ease-in-out;
+    background: #fff;
+    z-index: 10;
+    padding: 15px;
+    opacity: 1
+}
+
+.card-skeleton.hidden {
+    transition: all .3s ease-in-out;
+    opacity: 0;
+    height: 0;
+    padding: 0
+}
+
+.card-skeleton-img {
+    width: 100%;
+    height: 60px;
+    background: #e6e6e6;
+    display: block
+}
+
+.animated-background {
+    will-change: transform;
+    animation: placeHolderShimmer 1s linear infinite forwards;
+    -webkit-backface-visibility: hidden;
+    background: #e6e6e6;
+    background: linear-gradient(90deg, #eee 8%, #ddd 18%, #eee 33%);
+    background-size: 800px 104px;
+    height: 100%;
+    position: relative
+}
+
+.skel-mask-container {
+    position: relative
+}
+
+.skel-mask {
+    background: #fff;
+    position: absolute;
+    z-index: 200
+}
+
+.skel-mask-1 {
+    width: 100%;
+    height: 15px;
+    top: 0;
+    left: 0
+}
+
+.skel-mask-2 {
+    width: 25%;
+    height: 10px;
+    top: 15px;
+    right: 0
+}
+
+.skel-mask-3 {
+    top: 25px
+}
+
+.skel-mask-3,
+.skel-mask-4 {
+    width: 100%;
+    height: 15px;
+    right: 0
+}
+
+.skel-mask-4 {
+    top: 50px
+}
+
+.skel-mask-5 {
+    width: 10%;
+    height: 30px;
+    top: 65px;
+    right: 30%
+}
+
+.skel-mask-6 {
+    width: 100%;
+    height: 15px;
+    top: 95px;
+    right: 0
+}
+
+
+.skel-mask-7 {
+    width: 100%;
+    height: 5px;
+    top: 150px;
+    right: 0
+}
+
+
+.skel-mask-8 {
+    width: 100%;
+    height: 5px;
+    top: 210px;
+    right: 0
+}
+
+@media only screen and (max-width: 767px)  {
+    .result-group{
+        margin-top:0.5rem;   
+    }
+}

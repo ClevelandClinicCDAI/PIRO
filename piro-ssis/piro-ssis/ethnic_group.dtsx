@@ -1,0 +1,967 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/1/2025 8:50:23 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{420CB80B-9695-41FF-A3C0-F7021AE45E7A}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="ethnic_group"
+  DTS:PackageType="5"
+  DTS:VersionBuild="85"
+  DTS:VersionGUID="{998E7EFC-8505-4C2F-856C-0010F0C95B5A}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:LogProviders>
+    <DTS:LogProvider
+      DTS:ConfigString="oledb-piro"
+      DTS:CreationName="Microsoft.LogProviderSQLServer"
+      DTS:Description="Writes log entries for events to a SQL Server database"
+      DTS:DTSID="{2611C3E1-FB5A-4D67-BB19-41E0AA6D32D1}"
+      DTS:ObjectName="SSIS log provider for SQL Server">
+      <DTS:ObjectData>
+        <InnerObject />
+      </DTS:ObjectData>
+    </DTS:LogProvider>
+  </DTS:LogProviders>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{C248A916-6DED-4894-948C-6700731705FB}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'ethnic_group', '',
+        '', 'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{B9118794-0FB9-4553-93AC-77D9DA74ECE8}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'ethnic_group', '',
+        '', 'query', 'SELECT * FROM CLARITY.ZC_ETHNIC_GROUP', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{19C77724-65ED-487D-9111-41AAD8993B4B}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'ethnic_group', '',
+        '', 'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{A3865478-67A8-404B-8B21-E4962200B8B4}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;SELECT * FROM CLARITY.ZC_ETHNIC_GROUP&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8">SELECT * FROM CLARITY.ZC_ETHNIC_GROUP</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:LoggingOptions
+    DTS:FilterKind="0"
+    DTS:LoggingMode="1">
+    <DTS:Property
+      DTS:DataType="8"
+      DTS:Name="EventFilter">
+      6,7,OnError,13,OnPostExecute,14,OnPostValidate,12,OnPreExecute,13,OnPreValidate,12,OnTaskFailed</DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnError"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnTaskFailed"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:SelectedLogProviders>
+      <DTS:SelectedLogProvider
+        DTS:InstanceID="{2611C3E1-FB5A-4D67-BB19-41E0AA6D32D1}" />
+    </DTS:SelectedLogProviders>
+  </DTS:LoggingOptions>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\EthnicGroup-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="EthnicGroup-Data Flow Task"
+      DTS:DTSID="{233BC795-6BE3-4732-AFD6-23967DE029AF}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="EthnicGroup-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:LoggingOptions
+        DTS:FilterKind="0" />
+      <DTS:PropertyExpression
+        DTS:Name="[EthnicGroup-Source].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="EthnicGroup-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_EthnicGroup"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].Columns[ETHNIC_GROUP_C]"
+                      cachedDataType="numeric"
+                      cachedName="ETHNIC_GROUP_C"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ETHNIC_GROUP_C]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ETHNIC_GROUP_C]" />
+                    <inputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].Columns[NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="NAME"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[NAME]" />
+                    <inputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].Columns[TITLE]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="TITLE"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[TITLE]" />
+                    <inputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].Columns[ABBR]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="ABBR"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ABBR]" />
+                    <inputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].Columns[INTERNAL_ID]"
+                      cachedDataType="numeric"
+                      cachedName="INTERNAL_ID"
+                      cachedPrecision="38"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ETHNIC_GROUP_C]"
+                      dataType="numeric"
+                      name="ETHNIC_GROUP_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="EthnicGroup-Source"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
+                  * FROM CLARITY.ZC_ETHNIC_GROUP</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">30</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ETHNIC_GROUP_C]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[ETHNIC_GROUP_C]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ETHNIC_GROUP_C]"
+                      name="ETHNIC_GROUP_C"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[NAME]"
+                      name="NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[TITLE]"
+                      name="TITLE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[ABBR]"
+                      name="ABBR"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[ETHNIC_GROUP_C]"
+                      dataType="numeric"
+                      name="ETHNIC_GROUP_C"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="NAME" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      name="TITLE" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      name="ABBR" />
+                    <externalMetadataColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output].ExternalColumns[INTERNAL_ID]"
+                      dataType="numeric"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ETHNIC_GROUP_C]"
+                      dataType="numeric"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ETHNIC_GROUP_C]"
+                      name="ETHNIC_GROUP_C"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[NAME]"
+                      name="NAME" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[TITLE]"
+                      name="TITLE" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ABBR]"
+                      name="ABBR" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      dataType="numeric"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[INTERNAL_ID]"
+                      name="INTERNAL_ID"
+                      precision="38" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\EthnicGroup-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{33092e3a-e47c-427d-b274-907e93b073ae}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.P_SSIS_Load_Lookup_Ethnicity"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{45a63ba0-334e-4e61-90fa-9ef7cc463963}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{5c7437c2-443e-4f3b-9ae4-a6951ef5cf64}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{ac5001a5-6b5f-48f4-af7e-2dde5318654e}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{dbfd9b84-c1f3-4e57-a7d4-1d83c640fb47}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="P_SSIS_TruncateTable_EthnicGroup"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{8625C9D1-932F-4A32-8025-D44C7F487112}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\EthnicGroup-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{5CEF35FB-3D30-4222-9654-4212679A8284}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{59CE4811-8B2D-4213-BDB3-3770B2FEEAEE}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{2CE8DBA0-013A-489E-A7C9-207C229C7E6E}"
+      DTS:From="Package\EthnicGroup-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{9404091A-C1C1-4978-9DB7-1F461AE32A48}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="178,42"
+          Id="Package\EthnicGroup-Data Flow Task"
+          TopLeft="126,260" />
+        <NodeLayout
+          Size="117,42"
+          Id="Package\Log End"
+          TopLeft="183,435" />
+        <NodeLayout
+          Size="128,42"
+          Id="Package\Log Query"
+          TopLeft="140,185" />
+        <NodeLayout
+          Size="122,42"
+          Id="Package\Log Start"
+          TopLeft="114,35" />
+        <NodeLayout
+          Size="150,42"
+          Id="Package\Truncate Table"
+          TopLeft="120,109" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="204,227">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="11,33"
+              Start="0,0"
+              End="11,25.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,12.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,12.5"
+                    Point2="0,16.5"
+                    Point3="4,16.5" />
+                  <mssgle:LineSegment
+                    End="7,16.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="7,16.5"
+                    Point2="11,16.5"
+                    Point3="11,20.5" />
+                  <mssgle:LineSegment
+                    End="11,25.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="175,77">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="20,32"
+              Start="0,0"
+              End="20,24.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,12" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,12"
+                    Point2="0,16"
+                    Point3="4,16" />
+                  <mssgle:LineSegment
+                    End="16,16" />
+                  <mssgle:CubicBezierSegment
+                    Point1="16,16"
+                    Point2="20,16"
+                    Point3="20,20" />
+                  <mssgle:LineSegment
+                    End="20,24.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="195,151">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="9,34"
+              Start="0,0"
+              End="9,26.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,13" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,13"
+                    Point2="0,17"
+                    Point3="4,17" />
+                  <mssgle:LineSegment
+                    End="5,17" />
+                  <mssgle:CubicBezierSegment
+                    Point1="5,17"
+                    Point2="9,17"
+                    Point3="9,21" />
+                  <mssgle:LineSegment
+                    End="9,26.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="161,42"
+          Id="Package\Load Main Table"
+          TopLeft="146,344" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="215,302">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="11.5,42"
+              Start="0,0"
+              End="11.5,34.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,17" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,17"
+                    Point2="0,21"
+                    Point3="4,21" />
+                  <mssgle:LineSegment
+                    End="7.5,21" />
+                  <mssgle:CubicBezierSegment
+                    Point1="7.5,21"
+                    Point2="11.5,21"
+                    Point3="11.5,25" />
+                  <mssgle:LineSegment
+                    End="11.5,34.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="226.5,386">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="15,49"
+              Start="0,0"
+              End="15,41.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.5"
+                    Point2="0,24.5"
+                    Point3="4,24.5" />
+                  <mssgle:LineSegment
+                    End="11,24.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="11,24.5"
+                    Point2="15,24.5"
+                    Point3="15,28.5" />
+                  <mssgle:LineSegment
+                    End="15,41.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\EthnicGroup-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="192,41.6"
+          Id="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination"
+          TopLeft="167,223" />
+        <NodeLayout
+          Size="172.8,41.6"
+          Id="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source"
+          TopLeft="199.16665578468,46.7999996745586" />
+        <EdgeLayout
+          Id="Package\EthnicGroup-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="285.56665578468,88.3999996745586">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-22.5666557846803,134.600000325441"
+              Start="0,0"
+              End="-22.5666557846803,127.100000325441">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,63.3000001627207" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,63.3000001627207"
+                    Point2="0,67.3000001627207"
+                    Point3="-4,67.3000001627207" />
+                  <mssgle:LineSegment
+                    End="-18.5666557846803,67.3000001627207" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-18.5666557846803,67.3000001627207"
+                    Point2="-22.5666557846803,67.3000001627207"
+                    Point3="-22.5666557846803,71.3000001627207" />
+                  <mssgle:LineSegment
+                    End="-22.5666557846803,127.100000325441" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\EthnicGroup-Data Flow Task\EthnicGroup-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\EthnicGroup-Data Flow Task\EthnicGroup-Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

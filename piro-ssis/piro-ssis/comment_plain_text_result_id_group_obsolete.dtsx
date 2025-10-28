@@ -1,0 +1,1764 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="4/1/2025 8:50:23 AM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="[computer name]"
+  DTS:CreatorName="[domain\user]"
+  DTS:DTSID="{642228D8-4E25-4E16-BCC0-ACE955F33D19}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="16.0.5685.0"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="comment_plain_text_result_id_group_obsolete"
+  DTS:PackageType="5"
+  DTS:VersionBuild="248"
+  DTS:VersionGUID="{10B8A1D0-71B5-49B1-AAA9-FFB57DBA1AD1}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:LogProviders>
+    <DTS:LogProvider
+      DTS:ConfigString="oledb-piro"
+      DTS:CreationName="Microsoft.LogProviderSQLServer"
+      DTS:Description="Writes log entries for events to a SQL Server database"
+      DTS:DTSID="{E0199549-6AFB-433C-96E6-88B4E2DB33CC}"
+      DTS:ObjectName="SSIS log provider for SQL Server">
+      <DTS:ObjectData>
+        <InnerObject />
+      </DTS:ObjectData>
+    </DTS:LogProvider>
+  </DTS:LogProviders>
+  <DTS:Variables>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{A08EC54B-87FB-4611-98F5-E512DB25DD28}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="end_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-06-31</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{D38DBD97-6444-448D-A4BF-C4E6D6F11A10}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'end', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_end">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'comment_plain_text_result_id_group_obsolete', '', '', 'end', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{7C19A279-FE5E-4222-BEB4-34E94E237FCB}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'query', '&quot; + REPLACE(@[User::query], &quot;'&quot;, &quot;''&quot;)  + &quot;', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_query">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'comment_plain_text_result_id_group_obsolete', '', '', 'query', ' Select 0 RANK_RES_GROUP,
+        COMMENTS.RESULT_ID, REQ_SPE.REQUISITION_ID, RES_COMPONENTS.COMPONENT_ID, MAX(COMP.NAME)
+        COMP_NAME,
+        CASE
+        WHEN MAX(COMP.NAME) LIKE ''%FINAL%'' THEN ''FINAL''
+        WHEN MAX(COMP.NAME) LIKE ''%GROSS%'' THEN ''GROSS''
+        WHEN MAX(COMP.NAME) LIKE ''%INTRAOP%'' THEN ''INTRAOP''
+        WHEN MAX(COMP.NAME) LIKE ''%COMMENT%'' THEN ''COMMENT''
+        WHEN MAX(COMP.NAME) LIKE ''%SYNOPTIC%'' THEN ''SYNOPTIC''
+        WHEN MAX(COMP.NAME) LIKE ''%RESIDENT%'' THEN ''RESIDENT''
+        WHEN MAX(COMP.NAME) LIKE ''%ADDEND%'' THEN ''ADDEND''
+        ELSE ''OTHER''
+        END COMMENT_TYPE,
+        MAX(COMPONENT_INST) COMPONENT_INST, MAX(COMMENTS.GROUP_LINE) GROUP_LINE,
+        MAX(COMMENTS.VALUE_LINE) VALUE_LINE, MAX( RES_SPE.SPECIMENS_ID) SPECIMENS_ID,
+
+        RTRIM(
+        XMLAGG(
+        XMLELEMENT(e, REGEXP_REPLACE( CASE COMMENTS.MULT_LN_VAL_STORAGE
+        WHEN '' '' Then chr(10)
+        Else COMMENTS.MULT_LN_VAL_STORAGE
+        End, ''[[:cntrl:]]'', '''') , '','').EXTRACT(''//text()'') ORDER BY COMMENTS.GROUP_LINE,
+        COMMENTS.VALUE_LINE).GetClobVal(), ''###'') AS MULT_LN_VAL_STORAGE
+
+        from CLARITY.RES_VAL_DATA_RM COMMENTS
+        JOIN CLARITY.RES_VAL_PTR_RM RES_VAL_PTR_RM ON COMMENTS.RESULT_ID = RES_VAL_PTR_RM.RESULT_ID
+        AND COMMENTS.GROUP_LINE = RES_VAL_PTR_RM.CMP_MULTILINE_VALUE
+        JOIN CLARITY.RES_COMPONENTS RES_COMPONENTS ON RES_VAL_PTR_RM.RESULT_ID =
+        RES_COMPONENTS.RESULT_ID AND RES_VAL_PTR_RM.GROUP_LINE = RES_COMPONENTS.LINE
+        JOIN CLARITY.RES_SPECIMENS RES_SPE on COMMENTS.RESULT_ID = RES_SPE.RESULT_ID
+        JOIN CLARITY.REQ_SPECIMEN REQ_SPE on RES_SPE.SPECIMENS_ID = REQ_SPE.REQ_SPECIMEN_ID
+        JOIN CLARITY.CLARITY_COMPONENT COMP ON RES_COMPONENTS.COMPONENT_ID = COMP.COMPONENT_ID
+
+        WHERE RES_SPE.LINE = 1
+        AND ROWNUM &lt; 20 AND TO_NUMBER(COMMENTS.RESULT_ID) &gt;= 440111860221 AND
+        TO_NUMBER(COMMENTS.RESULT_ID) &lt; 440111860222 GROUP BY REQ_SPE.REQUISITION_ID,
+        COMMENTS.RESULT_ID, RES_COMPONENTS.COMPONENT_ID', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{DDAEAB14-C2AE-418A-8C43-FC59BC943B31}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot;Insert into SSIS_LogCustom Values ('&quot; + @[System::MachineName] + &quot;' , '&quot; + @[System::PackageName] + &quot;', '', '', 'start', '', getdate())&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="log_start">
+      <DTS:VariableValue
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' ,
+        'comment_plain_text_result_id_group_obsolete', '', '', 'start', '', getdate())</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{935E9036-8559-4075-858B-804040BD7B68}"
+      DTS:EvaluateAsExpression="True"
+      DTS:Expression="&quot; Select 0 RANK_RES_GROUP, COMMENTS.RESULT_ID, REQ_SPE.REQUISITION_ID, RES_COMPONENTS.COMPONENT_ID, MAX(COMP.NAME) COMP_NAME,  &#xA;  CASE&#xA;            WHEN MAX(COMP.NAME) LIKE '%FINAL%' THEN 'FINAL'&#xA;            WHEN MAX(COMP.NAME) LIKE '%GROSS%' THEN 'GROSS'&#xA;            WHEN MAX(COMP.NAME) LIKE '%INTRAOP%' THEN 'INTRAOP'&#xA;            WHEN MAX(COMP.NAME) LIKE '%COMMENT%' THEN 'COMMENT'&#xA;            WHEN MAX(COMP.NAME) LIKE '%SYNOPTIC%' THEN 'SYNOPTIC'&#xA;            WHEN MAX(COMP.NAME) LIKE '%RESIDENT%' THEN 'RESIDENT'&#xA;            WHEN MAX(COMP.NAME) LIKE '%ADDEND%' THEN 'ADDEND'&#xA;        ELSE 'OTHER' &#xA;  END COMMENT_TYPE,&#xA;MAX(COMPONENT_INST) COMPONENT_INST, MAX(COMMENTS.GROUP_LINE) GROUP_LINE,  &#xA;MAX(COMMENTS.VALUE_LINE) VALUE_LINE, MAX( RES_SPE.SPECIMENS_ID) SPECIMENS_ID,&#xA;   &#xA;  RTRIM(&#xA;    XMLAGG(&#xA;        XMLELEMENT(e, REGEXP_REPLACE( CASE COMMENTS.MULT_LN_VAL_STORAGE &#xA;      WHEN '  ' Then chr(10) &#xA;      Else COMMENTS.MULT_LN_VAL_STORAGE &#xA;  End, '[[:cntrl:]]', '') , ',').EXTRACT('//text()') ORDER BY COMMENTS.GROUP_LINE, COMMENTS.VALUE_LINE).GetClobVal(), '###') AS MULT_LN_VAL_STORAGE     &#xA;   &#xA;from CLARITY.RES_VAL_DATA_RM COMMENTS&#xA;JOIN CLARITY.RES_VAL_PTR_RM  RES_VAL_PTR_RM ON COMMENTS.RESULT_ID = RES_VAL_PTR_RM.RESULT_ID AND COMMENTS.GROUP_LINE = RES_VAL_PTR_RM.CMP_MULTILINE_VALUE&#xA;JOIN CLARITY.RES_COMPONENTS  RES_COMPONENTS ON RES_VAL_PTR_RM.RESULT_ID = RES_COMPONENTS.RESULT_ID AND RES_VAL_PTR_RM.GROUP_LINE = RES_COMPONENTS.LINE&#xA;JOIN CLARITY.RES_SPECIMENS RES_SPE on COMMENTS.RESULT_ID = RES_SPE.RESULT_ID&#xA;JOIN CLARITY.REQ_SPECIMEN REQ_SPE on RES_SPE.SPECIMENS_ID = REQ_SPE.REQ_SPECIMEN_ID&#xA;JOIN CLARITY.CLARITY_COMPONENT COMP ON RES_COMPONENTS.COMPONENT_ID = COMP.COMPONENT_ID &#xA; &#xA;WHERE RES_SPE.LINE = 1 &#xA;&quot; &#xA; + (@[User::row_num] == &quot;&quot; ?  &quot;&quot; : &quot; AND ROWNUM &lt; &quot; +  @[User::row_num])  + (@[User::result_id_start] == &quot;&quot; ?  &quot;&quot; : &quot; AND TO_NUMBER(COMMENTS.RESULT_ID) &gt;= &quot; +  @[User::result_id_start])   + (@[User::result_id_end] == &quot;&quot; ?  &quot;&quot; : &quot; AND TO_NUMBER(COMMENTS.RESULT_ID) &lt; &quot; +  @[User::result_id_end]) + &quot; GROUP BY  REQ_SPE.REQUISITION_ID, COMMENTS.RESULT_ID, RES_COMPONENTS.COMPONENT_ID&quot;"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="query">
+      <DTS:VariableValue
+        DTS:DataType="8"> Select 0 RANK_RES_GROUP, COMMENTS.RESULT_ID, REQ_SPE.REQUISITION_ID,
+        RES_COMPONENTS.COMPONENT_ID, MAX(COMP.NAME) COMP_NAME,
+        CASE
+        WHEN MAX(COMP.NAME) LIKE '%FINAL%' THEN 'FINAL'
+        WHEN MAX(COMP.NAME) LIKE '%GROSS%' THEN 'GROSS'
+        WHEN MAX(COMP.NAME) LIKE '%INTRAOP%' THEN 'INTRAOP'
+        WHEN MAX(COMP.NAME) LIKE '%COMMENT%' THEN 'COMMENT'
+        WHEN MAX(COMP.NAME) LIKE '%SYNOPTIC%' THEN 'SYNOPTIC'
+        WHEN MAX(COMP.NAME) LIKE '%RESIDENT%' THEN 'RESIDENT'
+        WHEN MAX(COMP.NAME) LIKE '%ADDEND%' THEN 'ADDEND'
+        ELSE 'OTHER'
+        END COMMENT_TYPE,
+        MAX(COMPONENT_INST) COMPONENT_INST, MAX(COMMENTS.GROUP_LINE) GROUP_LINE,
+        MAX(COMMENTS.VALUE_LINE) VALUE_LINE, MAX( RES_SPE.SPECIMENS_ID) SPECIMENS_ID,
+
+        RTRIM(
+        XMLAGG(
+        XMLELEMENT(e, REGEXP_REPLACE( CASE COMMENTS.MULT_LN_VAL_STORAGE
+        WHEN ' ' Then chr(10)
+        Else COMMENTS.MULT_LN_VAL_STORAGE
+        End, '[[:cntrl:]]', '') , ',').EXTRACT('//text()') ORDER BY COMMENTS.GROUP_LINE,
+        COMMENTS.VALUE_LINE).GetClobVal(), '###') AS MULT_LN_VAL_STORAGE
+
+        from CLARITY.RES_VAL_DATA_RM COMMENTS
+        JOIN CLARITY.RES_VAL_PTR_RM RES_VAL_PTR_RM ON COMMENTS.RESULT_ID = RES_VAL_PTR_RM.RESULT_ID
+        AND COMMENTS.GROUP_LINE = RES_VAL_PTR_RM.CMP_MULTILINE_VALUE
+        JOIN CLARITY.RES_COMPONENTS RES_COMPONENTS ON RES_VAL_PTR_RM.RESULT_ID =
+        RES_COMPONENTS.RESULT_ID AND RES_VAL_PTR_RM.GROUP_LINE = RES_COMPONENTS.LINE
+        JOIN CLARITY.RES_SPECIMENS RES_SPE on COMMENTS.RESULT_ID = RES_SPE.RESULT_ID
+        JOIN CLARITY.REQ_SPECIMEN REQ_SPE on RES_SPE.SPECIMENS_ID = REQ_SPE.REQ_SPECIMEN_ID
+        JOIN CLARITY.CLARITY_COMPONENT COMP ON RES_COMPONENTS.COMPONENT_ID = COMP.COMPONENT_ID
+
+        WHERE RES_SPE.LINE = 1
+        AND ROWNUM &lt; 20 AND TO_NUMBER(COMMENTS.RESULT_ID) &gt;= 440111860221 AND
+        TO_NUMBER(COMMENTS.RESULT_ID) &lt; 440111860222 GROUP BY REQ_SPE.REQUISITION_ID,
+        COMMENTS.RESULT_ID, RES_COMPONENTS.COMPONENT_ID</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{F8F94624-E5DF-4501-81FC-574CC7C7E4EC}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="result_id_end">
+      <DTS:VariableValue
+        DTS:DataType="8">440111860222</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{AFAEA624-57B3-467E-8974-2767A354AB2F}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="result_id_start">
+      <DTS:VariableValue
+        DTS:DataType="8">440111860221</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{9F4F7DEB-9CB4-4F91-9925-49F9F1E6B6D9}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="row_num">
+      <DTS:VariableValue
+        DTS:DataType="8">20</DTS:VariableValue>
+    </DTS:Variable>
+    <DTS:Variable
+      DTS:CreationName=""
+      DTS:DTSID="{3FA4CE46-4F58-4475-8211-F7EFB8D9ED65}"
+      DTS:IncludeInDebugDump="2345"
+      DTS:Namespace="User"
+      DTS:ObjectName="start_date">
+      <DTS:VariableValue
+        DTS:DataType="8">2025-05-31</DTS:VariableValue>
+    </DTS:Variable>
+  </DTS:Variables>
+  <DTS:LoggingOptions
+    DTS:FilterKind="0"
+    DTS:LoggingMode="1">
+    <DTS:Property
+      DTS:DataType="8"
+      DTS:Name="EventFilter">
+      6,7,OnError,13,OnPostExecute,14,OnPostValidate,12,OnPreExecute,13,OnPreValidate,12,OnTaskFailed</DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnError"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPostValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreExecute"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnPreValidate"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:Property
+      DTS:EventName="OnTaskFailed"
+      DTS:Name="ColumnFilter">
+      <DTS:Property
+        DTS:Name="Computer">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="Operator">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceName">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="SourceID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="ExecutionID">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="MessageText">-1</DTS:Property>
+      <DTS:Property
+        DTS:Name="DataBytes">-1</DTS:Property>
+    </DTS:Property>
+    <DTS:SelectedLogProviders>
+      <DTS:SelectedLogProvider
+        DTS:InstanceID="{E0199549-6AFB-433C-96E6-88B4E2DB33CC}" />
+    </DTS:SelectedLogProviders>
+  </DTS:LoggingOptions>
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\CommentPlainTextGroup-Data Flow Task"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="CommentSynopticSpecimen-Data Flow Task"
+      DTS:DTSID="{5DB910C2-4EB4-4DD4-8F07-01916A25A574}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="CommentPlainTextGroup-Data Flow Task"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:LoggingOptions
+        DTS:FilterKind="0" />
+      <DTS:PropertyExpression
+        DTS:Name="[CommentPlainText-Source ADO].[SqlCommand]">@[User::query]</DTS:PropertyExpression>
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;2"
+              description="Loads data into an ADO.NET-compliant database that uses a database table or view. Load data into a new or existing table. For example, use an ADO.NET provider for ODBC to load data into an ODBC destination."
+              name="CommentPlainText-Destination"
+              usesDispositions="true"
+              version="2">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="The Destination database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  "dbo"."SSIS_CommentPlainTextGroup"</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
+                  expressionType="Notify"
+                  name="BatchSize">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out. A value of 0 indicates infinite time-out. "
+                  expressionType="Notify"
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to use the SqlBulkCopy interface to improve the performance of bulk insert operations. Only certain providers support this interface."
+                  expressionType="Notify"
+                  name="UseBulkInsertWhenPossible">true</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.ADONETDestination</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Connections[IDbConnection]"
+                  connectionManagerID="{C80770AC-9444-4E72-B547-4298EDF08473}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[piro]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input]"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="ADO NET Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[RANK_RES_GROUP]"
+                      cachedDataType="numeric"
+                      cachedName="RANK_RES_GROUP"
+                      cachedPrecision="38"
+                      cachedScale="4"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RANK_RES_GROUP]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RANK_RES_GROUP]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[RESULT_ID]"
+                      cachedDataType="wstr"
+                      cachedLength="18"
+                      cachedName="RESULT_ID"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RESULT_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RESULT_ID]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[REQUISITION_ID]"
+                      cachedDataType="numeric"
+                      cachedName="REQUISITION_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REQUISITION_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[COMPONENT_ID]"
+                      cachedDataType="numeric"
+                      cachedName="COMPONENT_ID"
+                      cachedPrecision="18"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[COMP_NAME]"
+                      cachedDataType="wstr"
+                      cachedLength="254"
+                      cachedName="COMP_NAME"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_NAME]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMP_NAME]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[COMMENT_TYPE]"
+                      cachedDataType="wstr"
+                      cachedLength="8"
+                      cachedName="COMMENT_TYPE"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMMENT_TYPE]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMMENT_TYPE]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[COMPONENT_INST]"
+                      cachedDataType="dbTimeStamp"
+                      cachedName="COMPONENT_INST"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_INST]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_INST]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[GROUP_LINE]"
+                      cachedDataType="wstr"
+                      cachedLength="40"
+                      cachedName="GROUP_LINE"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[GROUP_LINE]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[GROUP_LINE]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[VALUE_LINE]"
+                      cachedDataType="wstr"
+                      cachedLength="40"
+                      cachedName="VALUE_LINE"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[VALUE_LINE]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[VALUE_LINE]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[SPECIMENS_ID]"
+                      cachedDataType="wstr"
+                      cachedLength="18"
+                      cachedName="SPECIMENS_ID"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPECIMENS_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[SPECIMENS_ID]" />
+                    <inputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].Columns[MULT_LN_VAL_STORAGE]"
+                      cachedDataType="nText"
+                      cachedName="MULT_LN_VAL_STORAGE"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[MULT_LN_VAL_STORAGE]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[MULT_LN_VAL_STORAGE]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RESULT_ID]"
+                      dataType="numeric"
+                      name="RESULT_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[GROUP_LINE]"
+                      dataType="i4"
+                      name="GROUP_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[VALUE_LINE]"
+                      dataType="i4"
+                      name="VALUE_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMP_NAME]"
+                      dataType="wstr"
+                      length="1000"
+                      name="COMP_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMMENT_TYPE]"
+                      dataType="wstr"
+                      length="100"
+                      name="COMMENT_TYPE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_ID]"
+                      dataType="numeric"
+                      name="COMPONENT_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[COMPONENT_INST]"
+                      dataType="dbTimeStamp"
+                      name="COMPONENT_INST" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[SPECIMENS_ID]"
+                      dataType="numeric"
+                      name="SPECIMENS_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[REQUISITION_ID]"
+                      dataType="numeric"
+                      name="REQUISITION_ID"
+                      precision="38" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[MULT_LN_VAL_STORAGE]"
+                      dataType="wstr"
+                      length="2147483647"
+                      name="MULT_LN_VAL_STORAGE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input].ExternalColumns[RANK_RES_GROUP]"
+                      dataType="i4"
+                      name="RANK_RES_GROUP" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Outputs[ADO NET Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="ADO NET Destination Error Output"
+                  synchronousInputId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Outputs[ADO NET Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server.;Microsoft Corporation; Microsoft SQL Server; © Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="Consumes data from SQL Server, OLE DB, ODBC, or Oracle, using the corresponding .NET Framework data provider. Use a Transact-SQL statement to define the result set. For example, extract data from SQL Server with the .NET Framework data provider for SQL Server."
+              name="CommentPlainText-Source ADO"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Specifies the SQL statement used by the component to extract data."
+                  expressionType="Notify"
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
+                  Select 0 RANK_RES_GROUP, COMMENTS.RESULT_ID, REQ_SPE.REQUISITION_ID,
+                  RES_COMPONENTS.COMPONENT_ID, MAX(COMP.NAME) COMP_NAME,
+                  CASE
+                  WHEN MAX(COMP.NAME) LIKE '%FINAL%' THEN 'FINAL'
+                  WHEN MAX(COMP.NAME) LIKE '%GROSS%' THEN 'GROSS'
+                  WHEN MAX(COMP.NAME) LIKE '%INTRAOP%' THEN 'INTRAOP'
+                  WHEN MAX(COMP.NAME) LIKE '%COMMENT%' THEN 'COMMENT'
+                  WHEN MAX(COMP.NAME) LIKE '%SYNOPTIC%' THEN 'SYNOPTIC'
+                  WHEN MAX(COMP.NAME) LIKE '%RESIDENT%' THEN 'RESIDENT'
+                  WHEN MAX(COMP.NAME) LIKE '%ADDEND%' THEN 'ADDEND'
+                  ELSE 'OTHER'
+                  END COMMENT_TYPE,
+                  MAX(COMPONENT_INST) COMPONENT_INST, MAX(COMMENTS.GROUP_LINE) GROUP_LINE,
+                  MAX(COMMENTS.VALUE_LINE) VALUE_LINE, MAX( RES_SPE.SPECIMENS_ID) SPECIMENS_ID,
+                  RTRIM(
+                  XMLAGG(
+                  XMLELEMENT(e, REGEXP_REPLACE( CASE COMMENTS.MULT_LN_VAL_STORAGE
+                  WHEN ' ' Then chr(10)
+                  Else COMMENTS.MULT_LN_VAL_STORAGE
+                  End, '[[:cntrl:]]', '') , ',').EXTRACT('//text()') ORDER BY COMMENTS.GROUP_LINE,
+                  COMMENTS.VALUE_LINE).GetClobVal(), '###') AS MULT_LN_VAL_STORAGE
+
+                  from CLARITY.RES_VAL_DATA_RM COMMENTS
+                  JOIN CLARITY.RES_VAL_PTR_RM RES_VAL_PTR_RM ON COMMENTS.RESULT_ID =
+                  RES_VAL_PTR_RM.RESULT_ID AND COMMENTS.GROUP_LINE =
+                  RES_VAL_PTR_RM.CMP_MULTILINE_VALUE
+                  JOIN CLARITY.RES_COMPONENTS RES_COMPONENTS ON RES_VAL_PTR_RM.RESULT_ID =
+                  RES_COMPONENTS.RESULT_ID AND RES_VAL_PTR_RM.GROUP_LINE = RES_COMPONENTS.LINE
+                  JOIN CLARITY.RES_SPECIMENS RES_SPE on COMMENTS.RESULT_ID = RES_SPE.RESULT_ID
+                  JOIN CLARITY.REQ_SPECIMEN REQ_SPE on RES_SPE.SPECIMENS_ID =
+                  REQ_SPE.REQ_SPECIMEN_ID
+                  JOIN CLARITY.CLARITY_COMPONENT COMP ON RES_COMPONENTS.COMPONENT_ID =
+                  COMP.COMPONENT_ID
+
+                  WHERE RES_SPE.LINE = 1
+                  AND ROWNUM &lt; 20 AND TO_NUMBER(COMMENTS.RESULT_ID) &gt;= 440111860221 AND
+                  TO_NUMBER(COMMENTS.RESULT_ID) &lt; 440111860222 GROUP BY REQ_SPE.REQUISITION_ID,
+                  COMMENTS.RESULT_ID, RES_COMPONENTS.COMPONENT_ID</property>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether to allow non-string external columns to be implicitly converted to strings at the output columns."
+                  name="AllowImplicitStringConversion">true</property>
+                <property
+                  dataType="System.String"
+                  description="The Source database table name."
+                  expressionType="Notify"
+                  name="TableOrViewName"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the mode to retrieve external column information"
+                  name="AccessMode"
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
+                  2</property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Connections[IDbConnection]"
+                  connectionManagerID="{2718AAF0-582F-4FEE-805B-07F8B5E87505}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[clarity]"
+                  description="Managed connection manager"
+                  name="IDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output]"
+                  name="ADO NET Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RANK_RES_GROUP]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[RANK_RES_GROUP]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RANK_RES_GROUP]"
+                      name="RANK_RES_GROUP"
+                      precision="38"
+                      scale="4"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RESULT_ID]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[RESULT_ID]"
+                      length="18"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[RESULT_ID]"
+                      name="RESULT_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[REQUISITION_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[REQUISITION_ID]"
+                      name="REQUISITION_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]"
+                      dataType="numeric"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_ID]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_ID]"
+                      name="COMPONENT_ID"
+                      precision="18"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMP_NAME]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMP_NAME]"
+                      length="254"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMP_NAME]"
+                      name="COMP_NAME"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMMENT_TYPE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMMENT_TYPE]"
+                      length="8"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMMENT_TYPE]"
+                      name="COMMENT_TYPE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_INST]"
+                      dataType="dbTimeStamp"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_INST]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[COMPONENT_INST]"
+                      name="COMPONENT_INST"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[GROUP_LINE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[GROUP_LINE]"
+                      length="40"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[GROUP_LINE]"
+                      name="GROUP_LINE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[VALUE_LINE]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[VALUE_LINE]"
+                      length="40"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[VALUE_LINE]"
+                      name="VALUE_LINE"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[SPECIMENS_ID]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[SPECIMENS_ID]"
+                      length="18"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[SPECIMENS_ID]"
+                      name="SPECIMENS_ID"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[MULT_LN_VAL_STORAGE]"
+                      dataType="nText"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[MULT_LN_VAL_STORAGE]"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].Columns[MULT_LN_VAL_STORAGE]"
+                      name="MULT_LN_VAL_STORAGE"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[RANK_RES_GROUP]"
+                      dataType="numeric"
+                      name="RANK_RES_GROUP"
+                      precision="38"
+                      scale="4" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[RESULT_ID]"
+                      dataType="wstr"
+                      length="18"
+                      name="RESULT_ID" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[REQUISITION_ID]"
+                      dataType="numeric"
+                      name="REQUISITION_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_ID]"
+                      dataType="numeric"
+                      name="COMPONENT_ID"
+                      precision="18" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMP_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      name="COMP_NAME" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMMENT_TYPE]"
+                      dataType="wstr"
+                      length="8"
+                      name="COMMENT_TYPE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[COMPONENT_INST]"
+                      dataType="dbTimeStamp"
+                      name="COMPONENT_INST" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[GROUP_LINE]"
+                      dataType="numeric"
+                      name="GROUP_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[VALUE_LINE]"
+                      dataType="numeric"
+                      name="VALUE_LINE" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[SPECIMENS_ID]"
+                      dataType="wstr"
+                      length="18"
+                      name="SPECIMENS_ID" />
+                    <externalMetadataColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output].ExternalColumns[MULT_LN_VAL_STORAGE]"
+                      dataType="nText"
+                      name="MULT_LN_VAL_STORAGE" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output]"
+                  isErrorOut="true"
+                  name="ADO NET Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[RANK_RES_GROUP]"
+                      dataType="numeric"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[RANK_RES_GROUP]"
+                      name="RANK_RES_GROUP"
+                      precision="38"
+                      scale="4" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[RESULT_ID]"
+                      dataType="wstr"
+                      length="18"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[RESULT_ID]"
+                      name="RESULT_ID" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[REQUISITION_ID]"
+                      dataType="numeric"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[REQUISITION_ID]"
+                      name="REQUISITION_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMPONENT_ID]"
+                      dataType="numeric"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMPONENT_ID]"
+                      name="COMPONENT_ID"
+                      precision="18" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMP_NAME]"
+                      dataType="wstr"
+                      length="254"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMP_NAME]"
+                      name="COMP_NAME" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMMENT_TYPE]"
+                      dataType="wstr"
+                      length="8"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMMENT_TYPE]"
+                      name="COMMENT_TYPE" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMPONENT_INST]"
+                      dataType="dbTimeStamp"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[COMPONENT_INST]"
+                      name="COMPONENT_INST" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[GROUP_LINE]"
+                      dataType="wstr"
+                      length="40"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[GROUP_LINE]"
+                      name="GROUP_LINE" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[VALUE_LINE]"
+                      dataType="wstr"
+                      length="40"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[VALUE_LINE]"
+                      name="VALUE_LINE" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[SPECIMENS_ID]"
+                      dataType="wstr"
+                      length="18"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[SPECIMENS_ID]"
+                      name="SPECIMENS_ID" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[MULT_LN_VAL_STORAGE]"
+                      dataType="nText"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[MULT_LN_VAL_STORAGE]"
+                      name="MULT_LN_VAL_STORAGE" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\CommentPlainTextGroup-Data Flow Task.Paths[ADO NET Source Output]"
+              endId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination.Inputs[ADO NET Destination Input]"
+              name="ADO NET Source Output"
+              startId="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO.Outputs[ADO NET Source Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Load Main Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{7646EDE7-3BE4-4DA3-81AD-1BC4B620A4D9}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Load Main Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="EXEC dbo.P_SSIS_Load_CaseCommentPlain_Direct"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log End"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{78579B17-384E-4814-8C71-81299B3CF6DF}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log End"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_end"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Query"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{1A4DDE66-E857-4CD0-AF94-7E887C21D3E3}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Query"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_query"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Log Start"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{3AF32478-9EEA-46BE-AA7E-28486E9317EC}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Log Start"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStmtSourceType="Variable"
+          SQLTask:SqlStatementSource="User::log_start"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Truncate Table"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{7E46CA0C-AFF5-4B66-BA93-C0665ACE7E41}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Truncate Table"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2016; © 2015 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
+          SQLTask:SqlStatementSource="P_SSIS_TruncateTable_CommentPlainText"
+          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Variables-Set"
+      DTS:CreationName="Microsoft.ScriptTask"
+      DTS:Description="Script Task"
+      DTS:DTSID="{E1B91875-C9E6-4BE3-858C-8BB72A590711}"
+      DTS:ExecutableType="Microsoft.ScriptTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Variables-Set"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ScriptProject
+          Name="ST_b13d09a382c943e582e2ae95e932d01d"
+          VSTAMajorVersion="14"
+          VSTAMinorVersion="0"
+          Language="CSharp"
+          ReadOnlyVariables="start_date_main,row_num_main,result_id_start_main,result_id_end_main,end_date_main"
+          ReadWriteVariables="start_date,row_num,result_id_start,result_id_end,end_date">
+          <ProjectItem
+            Name="Properties\AssemblyInfo.cs"
+            Encoding="UTF8"><![CDATA[using System.Reflection;
+using System.Runtime.CompilerServices;
+
+//
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+//
+[assembly: AssemblyTitle("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("ST_eb712b52076c41a2ab60a34b0214c004")]
+[assembly: AssemblyCopyright("Copyright @  2025")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+//
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Revision and Build Numbers
+// by using the '*' as shown below:
+
+[assembly: AssemblyVersion("1.0.*")]]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.resx"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+</root>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.settings"
+            Encoding="UTF8"><![CDATA[<?xml version='1.0' encoding='iso-8859-1'?>
+<SettingsFile xmlns="uri:settings" CurrentProfile="(Default)">
+  <Profiles>
+    <Profile Name="(Default)" />
+  </Profiles>
+  <Settings />
+</SettingsFile>]]></ProjectItem>
+          <ProjectItem
+            Name="ScriptMain.cs"
+            Encoding="UTF8"><![CDATA[#region Help:  Introduction to the script task
+/* The Script Task allows you to perform virtually any operation that can be accomplished in
+ * a .Net application within the context of an Integration Services control flow.
+ *
+ * Expand the other regions which have "Help" prefixes for examples of specific ways to use
+ * Integration Services features within this script task. */
+#endregion
+
+
+#region Namespaces
+using System;
+using System.Data;
+using Microsoft.SqlServer.Dts.Runtime;
+using System.Windows.Forms;
+#endregion
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004
+{
+    /// <summary>
+    /// ScriptMain is the entry point class of the script.  Do not change the name, attributes,
+    /// or parent of this class.
+    /// </summary>
+	[Microsoft.SqlServer.Dts.Tasks.ScriptTask.SSISScriptTaskEntryPointAttribute]
+	public partial class ScriptMain : Microsoft.SqlServer.Dts.Tasks.ScriptTask.VSTARTScriptObjectModelBase
+	{
+        #region Help:  Using Integration Services variables and parameters in a script
+        /* To use a variable in this script, first ensure that the variable has been added to
+         * either the list contained in the ReadOnlyVariables property or the list contained in
+         * the ReadWriteVariables property of this script task, according to whether or not your
+         * code needs to write to the variable.  To add the variable, save this script, close this instance of
+         * Visual Studio, and update the ReadOnlyVariables and
+         * ReadWriteVariables properties in the Script Transformation Editor window.
+         * To use a parameter in this script, follow the same steps. Parameters are always read-only.
+         *
+         * Example of reading from a variable:
+         *  DateTime startTime = (DateTime) Dts.Variables["System::StartTime"].Value;
+         *
+         * Example of writing to a variable:
+         *  Dts.Variables["User::myStringVariable"].Value = "new value";
+         *
+         * Example of reading from a package parameter:
+         *  int batchId = (int) Dts.Variables["$Package::batchId"].Value;
+         *
+         * Example of reading from a project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].Value;
+         *
+         * Example of reading from a sensitive project parameter:
+         *  int batchId = (int) Dts.Variables["$Project::batchId"].GetSensitiveValue();
+         * */
+
+        #endregion
+
+        #region Help:  Firing Integration Services events from a script
+        /* This script task can fire events for logging purposes.
+         *
+         * Example of firing an error event:
+         *  Dts.Events.FireError(18, "Process Values", "Bad value", "", 0);
+         *
+         * Example of firing an information event:
+         *  Dts.Events.FireInformation(3, "Process Values", "Processing has started", "", 0, ref fireAgain)
+         *
+         * Example of firing a warning event:
+         *  Dts.Events.FireWarning(14, "Process Values", "No values received for input", "", 0);
+         * */
+        #endregion
+
+        #region Help:  Using Integration Services connection managers in a script
+        /* Some types of connection managers can be used in this script task.  See the topic
+         * "Working with Connection Managers Programatically" for details.
+         *
+         * Example of using an ADO.Net connection manager:
+         *  object rawConnection = Dts.Connections["Sales DB"].AcquireConnection(Dts.Transaction);
+         *  SqlConnection myADONETConnection = (SqlConnection)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Sales DB"].ReleaseConnection(rawConnection);
+         *
+         * Example of using a File connection manager
+         *  object rawConnection = Dts.Connections["Prices.zip"].AcquireConnection(Dts.Transaction);
+         *  string filePath = (string)rawConnection;
+         *  //Use the connection in some code here, then release the connection
+         *  Dts.Connections["Prices.zip"].ReleaseConnection(rawConnection);
+         * */
+        #endregion
+
+
+		/// <summary>
+        /// This method is called when this script task executes in the control flow.
+        /// Before returning from this method, set the value of Dts.TaskResult to indicate success or failure.
+        /// To open Help, press F1.
+        /// </summary>
+		public void Main()
+		{
+            // TODO: Add your code here
+            Dts.Variables["start_date"].Value = Dts.Variables["start_date_main"].Value;
+            Dts.Variables["end_date"].Value = Dts.Variables["end_date_main"].Value;
+            Dts.Variables["row_num"].Value = Dts.Variables["row_num_main"].Value;
+
+            Dts.Variables["result_id_start"].Value = Dts.Variables["result_id_start_main"].Value;
+            Dts.Variables["result_id_end"].Value = Dts.Variables["result_id_end_main"].Value;
+            //Default the result_id_end to 10M
+            ////string result_id_start_str = Dts.Variables["result_id_start"].Value == null ? ""  : Dts.Variables["result_id_start"].Value.ToString();
+            ////long result_id_start = 0;
+            ////if (long.TryParse(result_id_start_str, out result_id_start))
+            ////{
+            ////    Dts.Variables["result_id_end"].Value = result_id_start + 10000000;
+            ////} else
+            ////{
+            ////   Dts.Variables["result_id_end"].Value = "";
+            ////}
+
+
+            //MessageBox.Show(Dts.Variables["start_date"].Value.ToString());
+            Dts.TaskResult = (int)ScriptResults.Success;
+		}
+
+        #region ScriptResults declaration
+        /// <summary>
+        /// This enum provides a convenient shorthand within the scope of this class for setting the
+        /// result of the script.
+        ///
+        /// This code was generated automatically.
+        /// </summary>
+        enum ScriptResults
+        {
+            Success = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Success,
+            Failure = Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Failure
+        };
+        #endregion
+
+	}
+}]]></ProjectItem>
+          <ProjectItem
+            Name="Project"
+            Encoding="UTF16LE"><![CDATA[<?xml version="1.0" encoding="UTF-16" standalone="yes"?>
+<c:Project xmlns:c="http://schemas.microsoft.com/codeprojectml/2010/08/main" xmlns:msb="http://schemas.microsoft.com/developer/msbuild/2003" runtimeVersion="3.0" schemaVersion="1.0">
+	<msb:PropertyGroup>
+		<msb:CodeName>ST_eb712b52076c41a2ab60a34b0214c004</msb:CodeName>
+		<msb:Language>msBuild</msb:Language>
+		<msb:DisplayName>ST_eb712b52076c41a2ab60a34b0214c004</msb:DisplayName>
+		<msb:ProjectId>{F5728C75-71DE-4670-BB4B-1F18C64576BE}</msb:ProjectId>
+	</msb:PropertyGroup>
+	<msb:ItemGroup>
+		<msb:Project Include="ST_b13d09a382c943e582e2ae95e932d01d.csproj"/>
+		<msb:File Include="Properties\AssemblyInfo.cs"/>
+		<msb:File Include="Properties\Settings.settings"/>
+		<msb:File Include="Properties\Resources.resx"/>
+		<msb:File Include="Properties\Resources.Designer.cs"/>
+		<msb:File Include="Properties\Settings.Designer.cs"/>
+		<msb:File Include="ScriptMain.cs"/>
+	</msb:ItemGroup>
+</c:Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Settings.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Settings.get_Default():ST_eb712b52076c41a2ab60a34b0214c004.Properties.Sett" +
+    "ings")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
+
+        [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
+        private static Settings defaultInstance = new Settings();
+
+        public static Settings Default {
+            get {
+                return defaultInstance;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <ProjectItem
+            Name="ST_b13d09a382c943e582e2ae95e932d01d.csproj"
+            Encoding="UTF8"><![CDATA[<?xml version="1.0" encoding="utf-8"?><Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup><ProjectTypeGuids>{30D016F9-3734-4E33-A861-5E7D899E18F3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids><Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration><Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform><ProductVersion>8.0.30703</ProductVersion><SchemaVersion>2.0</SchemaVersion><ProjectGuid>{1e7aea78-f9ec-4063-8f0c-85107d1eea8d}</ProjectGuid><OutputType>Library</OutputType><AppDesignerFolder>Properties</AppDesignerFolder><RootNamespace>ST_eb712b52076c41a2ab60a34b0214c004</RootNamespace><AssemblyName>ST_b13d09a382c943e582e2ae95e932d01d</AssemblyName><TargetFrameworkVersion>v4.5</TargetFrameworkVersion><FileAlignment>512</FileAlignment><ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Debug' "><DebugSymbols>true</DebugSymbols><DebugType>full</DebugType><Optimize>false</Optimize><OutputPath>.\bin\Debug\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>DEBUG;TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><PropertyGroup Condition=" '$(Configuration)' == 'Release' "><DebugSymbols>false</DebugSymbols><Optimize>true</Optimize><OutputPath>.\bin\Release\</OutputPath><EnableUnmanagedDebugging>false</EnableUnmanagedDebugging><DefineConstants>TRACE</DefineConstants><ErrorReport>prompt</ErrorReport><WarningLevel>4</WarningLevel></PropertyGroup><ItemGroup><Reference Include="System" /><Reference Include="System.Data" /><Reference Include="System.Windows.Forms" /><Reference Include="System.Xml" /><Reference Include="Microsoft.SqlServer.ManagedDTS, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /><Reference Include="Microsoft.SqlServer.ScriptTask, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91" /></ItemGroup><ItemGroup><AppDesigner Include="Properties\" /><Compile Include="Properties\AssemblyInfo.cs"><SubType>Code</SubType></Compile><EmbeddedResource Include="Properties\Resources.resx"><Generator>ResXFileCodeGenerator</Generator><LastGenOutput>Resources.Designer.cs</LastGenOutput></EmbeddedResource><Compile Include="Properties\Resources.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Resources.resx</DependentUpon></Compile><None Include="Properties\Settings.settings"><Generator>SettingsSingleFileGenerator</Generator><LastGenOutput>Settings.Designer.cs</LastGenOutput></None><Compile Include="Properties\Settings.Designer.cs"><AutoGen>True</AutoGen><DependentUpon>Settings.settings</DependentUpon></Compile><Compile Include="ScriptMain.cs"><SubType>Code</SubType></Compile></ItemGroup><!-- Include the build rules for a C# project.--><Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" /><ProjectExtensions><VisualStudio><FlavorProperties GUID="{30D016F9-3734-4E33-A861-5E7D899E18F3}"><ProjectProperties HostName="ScriptTask" HostPackage="{B3A685AA-7EAF-4BC6-9940-57959FA5AC07}" ApplicationType="usd" Language="cs" TemplatesPath="" DebugInfoCommandLine="" DebugInfoWorkingDir="" IconImageList="" /><Host Name="ScriptTask" GeneratedNamespace="$safeprojectname" IconIndex=""></Host><ProjectClient><HostIdentifier>SSIS_ST130</HostIdentifier></ProjectClient></FlavorProperties></VisualStudio></ProjectExtensions></Project>]]></ProjectItem>
+          <ProjectItem
+            Name="Properties\Resources.Designer.cs"
+            Encoding="UTF8"><![CDATA[//------------------------------------------------------------------------------
+// <auto-generated>
+//     This code was generated by a tool.
+//
+//     Changes to this file may cause incorrect behavior and will be lost if
+//     the code is regenerated.
+// </auto-generated>
+//------------------------------------------------------------------------------
+
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_ResourceManager():System.Resources.Resou" +
+    "rceManager")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.get_Culture():System.Globalization.CultureIn" +
+    "fo")]
+[assembly: global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Scope="member", Target="ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources.set_Culture(System.Globalization.CultureInfo" +
+    "):Void")]
+
+namespace ST_eb712b52076c41a2ab60a34b0214c004.Properties {
+
+
+    /// <summary>
+    ///   A strongly-typed resource class, for looking up localized strings, etc.
+    /// </summary>
+    // This class was auto-generated by the StronglyTypedResourceBuilder
+    // class via a tool like ResGen or Visual Studio.
+    // To add or remove a member, edit your .ResX file then rerun ResGen
+    // with the /str option, or rebuild your VS project.
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+    internal class Resources {
+
+        private static global::System.Resources.ResourceManager resourceMan;
+
+        private static global::System.Globalization.CultureInfo resourceCulture;
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
+        internal Resources() {
+        }
+
+        /// <summary>
+        ///   Returns the cached ResourceManager instance used by this class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if ((resourceMan == null)) {
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ST_eb712b52076c41a2ab60a34b0214c004.Properties.Resources", typeof(Resources).Assembly);
+                    resourceMan = temp;
+                }
+                return resourceMan;
+            }
+        }
+
+        /// <summary>
+        ///   Overrides the current thread's CurrentUICulture property for all
+        ///   resource lookups using this strongly typed resource class.
+        /// </summary>
+        [global::System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
+                return resourceCulture;
+            }
+            set {
+                resourceCulture = value;
+            }
+        }
+    }
+}]]></ProjectItem>
+          <BinaryItem
+            Name="ST_b13d09a382c943e582e2ae95e932d01d.dll">[binary item]</BinaryItem>
+        </ScriptProject>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:PrecedenceConstraints>
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint]"
+      DTS:CreationName=""
+      DTS:DTSID="{1B7975A7-A29E-402D-B2D9-993CDE27AE15}"
+      DTS:From="Package\Variables-Set"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint"
+      DTS:To="Package\Log Query" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 1]"
+      DTS:CreationName=""
+      DTS:DTSID="{A730C437-9F81-4BFB-BF06-686D9C691B6C}"
+      DTS:From="Package\Log Query"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 1"
+      DTS:To="Package\CommentPlainTextGroup-Data Flow Task" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 2]"
+      DTS:CreationName=""
+      DTS:DTSID="{9423B930-85F1-40AC-BF15-6346AE1DDF26}"
+      DTS:From="Package\Log Start"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 2"
+      DTS:To="Package\Truncate Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 3]"
+      DTS:CreationName=""
+      DTS:DTSID="{D92C78DA-0D5A-482F-9DB4-06CC8AF1D392}"
+      DTS:From="Package\Truncate Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 3"
+      DTS:To="Package\Variables-Set" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 4]"
+      DTS:CreationName=""
+      DTS:DTSID="{F1F154BB-A081-4ED0-AB7B-8E911B75806A}"
+      DTS:From="Package\CommentPlainTextGroup-Data Flow Task"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 4"
+      DTS:To="Package\Load Main Table" />
+    <DTS:PrecedenceConstraint
+      DTS:refId="Package.PrecedenceConstraints[Constraint 5]"
+      DTS:CreationName=""
+      DTS:DTSID="{6C756AEF-3544-4D24-93EB-9FA5A9CA10F6}"
+      DTS:From="Package\Load Main Table"
+      DTS:LogicalAnd="True"
+      DTS:ObjectName="Constraint 5"
+      DTS:To="Package\Log End" />
+  </DTS:PrecedenceConstraints>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="272,41.6"
+          Id="Package\CommentPlainTextGroup-Data Flow Task"
+          TopLeft="200,350" />
+        <NodeLayout
+          Size="156,41.6"
+          Id="Package\Load Main Table"
+          TopLeft="235,415" />
+        <NodeLayout
+          Size="116.8,41.6"
+          Id="Package\Log End"
+          TopLeft="249,486" />
+        <NodeLayout
+          Size="128,41.6"
+          Id="Package\Log Query"
+          TopLeft="212,266" />
+        <NodeLayout
+          Size="121.6,41.6"
+          Id="Package\Log Start"
+          TopLeft="218,23" />
+        <NodeLayout
+          Size="150.4,41.6"
+          Id="Package\Truncate Table"
+          TopLeft="216,95" />
+        <NodeLayout
+          Size="140.8,41.6"
+          Id="Package\Variables-Set"
+          TopLeft="201,178" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="273.75,220">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,46"
+              Start="0,0"
+              End="0,38.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,38.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="276,308">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="60,42"
+              Start="0,0"
+              End="60,34.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,17" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,17"
+                    Point2="0,21"
+                    Point3="4,21" />
+                  <mssgle:LineSegment
+                    End="56,21" />
+                  <mssgle:CubicBezierSegment
+                    Point1="56,21"
+                    Point2="60,21"
+                    Point3="60,25" />
+                  <mssgle:LineSegment
+                    End="60,34.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="279,65">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="12,30"
+              Start="0,0"
+              End="12,22.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,11" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,11"
+                    Point2="0,15"
+                    Point3="4,15" />
+                  <mssgle:LineSegment
+                    End="8,15" />
+                  <mssgle:CubicBezierSegment
+                    Point1="8,15"
+                    Point2="12,15"
+                    Point3="12,19" />
+                  <mssgle:LineSegment
+                    End="12,22.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 3]"
+          TopLeft="291,137">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-19.5,41"
+              Start="0,0"
+              End="-19.5,33.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,16.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,16.5"
+                    Point2="0,20.5"
+                    Point3="-4,20.5" />
+                  <mssgle:LineSegment
+                    End="-15.5,20.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-15.5,20.5"
+                    Point2="-19.5,20.5"
+                    Point3="-19.5,24.5" />
+                  <mssgle:LineSegment
+                    End="-19.5,33.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 4]"
+          TopLeft="336,392">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-23,23"
+              Start="0,0"
+              End="-23,15.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,7.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,7.5"
+                    Point2="0,11.5"
+                    Point3="-4,11.5" />
+                  <mssgle:LineSegment
+                    End="-19,11.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-19,11.5"
+                    Point2="-23,11.5"
+                    Point3="-23,15.5" />
+                  <mssgle:LineSegment
+                    End="-23,15.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 5]"
+          TopLeft="310.25,457">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,29"
+              Start="0,0"
+              End="0,21.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,21.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\CommentPlainTextGroup-Data Flow Task">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="228,42"
+          Id="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO"
+          TopLeft="122,55" />
+        <NodeLayout
+          Size="224,42"
+          Id="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination"
+          TopLeft="116,220" />
+        <EdgeLayout
+          Id="Package\CommentPlainTextGroup-Data Flow Task.Paths[ADO NET Source Output]"
+          TopLeft="236,97">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-8,123"
+              Start="0,0"
+              End="-8,115.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,57.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,57.5"
+                    Point2="0,61.5"
+                    Point3="-4,61.5" />
+                  <mssgle:LineSegment
+                    End="-4,61.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-4,61.5"
+                    Point2="-8,61.5"
+                    Point3="-8,65.5" />
+                  <mssgle:LineSegment
+                    End="-8,115.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\CommentPlainTextGroup-Data Flow Task\CommentPlainText-Source ADO">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

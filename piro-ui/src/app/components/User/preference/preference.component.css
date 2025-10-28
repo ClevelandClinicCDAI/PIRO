@@ -1,0 +1,14 @@
+.form-group {
+    padding-top: 20px;
+}
+
+
+.form-control:focus{
+    border-color:#ced4da !important;
+    box-shadow: none !important;
+    background-image: none;
+}
+
+.invalid-feedback{
+    display: block;
+}

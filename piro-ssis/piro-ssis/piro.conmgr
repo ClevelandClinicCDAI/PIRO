@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="piro"
+  DTS:DTSID="{C80770AC-9444-4E72-B547-4298EDF08473}"
+  DTS:CreationName="ADO.NET:System.Data.SqlClient.SqlConnection, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectionString="Data Source=[host\instance];User ID=piro_etl;Initial Catalog=PIRO;Persist Security Info=True;Application Name=SSIS-piro-ssis-{C80770AC-9444-4E72-B547-4298EDF08473}[host\instance].piro_etl;">
+      <DTS:Password
+        DTS:Name="Password"
+        Sensitive="1">[password]</DTS:Password>
+    </DTS:ConnectionManager>
+  </DTS:ObjectData>
+</DTS:ConnectionManager>

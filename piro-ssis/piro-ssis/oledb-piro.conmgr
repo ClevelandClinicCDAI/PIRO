@@ -1,0 +1,17 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="oledb-piro"
+  DTS:DTSID="{CB222D65-7204-4450-9284-8470275E9AE1}"
+  DTS:CreationName="OLEDB">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectRetryCount="1"
+      DTS:ConnectRetryInterval="5"
+      DTS:ConnectionString="Data Source=[host\instance];User ID=piro_etl;Initial Catalog=PIRO;Provider=SQLOLEDB.1;Persist Security Info=True;Connect Timeout=15;Auto Translate=False;Application Name=SSIS-piro-ssis-{CB222D65-7204-4450-9284-8470275E9AE1}[host\instance].PIRO;">
+      <DTS:Password
+        DTS:Name="Password"
+        Sensitive="1">
+        [password]</DTS:Password>
+    </DTS:ConnectionManager>
+  </DTS:ObjectData>
+</DTS:ConnectionManager>

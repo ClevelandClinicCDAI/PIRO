@@ -1,0 +1,7 @@
+.toaster {
+    z-index: 2000;
+    left:50%;
+    transform: translate(-50%, 0px);
+    padding-top: 0px !important;
+    margin-top: -5px !important;
+  }

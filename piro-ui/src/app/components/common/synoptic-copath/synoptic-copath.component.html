@@ -1,0 +1,13 @@
+<div *ngIf="isModal" class="modal-header">
+    <h4 class="modal-title">Synoptic Text</h4>
+    <button type="button" class="close btn-close" aria-label="Close" (click)="closeModal()"></button>
+</div>
+<div class="modal-body">
+    <div *ngIf="!isModal">
+        <div class="overlay show" *ngIf="!contentLoaded"></div>
+        <div class="spanner show" *ngIf="!contentLoaded">
+            <div class="loader"></div>
+        </div>
+    </div> 
+    <div [app-commenttext]="{textComments: coPathSynopticComments}"></div>
+</div>

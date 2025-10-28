@@ -1,0 +1,88 @@
+fieldset {    
+    border: 1px solid silver;
+    padding: 8px;    
+    border-radius: 8px;
+}
+
+legend {
+    padding: 2px;
+    color: gray;
+}
+
+.category-box {
+    padding-bottom: 10px;
+}
+
+.category-check {
+    --bs-btn-padding-x: 0.3rem;
+    --bs-btn-padding-y: 0.125rem;
+    background-color: grey;
+}
+
+.field-li {
+    width: 33%;
+}
+
+.field-ul {
+    padding-left: 50px;;
+}
+
+/* LOADING */
+
+.card-skeleton {
+    width: 100%;
+    height:15vh;
+    margin-bottom: 10px;
+    /* position: relative;
+     float: left;
+    top: 0;
+    left: 0; */
+    transition: all .3s ease-in-out;
+    background: #fff;
+    z-index: 10;
+    padding: 15px;
+    opacity: 1;
+    border-radius: 5px;
+}
+
+.card-skeleton.hidden {
+    transition: all .3s ease-in-out;
+    opacity: 0;
+    height: 0;
+    padding: 0
+}
+
+.card-skeleton-img {
+    width: 100%;
+    height: 0px;
+    background: #e6e6e6;
+    display: block
+}
+
+.animated-background {
+    will-change: transform;
+    animation: placeHolderShimmer 1s linear infinite forwards;
+    -webkit-backface-visibility: hidden;
+    background: #e6e6e6;
+    background: linear-gradient(90deg, #eee 8%, #ddd 18%, #eee 33%);
+    /* background-size: 800px 104px; */
+    height: 100%;
+    position: relative
+}
+
+.skel-mask-container {
+    position: relative;
+    padding: 10px 10px 10px 10px;
+}
+
+.skel-mask {
+    background: #fff;
+    position: absolute;
+    z-index: 200
+}
+
+.skel-mask-container legend {
+    color: grey;
+}
+
+

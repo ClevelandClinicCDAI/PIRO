@@ -1,0 +1,19 @@
+<dataConfig>
+
+    <dataSource type="JdbcDataSource"
+        driver="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+        url="jdbc:sqlserver://[host]\[instance];databaseName=[database_name];"
+        user="[username]"
+        password="[password]"
+        encryptKeyFile="[path]/dih-encryptionkey"
+    />
+
+    <document>
+        <entity name="PIROStaffName"
+            pk="id"
+            query="Select Pathologist as StaffName from [dbo].[CaseStaffSolr_Delta] order by Pathologist">
+            <field column="StaffName" name="id" />
+            <field column="StaffName" name="staffname" />
+        </entity>
+    </document>
+</dataConfig>

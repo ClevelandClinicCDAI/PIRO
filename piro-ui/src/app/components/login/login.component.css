@@ -1,0 +1,67 @@
+.container {
+  padding: 2rem 0rem;
+}
+
+@media (min-width: 576px){
+  .modal-dialog {
+    max-width: 400px;
+  }
+  .modal-content {
+    padding: 1rem;
+  }
+}
+
+.modal-header {
+  /* .close { */
+    margin-top: -1.5rem;
+  /* } */
+}
+
+.form-title {
+  margin: -2rem 0rem 2rem;
+}
+
+.btn-round {
+  border-radius: 3rem;
+}
+
+.delimiter {
+  padding: 1rem;  
+}
+  
+
+.signup-section {
+  padding: 0.3rem 0rem;
+}
+
+
+
+#login img{
+  margin: 10px 0;
+}
+#login .center {
+  text-align: center;
+}
+
+#login .login {
+  max-width: 300px;
+  margin: 35px auto;
+}
+
+#login .login-form{
+  padding:0px 25px;
+}
+
+.login_btn{
+  width: 100%;
+}
+
+.form-control:focus{
+  border-color:#ced4da !important;
+  box-shadow: none !important;
+  background-image: none;
+}
+
+.invalid-feedback{
+  display: block;
+}
