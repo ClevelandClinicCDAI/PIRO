@@ -27,3 +27,54 @@ The SSIS jobs are triggered via our Airflow server (DAG names: 'ssis_delta_load_
 
 # Airflow
 We use an instance of the Apache Airflow application as a job scheduling tool for PIRO.  It is used primarily to load data: from the Clarity database into PIRO's SQL Server instance, and from PIRO's SQL Server instance into Solr, along with other duties.
+
+## Docker Compose Quickstart
+
+You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the Angular UI) with Docker Compose. The new workflow lives at the repository root and relies on the files in `docker-compose.yml` plus the helper assets inside the `docker/` directory.
+
+### Prerequisites
+
+- Docker Desktop **or** the Docker Engine CLI plus the Compose plugin (`docker compose` command).
+- ~8 GB of free RAM (SQL Server + Solr are memory hungry).
+
+### One-time bootstrap with sample data
+
+```bash
+# from the repo root
+PIRO_LOAD_SAMPLE_DATA=true \
+PIRO_MSSQL_SA_PASSWORD='ChooseA$trongPassword' \
+docker compose up --build
+```
+
+What happens:
+
+- `sqlserver` starts Microsoft SQL Server 2022 and listens on `localhost:1433`.
+- `solr` builds from the checked-in PIRO config sets and exposes the admin UI on `http://localhost:8983`.
+- `sample-data` waits for both services, deploys every schema script from `piro-sql`, and (optionally) loads the curated demo dataset into SQL Server and Solr when `PIRO_LOAD_SAMPLE_DATA=true`.
+- `api` builds the FastAPI service with ODBC Driver 18 and exposes it on `http://localhost:8001` (the UI proxies to it via `/api`).
+- `ui` builds the Angular application and serves it via nginx on `http://localhost:8080`.
+
+Default login for the demo data is `demo.user` with any password (the API trusts usernames listed in `ACCESS_TOKEN_TEST_USER` for local use). You can change the hard-coded secrets by setting:
+
+- `PIRO_ACCESS_TOKEN_SECRET` – JWT signing secret (defaults to `change-me`).
+- `PIRO_MSSQL_SA_PASSWORD` – SQL Server `sa` password (defaults to `P1ro!LocalDev`).
+- `PIRO_BOOTSTRAP_DB` – set to `false` to keep the existing database files and skip schema re-deployment on the next `docker compose up`.
+- `PIRO_FORCE_RESET` – when `true`, forces the database to be dropped/recreated before schema files run (defaults to `true`).
+- `PIRO_LOAD_SAMPLE_DATA` – set to `true` to re-import the curated demo data set, `false` to start with empty tables.
+
+Ports and URLs:
+
+- UI: <http://localhost:8080>
+- API (direct): <http://localhost:8001/docs>
+- Solr: <http://localhost:8983/solr>
+- SQL Server: localhost:1433 (SQL authentication, database `PIRO`).
+
+To stop the stack press `Ctrl+C`. To remove containers/volumes afterwards:
+
+```bash
+docker compose down
+# or keep the persistent SQL volume
+docker compose down --volumes
+```
+
+If you need to inspect the schema/data bootstrap logs, run `docker compose logs sample-data`.
