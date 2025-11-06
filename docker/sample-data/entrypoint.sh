@@ -116,7 +116,9 @@ post_solr(){
     return
   fi
   log "Seeding Solr core ${core} with $(basename "$file")"
-  curl -sf -X POST -H 'Content-Type: application/json' "${SOLR_URL}/${core}/update?commit=true" --data-binary "@$file" >/dev/null
+  if ! curl -sf -X POST -H 'Content-Type: application/json' "${SOLR_URL}/${core}/update?commit=true" --data-binary "@$file" >/dev/null; then
+    log "Warning: failed to seed ${core}; continuing without Solr sample docs"
+  fi
 }
 main(){
   if [ "$BOOTSTRAP" != "true" ]; then
