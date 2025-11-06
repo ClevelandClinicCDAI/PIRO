@@ -102,10 +102,10 @@ seed_sql_data(){
   local last_name_value="${SAMPLE_USER_LAST_NAME:-__unset__}"
   local role_value="${SAMPLE_USER_ROLE:-__unset__}"
 
-  sql_vars+=("SAMPLE_USER_NUID=\"${nuid_value//\"/\\\"}\"")
-  sql_vars+=("SAMPLE_USER_FIRST_NAME=\"${first_name_value//\"/\\\"}\"")
-  sql_vars+=("SAMPLE_USER_LAST_NAME=\"${last_name_value//\"/\\\"}\"")
-  sql_vars+=("SAMPLE_USER_ROLE=\"${role_value//\"/\\\"}\"")
+  sql_vars+=("SAMPLE_USER_NUID=${nuid_value}")
+  sql_vars+=("SAMPLE_USER_FIRST_NAME=${first_name_value}")
+  sql_vars+=("SAMPLE_USER_LAST_NAME=${last_name_value}")
+  sql_vars+=("SAMPLE_USER_ROLE=${role_value}")
 
   run_sql "$SQL_DB" -v "${sql_vars[@]}" -i "$SAMPLE_SQL"
 }

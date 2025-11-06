@@ -37,6 +37,8 @@ IF (
     )
     SET @sampleUserRoleCode = 'USER';
 
+SET @sampleUserRoleCode = REPLACE(@sampleUserRoleCode, '''', '''''');
+
 IF EXISTS (SELECT 1 FROM dbo.[User])
 BEGIN
     PRINT 'Sample data already exists; skipping seed run.';
