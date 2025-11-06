@@ -55,6 +55,7 @@ class Settings:
     SOLR_USER_PASSWORD: str = os.getenv("SOLR_USER_PASSWORD")
     AD_LDAP_PATH: str = os.getenv("AD_LDAP_PATH")
     AD_SECURITY_GROUP: str = os.getenv("AD_SECURITY_GROUP")
+    AD_DOMAIN: str = os.getenv("AD_DOMAIN")
     EXCEL_Template_DIRECTORY: str = os.getenv("EXCEL_Template_DIRECTORY")
     EXCEL_Output_DIRECTORY: str = os.getenv("EXCEL_Output_DIRECTORY")
     EXCEL_SEARCH_REQUEST_Template_FILE: str = os.getenv(
