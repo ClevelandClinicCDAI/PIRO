@@ -9,10 +9,10 @@ RUN apt-get update && \
     apt-get update && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
-COPY piro-api/requirements.txt /tmp/requirements.txt
-COPY piro-api/core_requirements.txt /tmp/core_requirements.txt
+COPY requirements.txt /tmp/requirements.txt
+COPY core_requirements.txt /tmp/core_requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
-COPY piro-api/backend /app
+COPY backend /app
 ENV PYTHONPATH=/app
 EXPOSE 8001
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
