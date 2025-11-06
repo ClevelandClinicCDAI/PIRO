@@ -7,5 +7,5 @@ for core in PIROCase PIROCohort PIROSuggestCase PIROSuggestComment PIROSuggestSt
     exit 1
   fi
   echo "Creating core ${core}"
-  solr-precreate "${core}" "${CONFIG_ROOT}/${core}"
+  /opt/solr/docker/scripts/precreate-core "${core}" "${CONFIG_ROOT}/${core}"
 done

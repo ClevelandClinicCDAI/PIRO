@@ -2,6 +2,7 @@ version: '3.9'
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
     environment:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: ${PIRO_MSSQL_SA_PASSWORD:-P1ro!LocalDev}
@@ -18,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: docker/solr/Dockerfile
+    platform: linux/amd64
     ports:
       - "8983:8983"
     healthcheck:
@@ -29,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: docker/sample-data/Dockerfile
+    platform: linux/amd64
     environment:
       SQLSERVER_HOST: sqlserver
       SQLSERVER_PORT: 1433
@@ -49,6 +52,7 @@ services:
     build:
       context: piro-api
       dockerfile: Dockerfile
+    platform: linux/amd64
     environment:
       PROJECT_NAME: PIRO
       PROJECT_VERSION: "1.0.0"
@@ -80,8 +84,9 @@ services:
       - "8001:8001"
   ui:
     build:
-      context: piro-ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: piro-ui/Dockerfile
+    platform: linux/amd64
     ports:
       - "8080:80"
     depends_on:
