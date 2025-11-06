@@ -33,22 +33,37 @@ apply_dir(){
   if [ ! -d "$dir" ]; then
     return
   fi
-  mapfile -t files < <(find "$dir" -type f -name '*.sql' | sort)
+  if [ "$dir" = "${SCRIPTS_ROOT}/Table" ] && [ -x /usr/local/bin/table-order.py ]; then
+    if ! mapfile -t files < <(python3 /usr/local/bin/table-order.py "$dir"); then
+      log "Falling back to alphabetical order for $dir"
+      mapfile -t files < <(find "$dir" -type f -name '*.sql' | sort)
+    fi
+  else
+    mapfile -t files < <(find "$dir" -type f -name '*.sql' | sort)
+  fi
   if [ ${#files[@]} -eq 0 ]; then
     return
   fi
   local pending=()
   pending=("${files[@]}")
+  local deferred=()
   local pass=1
   while [ ${#pending[@]} -gt 0 ]; do
-    local deferred=()
+    deferred=()
     local progress=0
     for file in "${pending[@]}"; do
       log "Applying ${file#/seed/}"
-      if run_sql "$SQL_DB" -i "$file" >/dev/null; then
+      if [[ "$file" == */SSIS/TABLES/* ]]; then
+        local base table_name
+        base=$(basename "$file")
+        table_name=${base#*.}
+        table_name=${table_name%%.*}
+        run_sql "$SQL_DB" -Q "IF OBJECT_ID('[dbo].[$table_name]', 'U') IS NOT NULL DROP TABLE [dbo].[$table_name]" >/dev/null 2>&1 || true
+      fi
+      if run_sql "$SQL_DB" -i "$file"; then
         progress=1
       else
-        log "Deferring ${file#/seed/}"
+        log "Deferring ${file#/seed/}; see error above"
         deferred+=("$file")
       fi
     done
@@ -56,7 +71,11 @@ apply_dir(){
       log "Failed to apply scripts in $dir"
       exit 1
     fi
-    pending=("${deferred[@]}")
+    if [ ${#deferred[@]} -gt 0 ]; then
+      pending=("${deferred[@]}")
+    else
+      pending=()
+    fi
     pass=$((pass+1))
     if [ $pass -gt 10 ]; then
       log "Exceeded retry attempts for scripts in $dir"
@@ -73,7 +92,7 @@ seed_sql_data(){
     return
   fi
   log "Loading SQL sample data"
-  run_sql "$SQL_DB" -i "$SAMPLE_SQL" >/dev/null
+  run_sql "$SQL_DB" -i "$SAMPLE_SQL"
 }
 wait_for_solr(){
   local attempts=0
@@ -111,7 +130,7 @@ main(){
   fi
   log "Creating database ${SQL_DB}"
   run_sql master -Q "IF DB_ID('${SQL_DB}') IS NULL CREATE DATABASE [${SQL_DB}]"
-  for dir in Table View/PIRO View/SOLR Function PLSQL Airflow SSIS; do
+  for dir in Table Function View/PIRO View/SOLR PLSQL Airflow; do
     apply_dir "${SCRIPTS_ROOT}/${dir}"
   done
   seed_sql_data
