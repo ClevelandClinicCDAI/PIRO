@@ -75,8 +75,9 @@ services:
       SOLR_SUGGEST_CASE: PIROSuggestCase/suggest?q=
       SOLR_USER_NAME: ""
       SOLR_USER_PASSWORD: ""
-      AD_LDAP_PATH: ""
-      AD_SECURITY_GROUP: ""
+      AD_LDAP_PATH: ${AD_LDAP_PATH:-}
+      AD_SECURITY_GROUP: ${AD_SECURITY_GROUP:-}
+      AD_DOMAIN: ${AD_DOMAIN:-}
     depends_on:
       sample-data:
         condition: service_completed_successfully
