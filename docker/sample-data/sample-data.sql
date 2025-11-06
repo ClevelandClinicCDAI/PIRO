@@ -10,16 +10,31 @@ DECLARE @sampleUserFirstName NVARCHAR(150) = NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_F
 DECLARE @sampleUserLastName NVARCHAR(150) = NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_LAST_NAME)')), '');
 DECLARE @sampleUserRoleCode NVARCHAR(50) = UPPER(NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_ROLE)')), ''));
 
-IF (@sampleUserNuid IS NULL OR @sampleUserNuid = '')
+IF (
+        @sampleUserNuid IS NULL
+        OR @sampleUserNuid = ''
+        OR @sampleUserNuid = '__unset__'
+    )
     SET @sampleUserNuid = 'piro.user';
 
-IF (@sampleUserFirstName IS NULL)
+SET @sampleUserNuid = REPLACE(@sampleUserNuid, '''', '''''');
+
+IF (@sampleUserFirstName IS NULL OR @sampleUserFirstName = '__unset__')
     SET @sampleUserFirstName = 'PIRO';
 
-IF (@sampleUserLastName IS NULL)
+SET @sampleUserFirstName = REPLACE(@sampleUserFirstName, '''', '''''');
+
+IF (@sampleUserLastName IS NULL OR @sampleUserLastName = '__unset__')
     SET @sampleUserLastName = 'User';
 
-IF (@sampleUserRoleCode IS NULL)
+SET @sampleUserLastName = REPLACE(@sampleUserLastName, '''', '''''');
+
+IF (
+        @sampleUserRoleCode IS NULL
+        OR @sampleUserRoleCode = ''
+        OR @sampleUserRoleCode = '__UNSET__'
+        OR @sampleUserRoleCode = '__unset__'
+    )
     SET @sampleUserRoleCode = 'USER';
 
 IF EXISTS (SELECT 1 FROM dbo.[User])
