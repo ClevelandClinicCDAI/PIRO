@@ -42,6 +42,10 @@ services:
       PIRO_FORCE_RESET: ${PIRO_FORCE_RESET:-true}
       PIRO_LOAD_SAMPLE_DATA: ${PIRO_LOAD_SAMPLE_DATA:-false}
       SOLR_URL: http://solr:8983/solr
+      PIRO_SAMPLE_USER_NUID: ${PIRO_SAMPLE_USER_NUID:-}
+      PIRO_SAMPLE_USER_FIRST_NAME: ${PIRO_SAMPLE_USER_FIRST_NAME:-}
+      PIRO_SAMPLE_USER_LAST_NAME: ${PIRO_SAMPLE_USER_LAST_NAME:-}
+      PIRO_SAMPLE_USER_ROLE: ${PIRO_SAMPLE_USER_ROLE:-USER}
     depends_on:
       sqlserver:
         condition: service_healthy

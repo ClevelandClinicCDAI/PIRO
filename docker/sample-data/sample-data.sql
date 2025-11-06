@@ -5,6 +5,22 @@ SET XACT_ABORT ON;
 
 DECLARE @seedUser VARCHAR(100) = 'sample-seed';
 DECLARE @now DATETIME = GETDATE();
+DECLARE @sampleUserNuid NVARCHAR(150) = LTRIM(RTRIM('$(SAMPLE_USER_NUID)'));
+DECLARE @sampleUserFirstName NVARCHAR(150) = NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_FIRST_NAME)')), '');
+DECLARE @sampleUserLastName NVARCHAR(150) = NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_LAST_NAME)')), '');
+DECLARE @sampleUserRoleCode NVARCHAR(50) = UPPER(NULLIF(LTRIM(RTRIM('$(SAMPLE_USER_ROLE)')), ''));
+
+IF (@sampleUserNuid IS NULL OR @sampleUserNuid = '')
+    SET @sampleUserNuid = 'piro.user';
+
+IF (@sampleUserFirstName IS NULL)
+    SET @sampleUserFirstName = 'PIRO';
+
+IF (@sampleUserLastName IS NULL)
+    SET @sampleUserLastName = 'User';
+
+IF (@sampleUserRoleCode IS NULL)
+    SET @sampleUserRoleCode = 'USER';
 
 IF EXISTS (SELECT 1 FROM dbo.[User])
 BEGIN
@@ -88,7 +104,16 @@ BEGIN TRY
     VALUES
         ('Administrator', 'ADMIN', 'Full administrative access', 1, 'ROLE-ADMIN', @now, @seedUser, @now, @seedUser),
         ('Reviewer', 'REVIEW', 'Clinical reviewer', 1, 'ROLE-REVIEW', @now, @seedUser, @now, @seedUser),
-        ('Researcher', 'RESEARCH', 'Research workspace access', 1, 'ROLE-RESEARCH', @now, @seedUser, @now, @seedUser);
+        ('Researcher', 'RESEARCH', 'Research workspace access', 1, 'ROLE-RESEARCH', @now, @seedUser, @now, @seedUser),
+        ('User', 'USER', 'Standard PIRO user', 1, 'ROLE-USER', @now, @seedUser, @now, @seedUser);
+
+    IF NOT EXISTS (SELECT 1 FROM @Role WHERE Code = @sampleUserRoleCode)
+    BEGIN
+        INSERT INTO dbo.Role (ShortName, Code, DESCRIPTION, IsActive, DataLabReference, CreateDate, CreateBy, UpdateDate, UpdateBy)
+        OUTPUT INSERTED.RoleId, INSERTED.Code INTO @Role
+        VALUES
+            (@sampleUserRoleCode, @sampleUserRoleCode, CONCAT(@sampleUserRoleCode, ' role'), 1, CONCAT('ROLE-', @sampleUserRoleCode), @now, @seedUser, @now, @seedUser);
+    END
 
     DECLARE @User TABLE (UserId INT, Email VARCHAR(100));
     INSERT INTO dbo.[User] (NUID, FirstName, LastName, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
@@ -96,13 +121,15 @@ BEGIN TRY
     VALUES
         ('judy.hart@piro.local', 'Judy', 'Hart', 1, @now, @seedUser, @now, @seedUser),
         ('marcus.hale@piro.local', 'Marcus', 'Hale', 1, @now, @seedUser, @now, @seedUser),
-        ('elena.cole@piro.local', 'Elena', 'Cole', 1, @now, @seedUser, @now, @seedUser);
+        ('elena.cole@piro.local', 'Elena', 'Cole', 1, @now, @seedUser, @now, @seedUser),
+        (@sampleUserNuid, @sampleUserFirstName, @sampleUserLastName, 1, @now, @seedUser, @now, @seedUser);
 
     INSERT INTO dbo.UserRole (UserId, RoleId, isActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     VALUES
         ((SELECT UserId FROM @User WHERE Email = 'judy.hart@piro.local'), (SELECT RoleId FROM @Role WHERE Code = 'ADMIN'), 1, @now, @seedUser, @now, @seedUser),
         ((SELECT UserId FROM @User WHERE Email = 'marcus.hale@piro.local'), (SELECT RoleId FROM @Role WHERE Code = 'REVIEW'), 1, @now, @seedUser, @now, @seedUser),
-        ((SELECT UserId FROM @User WHERE Email = 'elena.cole@piro.local'), (SELECT RoleId FROM @Role WHERE Code = 'RESEARCH'), 1, @now, @seedUser, @now, @seedUser);
+        ((SELECT UserId FROM @User WHERE Email = 'elena.cole@piro.local'), (SELECT RoleId FROM @Role WHERE Code = 'RESEARCH'), 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT UserId FROM @User WHERE Email = @sampleUserNuid), (SELECT RoleId FROM @Role WHERE Code = @sampleUserRoleCode), 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @Staff TABLE (StaffId INT, RefEmployeeKey VARCHAR(50));
     INSERT INTO dbo.Staff (FullName, UserId, StartDate, EndDate, RefEmployeeKey, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)

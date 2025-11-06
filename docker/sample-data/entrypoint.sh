@@ -9,6 +9,10 @@ BOOTSTRAP=${PIRO_BOOTSTRAP_DB:-true}
 FORCE_RESET=${PIRO_FORCE_RESET:-true}
 LOAD_SAMPLE=${PIRO_LOAD_SAMPLE_DATA:-false}
 SOLR_URL=${SOLR_URL:-http://solr:8983/solr}
+SAMPLE_USER_NUID=${PIRO_SAMPLE_USER_NUID:-}
+SAMPLE_USER_FIRST_NAME=${PIRO_SAMPLE_USER_FIRST_NAME:-}
+SAMPLE_USER_LAST_NAME=${PIRO_SAMPLE_USER_LAST_NAME:-}
+SAMPLE_USER_ROLE=${PIRO_SAMPLE_USER_ROLE:-}
 SCRIPTS_ROOT=/seed/piro-sql
 SAMPLE_SQL=/seed/sample-data.sql
 log(){ printf '%s\n' "$*"; }
@@ -92,7 +96,12 @@ seed_sql_data(){
     return
   fi
   log "Loading SQL sample data"
-  run_sql "$SQL_DB" -i "$SAMPLE_SQL"
+  run_sql "$SQL_DB" \
+    -v SAMPLE_USER_NUID="${SAMPLE_USER_NUID}" \
+    -v SAMPLE_USER_FIRST_NAME="${SAMPLE_USER_FIRST_NAME}" \
+    -v SAMPLE_USER_LAST_NAME="${SAMPLE_USER_LAST_NAME}" \
+    -v SAMPLE_USER_ROLE="${SAMPLE_USER_ROLE}" \
+    -i "$SAMPLE_SQL"
 }
 wait_for_solr(){
   local attempts=0
