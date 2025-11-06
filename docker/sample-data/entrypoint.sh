@@ -16,6 +16,11 @@ SAMPLE_USER_ROLE=${PIRO_SAMPLE_USER_ROLE:-}
 SCRIPTS_ROOT=/seed/piro-sql
 SAMPLE_SQL=/seed/sample-data.sql
 log(){ printf '%s\n' "$*"; }
+escape_sql_var(){
+  local value="$1"
+  value=${value//\"/\"\"}
+  printf '%s' "$value"
+}
 run_sql(){
   local database=$1
   shift
@@ -96,18 +101,23 @@ seed_sql_data(){
     return
   fi
   log "Loading SQL sample data"
-  local sql_vars=()
   local nuid_value="${SAMPLE_USER_NUID:-__unset__}"
   local first_name_value="${SAMPLE_USER_FIRST_NAME:-__unset__}"
   local last_name_value="${SAMPLE_USER_LAST_NAME:-__unset__}"
   local role_value="${SAMPLE_USER_ROLE:-__unset__}"
-
-  sql_vars+=("SAMPLE_USER_NUID=${nuid_value}")
-  sql_vars+=("SAMPLE_USER_FIRST_NAME=${first_name_value}")
-  sql_vars+=("SAMPLE_USER_LAST_NAME=${last_name_value}")
-  sql_vars+=("SAMPLE_USER_ROLE=${role_value}")
-
-  run_sql "$SQL_DB" -v "${sql_vars[@]}" -i "$SAMPLE_SQL"
+  local tmp_sql
+  tmp_sql=$(mktemp)
+  trap 'rm -f "$tmp_sql"' RETURN
+  {
+    printf ':setvar SAMPLE_USER_NUID "%s"\n' "$(escape_sql_var "$nuid_value")"
+    printf ':setvar SAMPLE_USER_FIRST_NAME "%s"\n' "$(escape_sql_var "$first_name_value")"
+    printf ':setvar SAMPLE_USER_LAST_NAME "%s"\n' "$(escape_sql_var "$last_name_value")"
+    printf ':setvar SAMPLE_USER_ROLE "%s"\n' "$(escape_sql_var "$role_value")"
+    cat "$SAMPLE_SQL"
+  } >"$tmp_sql"
+  run_sql "$SQL_DB" -i "$tmp_sql"
+  rm -f "$tmp_sql"
+  trap - RETURN
 }
 wait_for_solr(){
   local attempts=0
