@@ -62,7 +62,52 @@ Default login for the demo data is `demo.user` with any password (the API trusts
 - `PIRO_FORCE_RESET` – when `true`, forces the database to be dropped/recreated before schema files run (defaults to `true`).
 - `PIRO_LOAD_SAMPLE_DATA` – set to `true` to re-import the curated demo data set, `false` to start with empty tables.
 
+### Common Docker Compose launch recipes
+
+Replace the placeholder values (`password-here`, `ldap.example.org`, `CN=Your-Security-Group,...`, `example.org`, etc.) with the settings from your own environment before running these commands.
+
+**Offline demo (no LDAP required)**
+
+This path seeds the database and enables the `demo.user` bypass account so you can log in with any password even when the LDAP server is unreachable:
+
+```bash
+PIRO_LOAD_SAMPLE_DATA=true \
+PIRO_SAMPLE_USER_NUID=demo.user \
+PIRO_SAMPLE_USER_FIRST_NAME=Demo \
+PIRO_SAMPLE_USER_LAST_NAME=User \
+PIRO_SAMPLE_USER_ROLE=USER \
+docker compose up --build
+```
+
+**First-time LDAP initialization with sample data**
+
+Use this variant when you are on-network and want LDAP auth plus a seeded sample account that mirrors your real user. The LDAP variables shown here are generic examples—point them to your own directory service details.
+
+```bash
+PIRO_LOAD_SAMPLE_DATA=true \
+PIRO_SAMPLE_USER_NUID=your.user@your-domain.org \
+PIRO_SAMPLE_USER_FIRST_NAME=YourName \
+PIRO_SAMPLE_USER_LAST_NAME=YourLast \
+PIRO_SAMPLE_USER_ROLE=USER \
+AD_LDAP_PATH="ldaps://ldap.example.org:3269" \
+AD_SECURITY_GROUP="CN=PIRO-Dev,OU=Groups,DC=example,DC=org" \
+AD_DOMAIN=example.org \
+docker compose up --build
+```
+
+**Production-like run (LDAP only, no sample data)**
+
+Once the schema and baseline data are in place, you can skip the curated dataset and rely entirely on your directory service:
+
+```bash
+AD_LDAP_PATH="ldaps://ldap.example.org:3269" \
+AD_SECURITY_GROUP="CN=PIRO-Prod,OU=Groups,DC=example,DC=org" \
+AD_DOMAIN=example.org \
+docker compose up --build
+```
+
 Ports and URLs:
+
 
 - UI: <http://localhost:8080>
 - API (direct): <http://localhost:8001/docs>
