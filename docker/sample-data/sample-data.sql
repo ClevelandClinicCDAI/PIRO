@@ -523,7 +523,7 @@ BEGIN TRY
             @seedUser
         );
 
-    DECLARE @SynopticId DECIMAL(38, 0) = CAST(20240010001 AS DECIMAL(38, 0));
+    DECLARE @SynopticId DECIMAL(38, 0) = CAST(1001 AS DECIMAL(38, 0));
     INSERT INTO dbo.CaseCommentSynopticSpecimen (
         CaseId,
         SpecimenId,
