@@ -699,6 +699,58 @@ BEGIN TRY
             @seedUser
         );
 
+    INSERT INTO dbo.CaseCommentSynopticTextComment (
+        SynopticId,
+        HlvId,
+        [Line],
+        Comment,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy
+    )
+    VALUES
+        (
+            @SynopticId,
+            101,
+            1,
+            'Lumpectomy – left breast, sentinel nodes not submitted.',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            102,
+            2,
+            'Greatest invasive focus measures 2.1 cm.',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            103,
+            3,
+            'Nottingham grade II (tubule score 2 / nuclear 2 / mitotic 2).',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            104,
+            4,
+            'Patient MRN: MRN-0001.',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        );
+
     DECLARE @Tag TABLE (TagId INT, Name VARCHAR(100));
     INSERT INTO dbo.Tag (UserId, Name, Description, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.TagId, INSERTED.Name INTO @Tag
