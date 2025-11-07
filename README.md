@@ -1,4 +1,6 @@
-# PIRO: Pathology Information Retrieval Optimizer
+# PIRO: A web-based search platform for pathology reports, leveraging large language models to generate discrete searchable insights
+
+[Journal Link](https://www.sciencedirect.com/science/article/pii/S2153353925000215)
 
 This page documents the technologies and applications used to build PIRO, including the web application that provides the user interface, and various back-end ETL and database/full-text search tools.
 
