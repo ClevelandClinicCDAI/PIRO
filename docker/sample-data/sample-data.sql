@@ -132,6 +132,25 @@ BEGIN TRY
             (@sampleUserRoleCode, @sampleUserRoleCode, CONCAT(@sampleUserRoleCode, ' role'), 1, CONCAT('ROLE-', @sampleUserRoleCode), @now, @seedUser, @now, @seedUser);
     END
 
+    DECLARE @CommentType TABLE (CommentTypeId INT, Code VARCHAR(50));
+    INSERT INTO dbo.CommentType (
+        ShortName,
+        Code,
+        DESCRIPTION,
+        DataLabReference,
+        ETLSource,
+        IsActive,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy
+    )
+    OUTPUT INSERTED.CommentTypeId, INSERTED.Code INTO @CommentType
+    VALUES
+        ('Final Report', 'FINAL', 'Final diagnostic summary', 'COMMENT-FINAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
+        ('General Comment', 'COMMENT', 'Author comments and notes', 'COMMENT-GENERAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
+        ('Synoptic', 'SYNOPTIC', 'Structured synoptic section', 'COMMENT-SYNOPTIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser);
+
     DECLARE @User TABLE (UserId INT, Email VARCHAR(100));
     INSERT INTO dbo.[User] (NUID, FirstName, LastName, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.UserId, INSERTED.NUID INTO @User
@@ -329,6 +348,356 @@ BEGIN TRY
     JOIN dbo.CaseCommentSourceInfo CSI ON C.CaseId = CSI.CaseId
     LEFT JOIN StaffNames SN ON SN.CaseId = C.CaseId
     WHERE C.CaseNumber IN ('S24-0001', 'C24-0007');
+
+    DECLARE @FinalCommentTypeId INT = (
+        SELECT CommentTypeId FROM @CommentType WHERE Code = 'FINAL'
+    );
+    DECLARE @GeneralCommentTypeId INT = (
+        SELECT CommentTypeId FROM @CommentType WHERE Code = 'COMMENT'
+    );
+    DECLARE @SynopticCommentTypeId INT = (
+        SELECT CommentTypeId FROM @CommentType WHERE Code = 'SYNOPTIC'
+    );
+
+    INSERT INTO dbo.CaseComment (
+        CaseId,
+        CommentTypeId,
+        [Text],
+        RefRequistionKey,
+        RefResultKey,
+        RefLabCompName,
+        RefCommentType,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy,
+        RefComponentDate
+    )
+    VALUES
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @FinalCommentTypeId,
+            'Final diagnosis: Invasive ductal carcinoma, Nottingham grade 2. Surgical margins negative (closest margin 4 mm). ER 95% positive, PR 80% positive, HER2 IHC 1+.',
+            CAST(20240010001 AS DECIMAL(38, 0)),
+            CAST(90010001 AS DECIMAL(38, 0)),
+            'EPIC FINAL',
+            'FINAL DIAGNOSIS',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            '2024-08-05T14:35:00'
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @GeneralCommentTypeId,
+            'Comment: Recommend multidisciplinary tumor board discussion. Imaging correlation reviewed; no residual calcifications noted.',
+            CAST(20240010001 AS DECIMAL(38, 0)),
+            CAST(90010002 AS DECIMAL(38, 0)),
+            'EPIC COMMENT',
+            'COMMENT',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            '2024-08-05T14:40:00'
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'C24-0007'),
+            @FinalCommentTypeId,
+            'Consultation pending: blocks pending deeper levels for neuropathology review.',
+            CAST(20240020007 AS DECIMAL(38, 0)),
+            CAST(90020007 AS DECIMAL(38, 0)),
+            'EPIC FINAL',
+            'FINAL DIAGNOSIS',
+            @now,
+            @seedUser,
+            NULL,
+            NULL,
+            NULL
+        );
+
+    INSERT INTO dbo.CaseCommentCoPath (
+        CaseId,
+        CommentTypeId,
+        [Text],
+        RtfText,
+        StatusDate,
+        SpecYear,
+        RefId,
+        RefSpecimenId,
+        RefCaseNum,
+        RefSpecimenNum,
+        RefTextType,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy,
+        IsTextUpdated
+    )
+    VALUES
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @FinalCommentTypeId,
+            'Final CoPath report confirms invasive ductal carcinoma with negative margins.',
+            '{\rtf1\ansi\deff0 {\fonttbl {\f0 Arial;}} \f0\fs24 Final Diagnosis:\line Invasive ductal carcinoma, grade 2.\line Margins: Negative (closest 4 mm).}',
+            '2024-08-05T15:05:00',
+            2024,
+            5001,
+            'SPEC-A1',
+            'S24-0001',
+            'A1',
+            'FINAL',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            0
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @SynopticCommentTypeId,
+            '#Synoptic Report#\nProcedure: Lumpectomy.\nHistologic Type: Invasive ductal carcinoma.\nNottingham Grade: II (tubule 2, nuclear 2, mitotic 2).\nTumor Size: 2.1 cm.',
+            '{\rtf1\ansi\deff0 {\fonttbl {\f0 Arial;}} \f0\fs24 #Synoptic Report#\line Procedure: Lumpectomy\line Histologic Type: Invasive ductal carcinoma\line Nottingham Grade: II\line Tumor Size: 2.1 cm}',
+            '2024-08-05T15:06:00',
+            2024,
+            5002,
+            'SPEC-A1',
+            'S24-0001',
+            'A1',
+            'SYNOPTIC',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            0
+        );
+
+    INSERT INTO dbo.CaseCommentEpic (
+        CaseId,
+        CommentTypeId,
+        [Text],
+        NumberOfLines,
+        RefRequisitionKey,
+        RefOrdKey,
+        RefLabCompName,
+        RefOrdResultDate,
+        RefContactDate,
+        RefRecNum,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy
+    )
+    VALUES
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @FinalCommentTypeId,
+            'EPIC FINAL REPORT: Invasive ductal carcinoma, ER+/PR+, HER2-.',
+            6,
+            'REQ-2024-0001',
+            'ORD-1001',
+            'EPIC FINAL',
+            '2024-08-05T15:00:00',
+            CAST(20240805 AS DECIMAL(18, 2)),
+            'EPIC-0001',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @GeneralCommentTypeId,
+            'EPIC COMMENT: Case discussed with surgical oncology.',
+            3,
+            'REQ-2024-0001',
+            'ORD-1002',
+            'EPIC COMMENT',
+            '2024-08-05T15:10:00',
+            CAST(20240805 AS DECIMAL(18, 2)),
+            'EPIC-0002',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        );
+
+    DECLARE @SynopticId DECIMAL(38, 0) = CAST(20240010001 AS DECIMAL(38, 0));
+    INSERT INTO dbo.CaseCommentSynopticSpecimen (
+        CaseId,
+        SpecimenId,
+        SynopticId,
+        SynopticLine,
+        CaseNum,
+        SpecimenNum,
+        SpecimenList,
+        RecordCreateDate,
+        IsSpecimenLevel,
+        RefSpecimenKey,
+        RefRequisitionKey,
+        IsParsed,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy
+    )
+    VALUES
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            1001,
+            @SynopticId,
+            1,
+            'S24-0001',
+            'A1',
+            'A1 - Left breast lumpectomy',
+            @now,
+            1,
+            'SPEC-A1',
+            'REQ-2024-0001',
+            1,
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        );
+
+    INSERT INTO dbo.CaseCommentSynopticText (
+        SynopticId,
+        Name,
+        ResultId,
+        HlvId,
+        DataType,
+        ContextName,
+        ContexHierarchy,
+        ValueLine,
+        Level1,
+        Level2,
+        Level3,
+        Level4,
+        Level5,
+        Level6,
+        ElementName,
+        ElementValue,
+        SynopticKey,
+        ElementComment,
+        CommentLine,
+        CommentSequence,
+        RefSynopticKey,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy
+    )
+    VALUES
+        (
+            @SynopticId,
+            'Procedure',
+            'RES-1001',
+            101,
+            'Text',
+            'SYNOPTIC',
+            'Breast|Procedure',
+            '1',
+            'Breast Cancer',
+            'Procedure',
+            'Specimen',
+            'Procedure Detail',
+            '',
+            '',
+            'Procedure Type',
+            'Lumpectomy',
+            'SYN-001',
+            '',
+            '1',
+            1,
+            'SYN-001',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            'Tumor Size',
+            'RES-1002',
+            102,
+            'Text',
+            'SYNOPTIC',
+            'Breast|Tumor',
+            '2',
+            'Breast Cancer',
+            'Tumor Characteristics',
+            'Greatest Dimension',
+            '',
+            '',
+            '',
+            'Greatest Dimension',
+            '2.1 cm',
+            'SYN-002',
+            '',
+            '2',
+            2,
+            'SYN-002',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            'Nottingham Grade',
+            'RES-1003',
+            103,
+            'Text',
+            'SYNOPTIC',
+            'Breast|Grade',
+            '3',
+            'Breast Cancer',
+            'Tumor Characteristics',
+            'Grading',
+            '',
+            '',
+            '',
+            'Grade Components',
+            'II (tubule 2 / nuclear 2 / mitotic 2)',
+            'SYN-003',
+            '',
+            '3',
+            3,
+            'SYN-003',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        ),
+        (
+            @SynopticId,
+            'Patient Metadata',
+            'RES-1004',
+            104,
+            'Text',
+            'PATIENT',
+            'Patient|Demographics',
+            '1',
+            'Patient',
+            'Demographics',
+            'MRN',
+            '',
+            '',
+            '',
+            'MRN',
+            'MRN-0001',
+            'SYN-004',
+            '',
+            '4',
+            4,
+            'SYN-004',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser
+        );
 
     DECLARE @Tag TABLE (TagId INT, Name VARCHAR(100));
     INSERT INTO dbo.Tag (UserId, Name, Description, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
