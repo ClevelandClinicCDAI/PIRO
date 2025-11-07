@@ -118,8 +118,9 @@ To stop the stack press `Ctrl+C`. To remove containers/volumes afterwards:
 
 ```bash
 docker compose down
-# or keep the persistent SQL volume
+# WARNING: The following command will REMOVE all volumes, including the persistent SQL volume!
 docker compose down --volumes
+# To keep the persistent SQL volume, run `docker compose down` without the `--volumes` flag.
 ```
 
 If you need to inspect the schema/data bootstrap logs, run `docker compose logs sample-data`.
