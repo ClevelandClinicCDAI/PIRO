@@ -169,10 +169,166 @@ BEGIN TRY
         ((SELECT PatientId FROM @Patient WHERE RefKey = 'PAT-0001'), (SELECT HospitalId FROM @Hospital WHERE Code = 'CCF-MAIN'), (SELECT CaseStatusId FROM @CaseStatus WHERE Code = 'SIGNED'), (SELECT CaseTypeId FROM @CaseType WHERE Code = 'SURG'), (SELECT SpecialtyId FROM @Specialty WHERE Code = 'BREAST'), 2024, 'S24-0001', '2024-08-01T09:00:00', '2024-08-01T08:15:00', '2024-08-15T17:00:00', '2024-07-30T10:00:00', '2024-08-05T14:22:00', 'REQ-2024-0001', CAST(20240010001 AS DECIMAL(38,0)), 'PAT-0001', 1, @now, @seedUser, @now, @seedUser, '2024-08-05T14:30:00'),
         ((SELECT PatientId FROM @Patient WHERE RefKey = 'PAT-0002'), (SELECT HospitalId FROM @Hospital WHERE Code = 'CCF-MAIN'), (SELECT CaseStatusId FROM @CaseStatus WHERE Code = 'PENDING'), (SELECT CaseTypeId FROM @CaseType WHERE Code = 'CONSULT'), (SELECT SpecialtyId FROM @Specialty WHERE Code = 'NEURO'), 2024, 'C24-0007', '2024-09-12T11:00:00', '2024-09-12T10:10:00', '2024-09-19T17:00:00', '2024-09-10T13:00:00', NULL, 'REQ-2024-0002', CAST(20240020007 AS DECIMAL(38,0)), 'PAT-0002', 1, @now, @seedUser, @now, @seedUser, NULL);
 
+    INSERT INTO dbo.CaseCommentSourceInfo (RefRequisitionKey, CaseId, CaseNumber, IsEpic, IsCopath, IsEpicMigrated, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
+    VALUES
+        ('REQ-2024-0001', (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'), 'S24-0001', 1, 0, 1, 1, @now, @seedUser, @now, @seedUser),
+        ('REQ-2024-0002', (SELECT CaseId FROM @Case WHERE CaseNumber = 'C24-0007'), 'C24-0007', 1, 0, 0, 1, @now, @seedUser, @now, @seedUser);
+
     INSERT INTO dbo.CaseStaff (CaseId, StaffId, IsActive, RefRequisitionKey, RefEmployeeKey, CreateDate, CreateBy, UpdateDate, UpdateBy)
     VALUES
         ((SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'), (SELECT StaffId FROM @Staff WHERE RefEmployeeKey = 'EMP-1001'), 1, 'REQ-2024-0001', 'EMP-1001', @now, @seedUser, @now, @seedUser),
         ((SELECT CaseId FROM @Case WHERE CaseNumber = 'C24-0007'), (SELECT StaffId FROM @Staff WHERE RefEmployeeKey = 'EMP-1002'), 1, 'REQ-2024-0002', 'EMP-1002', @now, @seedUser, @now, @seedUser);
+
+    ;WITH StaffNames AS (
+        SELECT
+            cs.CaseId,
+            STRING_AGG(st.FullName, '; ') AS StaffList
+        FROM dbo.CaseStaff cs
+        JOIN dbo.Staff st ON cs.StaffId = st.StaffId
+        GROUP BY cs.CaseId
+    )
+    INSERT INTO dbo.CaseSolr (
+        CaseId,
+        RefRequisitionKey,
+        SpecimenYear,
+        CaseNumber,
+        AccessionDate,
+        ReceiveDate,
+        OverdueDate,
+        CollectionDate,
+        SignoutDate,
+        PatientName,
+        PatientDOB,
+        PatientEpi,
+        PatientMrn,
+        PatientLanguage,
+        PatientEthnicity,
+        PatientGender,
+        PatientDeathDate,
+        PatientIsDeceased,
+        PatientRace,
+        PatientCity,
+        PatientState,
+        PatientCountry,
+        Hospital,
+        Region,
+        CaseStatus,
+        CaseType,
+        CaseTypeCategory,
+        ReviewType,
+        Specialty,
+        SpecialtyCode,
+        SpecialtyCategory,
+        ADDEND,
+        ADDENDCount,
+        COMMENT,
+        COMMENTCount,
+        FINAL,
+        FINALCount,
+        GROSS,
+        GROSSCount,
+        INTRAOP,
+        INTRAOPCount,
+        RESIDENT,
+        RESIDENTCount,
+        SYNOPTIC,
+        SYNOPTICCount,
+        CLINICAL,
+        CLINICALCount,
+        Interpreter,
+        ProcedureCategory,
+        StaffName,
+        SpecimenNumber,
+        CasePatientAge,
+        CasePatientAgeYears,
+        AnnotationMalignant,
+        IsEpic,
+        IsEpicMigrated,
+        IsCopath,
+        IsActive,
+        CreateDate,
+        CreateBy,
+        UpdateDate,
+        UpdateBy,
+        IsSolrUpdate,
+        IsConcentriq,
+        CaseConcentriqId
+    )
+    SELECT
+        C.CaseId,
+        C.RefRequisitionKey,
+        C.SpecimenYear,
+        C.CaseNumber,
+        C.AccessionDate,
+        C.ReceiveDate,
+        C.OverdueDate,
+        C.CollectionDate,
+        C.SignoutDate,
+        dbo.F_FullName(P.FirstName, P.MiddleName, P.LastName),
+        P.DOB,
+        P.EpiId,
+        P.MRN,
+        L.ShortName,
+        E.ShortName,
+        G.ShortName,
+        P.DeathDate,
+        P.IsDeceased,
+        R.ShortName,
+        P.City,
+        P.[State],
+        P.Country,
+        H.ShortName,
+        REG.ShortName,
+        CS.ShortName,
+        CT.ShortName,
+        CT.CaseTypeCategory,
+        CT.ReviewType,
+        S.ShortName,
+        S.Code,
+        S.SpecialtyCategory,
+        '', 0,        -- ADDEND / ADDENDCount
+        '', 0,        -- COMMENT / COMMENTCount
+        '', 0,        -- FINAL / FINALCount
+        '', 0,        -- GROSS / GROSSCount
+        '', 0,        -- INTRAOP / INTRAOPCount
+        '', 0,        -- RESIDENT / RESIDENTCount
+        '', 0,        -- SYNOPTIC / SYNOPTICCount
+        '', 0,        -- CLINICAL / CLINICALCount
+        COALESCE(SN.StaffList, 'Demo Staff'),
+        'General',
+        COALESCE(SN.StaffList, 'Demo Staff'),
+        C.CaseNumber,
+        CAST(dbo.F_CasePatientAge(P.DOB, C.AccessionDate) AS VARCHAR(100)),
+        CASE
+            WHEN P.DOB = '1800-01-01' THEN 0
+            ELSE ISNULL(DATEDIFF(YEAR, P.DOB, C.AccessionDate), 0)
+        END,
+        '-',
+        CSI.IsEpic,
+        CSI.IsEpicMigrated,
+        CSI.IsCopath,
+        1,
+        @now,
+        @seedUser,
+        @now,
+        @seedUser,
+        1,
+        0,
+        -1
+    FROM dbo.[Case] C
+    JOIN dbo.Patient P ON C.PatientId = P.PatientId
+    JOIN dbo.Gender G ON P.GenderId = G.GenderId
+    JOIN dbo.Ethnicity E ON P.EthnicityId = E.EthnicityId
+    JOIN dbo.Race R ON P.RaceId = R.RaceId
+    JOIN dbo.[Language] L ON P.LanguageId = L.LanguageId
+    JOIN dbo.Hospital H ON C.HospitalId = H.HospitalId
+    JOIN dbo.Region REG ON H.RegionId = REG.RegionId
+    JOIN dbo.CaseStatus CS ON C.CaseStatusId = CS.CaseStatusId
+    JOIN dbo.CaseType CT ON C.CaseTypeId = CT.CaseTypeId
+    JOIN dbo.Specialty S ON C.SpecialtyId = S.SpecialtyId
+    JOIN dbo.CaseCommentSourceInfo CSI ON C.CaseId = CSI.CaseId
+    LEFT JOIN StaffNames SN ON SN.CaseId = C.CaseId
+    WHERE C.CaseNumber IN ('S24-0001', 'C24-0007');
 
     DECLARE @Tag TABLE (TagId INT, Name VARCHAR(100));
     INSERT INTO dbo.Tag (UserId, Name, Description, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
