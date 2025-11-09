@@ -6,7 +6,8 @@ Falls back to filename order for any cycles or unparsed scripts.
 
 import re
 import sys
-from collections import defaultdict, deque
+from collections import defaultdict
+import heapq
 from pathlib import Path
 
 
@@ -50,25 +51,29 @@ def build_dependency_graph(table_to_file, texts):
 
 def topo_sort(table_to_file, deps):
     indegree = {table: 0 for table in table_to_file}
-    for table in table_to_file:
-        for ref in deps[table]:
+    dependents = defaultdict(set)
+
+    for table, references in deps.items():
+        for ref in references:
             indegree[table] += 1
+            dependents[ref].add(table)
 
-    queue = deque(sorted([t for t, deg in indegree.items() if deg == 0]))
+    heap = [table for table, degree in indegree.items() if degree == 0]
+    heapq.heapify(heap)
+
     ordered = []
-    remaining = set(table_to_file)
+    processed = set()
 
-    while queue:
-        table = queue.popleft()
+    while heap:
+        table = heapq.heappop(heap)
         ordered.append(table_to_file[table])
-        remaining.discard(table)
-        for other in list(remaining):
-            if table in deps[other]:
-                indegree[other] -= 1
-                if indegree[other] == 0:
-                    queue.append(other)
-        queue = deque(sorted(queue))
+        processed.add(table)
+        for dependent in dependents.get(table, set()):
+            indegree[dependent] -= 1
+            if indegree[dependent] == 0:
+                heapq.heappush(heap, dependent)
 
+    remaining = set(table_to_file) - processed
     if remaining:
         # Append any cyclic/unresolved tables in filename order
         unresolved = sorted(table_to_file[t] for t in remaining)
