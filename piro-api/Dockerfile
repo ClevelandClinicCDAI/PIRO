@@ -18,9 +18,9 @@ RUN apt-get update && \
     apt-get update && \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt /tmp/requirements.txt
-COPY core_requirements.txt /tmp/core_requirements.txt
-RUN cd /tmp && pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /app/requirements.txt
+COPY core_requirements.txt /app/core_requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY backend /app
 ENV PYTHONPATH=/app
 EXPOSE 8001
