@@ -1,5 +1,10 @@
 #!/bin/bash
 set -euo pipefail
+
+if [ "${BASH_VERSINFO[0]:-0}" -lt 4 ]; then
+  printf 'seed.sh requires bash 4.0 or newer (found %s)\n' "${BASH_VERSINFO[0]:-unknown}" >&2
+  exit 1
+fi
 SQL_HOST=${SQLSERVER_HOST:-sqlserver}
 SQL_PORT=${SQLSERVER_PORT:-1433}
 SQL_USER=${SQLSERVER_USER:-sa}
