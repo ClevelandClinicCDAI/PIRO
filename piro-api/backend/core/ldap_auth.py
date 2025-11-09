@@ -80,7 +80,9 @@ def try_ldap_bind(
 
     try:
         escaped_username: str = ldap.filter.escape_filter_chars(userName)
-        ldap_client.simple_bind_s(f"{escaped_username}@<changeme>", password)
+        ldap_client.simple_bind_s(
+            f"{escaped_username}@{Settings.AD_DOMAIN}", password
+        )
         return True
     except ldap.INVALID_CREDENTIALS:
         return False
@@ -131,7 +133,9 @@ def check_if_user_is_in_group(
     """Perform an LDAP query to confirm that a user is in a group."""
 
     escaped_username: str = ldap.filter.escape_filter_chars(username)
-    ldap_client.simple_bind_s(f"{escaped_username}@<changeme>", password)
+    ldap_client.simple_bind_s(
+        f"{escaped_username}@{Settings.AD_DOMAIN}", password
+    )
     search_results = ldap_client.search_s(
         base="dc=cc,dc=ad,dc=cchs,dc=net",
         scope=ldap.SCOPE_SUBTREE,
@@ -188,7 +192,9 @@ def get_user_displayname_ldap(
     """Perform an LDAP query to get the user's first and last name."""
 
     escaped_username: str = ldap.filter.escape_filter_chars(username)
-    ldap_client.simple_bind_s(f"{escaped_username}@<changeme>", password)
+    ldap_client.simple_bind_s(
+        f"{escaped_username}@{Settings.AD_DOMAIN}", password
+    )
     search_results = ldap_client.search_s(
         base="dc=cc,dc=ad,dc=cchs,dc=net",
         scope=ldap.SCOPE_SUBTREE,

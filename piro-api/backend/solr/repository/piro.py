@@ -462,8 +462,8 @@ def read_result(result: any, db: Session):
         doc.residentcount = 0
     if "isepic" in result:
         doc.isepic = result["isepic"]
-    if "isepicmigratedc" in result:
-        doc.isepicmigratedc = result["isepicmigratedc"]
+    if "isepicmigrated" in result:
+        doc.isepicmigrated = result["isepicmigrated"]
     if "iscopath" in result:
         doc.iscopath = result["iscopath"]
 

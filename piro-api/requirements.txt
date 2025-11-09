@@ -1,1 +1,1 @@
-./core_requirements.txt
+-r ./core_requirements.txt
