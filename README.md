@@ -69,7 +69,7 @@ Behind the scenes:
 - `solr` builds from `piro-solr/Dockerfile`, copies the checked-in config sets, runs `create-cores.sh`, and listens on `http://localhost:8983`.
 - `sample-data` builds from `piro-sample-data/Dockerfile`, waits for SQL + Solr, redeploys every schema from `piro-sql`, and optionally loads curated demo data into both systems when `PIRO_LOAD_SAMPLE_DATA=true`.
 - `api` builds from `./piro-api` with ODBC Driver 18, exposes Swagger UI on `http://localhost:8001/docs`, and expects Solr + SQL hostnames from Compose networking.
-- `ui` builds `./piro-ui`, copies `ngx` artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
+- `ui` builds `./piro-ui`, copies the compiled Angular build artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
 
 ### Useful configuration knobs
 
