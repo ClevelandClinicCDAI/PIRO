@@ -80,9 +80,9 @@ Behind the scenes:
 - `PIRO_LOAD_SAMPLE_DATA` – `true` re-imports demo SQL + Solr docs, `false` leaves the schema empty.
 - `PIRO_SAMPLE_USER_*` – seeds a specific account into SQL + Solr for local testing (`NUID`, `FIRST_NAME`, `LAST_NAME`, `ROLE`).
 - `AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN` – plug real directory settings in when you want LDAP-backed auth inside the API container.
-- `ACCESS_TOKEN_TEST_USER` – comma-separated usernames allowed to bypass LDAP when running locally (default `demo.user`).
+- `ACCESS_TOKEN_TEST_USER` – comma-separated usernames allowed to bypass LDAP when running locally (unset by default; set explicitly, e.g., `ACCESS_TOKEN_TEST_USER=demo.user`, only when you need the bypass).
 
-Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` (already done in `docker-compose.yml`), then sign in via the UI as `demo.user` with any password.
+Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` in your shell or `.env` file before running `docker compose up`, then sign in via the UI as `demo.user` with any password. Leave this variable unset in shared or production-like environments to avoid enabling the bypass.
 
 ### Common Docker Compose launch recipes
 
@@ -91,6 +91,7 @@ Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=You
 **Offline demo (no LDAP required)** – loads curated data and enables the `demo.user` bypass account:
 
 ```bash
+ACCESS_TOKEN_TEST_USER=demo.user \
 PIRO_LOAD_SAMPLE_DATA=true \
 PIRO_SAMPLE_USER_NUID=demo.user \
 PIRO_SAMPLE_USER_FIRST_NAME=Demo \

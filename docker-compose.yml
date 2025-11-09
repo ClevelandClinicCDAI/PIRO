@@ -70,7 +70,8 @@ services:
       ACCESS_TOKEN_SECRET_KEY: ${PIRO_ACCESS_TOKEN_SECRET:-change-me}
       ACCESS_TOKEN_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 300
-      ACCESS_TOKEN_TEST_USER: demo.user
+      # ACCESS_TOKEN_TEST_USER deliberately has no default—set it explicitly for temporary local bypass only.
+      ACCESS_TOKEN_TEST_USER: ${ACCESS_TOKEN_TEST_USER:-}
       API_CORS: http://localhost:8080
       SOLR_URL: http://solr:8983/solr
       SOLR_CORE: PIROCase
