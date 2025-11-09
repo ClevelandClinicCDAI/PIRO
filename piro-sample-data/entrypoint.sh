@@ -59,7 +59,6 @@ apply_dir(){
   local pass=1
   while [ ${#pending[@]} -gt 0 ]; do
     deferred=()
-    local progress=0
     for file in "${pending[@]}"; do
       log "Applying ${file#/seed/}"
       if [[ "$file" == */SSIS/TABLES/* ]]; then
@@ -69,9 +68,7 @@ apply_dir(){
         table_name=${table_name%%.*}
         run_sql "$SQL_DB" -Q "IF OBJECT_ID('[dbo].[$table_name]', 'U') IS NOT NULL DROP TABLE [dbo].[$table_name]" >/dev/null 2>&1 || true
       fi
-      if run_sql "$SQL_DB" -i "$file"; then
-        progress=1
-      else
+      if ! run_sql "$SQL_DB" -i "$file"; then
         log "Deferring ${file#/seed/}; see error above"
         deferred+=("$file")
       fi
