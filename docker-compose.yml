@@ -1,5 +1,6 @@
 services:
   sqlserver:
+    profiles: ["local-mssql"]
     image: mcr.microsoft.com/mssql/server:2022-latest
     platform: linux/amd64
     environment:
@@ -27,17 +28,84 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    volumes:
+      - solr_data:/var/solr
+  airflow-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+  airflow:
+    image: apache/airflow:2.8.4-python3.11
+    depends_on:
+      airflow-db:
+        condition: service_started
+      solr:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-S0meRand0mFerNetKey12345678901234567890123456=}
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-dev-webserver-secret}
+      AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth
+      _PIP_ADDITIONAL_REQUIREMENTS: "pymssql striprtf python-dotenv requests"
+      # Airflow Variables surfaced via env for DB + Solr
+      AIRFLOW_VAR_PIRO_DB_SERVER: ${PIRO_MSSQL_HOST:-sqlserver}
+      AIRFLOW_VAR_PIRO_DB_INSTANCE: ${PIRO_MSSQL_INSTANCE:-}
+      AIRFLOW_VAR_PIRO_DB_NAME: ${PIRO_MSSQL_DB:-PIRO}
+      AIRFLOW_VAR_PIRO_DB_USERNAME: ${PIRO_MSSQL_USERNAME:-sa}
+      AIRFLOW_VAR_PIRO_DB_PASSWORD: ${PIRO_MSSQL_SA_PASSWORD:-P1ro!LocalDev}
+      AIRFLOW_VAR_SOLR_CASE_URL_DATA_IMPORT: ${PIRO_SOLR_CASE_URL_DATA_IMPORT:-http://solr:8983/solr/PIROCase/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_URL_DATA_UPDATE: ${PIRO_SOLR_CASE_URL_DATA_UPDATE:-http://solr:8983/solr/PIROCase/update?commitWithin=1000&overwrite=true&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_URL_STATUS: ${PIRO_SOLR_CASE_URL_STATUS:-http://solr:8983/solr/admin/ping}
+      AIRFLOW_VAR_SOLR_CASE_URL_DATA_COUNT: ${PIRO_SOLR_CASE_URL_DATA_COUNT:-http://solr:8983/solr/PIROCase/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_BATCH_DATA_UPDATE: ${PIRO_SOLR_CASE_BATCH_DATA_UPDATE:-3000}
+      AIRFLOW_VAR_SOLR_CASE_DB_RELOAD_DATA: ${PIRO_SOLR_CASE_DB_RELOAD_DATA:-0}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_URL_DATA_IMPORT: ${PIRO_SOLR_CASE_SUGGEST_URL_DATA_IMPORT:-http://solr:8983/solr/PIROSuggestCase/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_URL_DATA_UPDATE: ${PIRO_SOLR_CASE_SUGGEST_URL_DATA_UPDATE:-http://solr:8983/solr/PIROSuggestCase/update?commitWithin=1000&overwrite=true&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_URL_STATUS: ${PIRO_SOLR_CASE_SUGGEST_URL_STATUS:-http://solr:8983/solr/admin/ping}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_URL_DATA_COUNT: ${PIRO_SOLR_CASE_SUGGEST_URL_DATA_COUNT:-http://solr:8983/solr/PIROSuggestCase/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_BATCH_DATA_UPDATE: ${PIRO_SOLR_CASE_SUGGEST_BATCH_DATA_UPDATE:-3000}
+      AIRFLOW_VAR_SOLR_CASE_SUGGEST_DB_RELOAD_DATA: ${PIRO_SOLR_CASE_SUGGEST_DB_RELOAD_DATA:-0}
+      AIRFLOW_VAR_SOLR_CASE_STAFF_URL_DATA_IMPORT: ${PIRO_SOLR_CASE_STAFF_URL_DATA_IMPORT:-http://solr:8983/solr/PIROSuggestStaff/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_STAFF_URL_DATA_UPDATE: ${PIRO_SOLR_CASE_STAFF_URL_DATA_UPDATE:-http://solr:8983/solr/PIROSuggestStaff/update?commitWithin=1000&overwrite=true&wt=json}
+      AIRFLOW_VAR_SOLR_CASE_STAFF_URL_STATUS: ${PIRO_SOLR_CASE_STAFF_URL_STATUS:-http://solr:8983/solr/admin/ping}
+      AIRFLOW_VAR_SOLR_CASE_STAFF_BATCH_DATA_UPDATE: ${PIRO_SOLR_CASE_STAFF_BATCH_DATA_UPDATE:-3000}
+      AIRFLOW_VAR_SOLR_CASE_STAFF_DB_RELOAD_DATA: ${PIRO_SOLR_CASE_STAFF_DB_RELOAD_DATA:-0}
+      AIRFLOW_VAR_SOLR_COHORT_URL_DATA_IMPORT: ${PIRO_SOLR_COHORT_URL_DATA_IMPORT:-http://solr:8983/solr/PIROCohort/select?q=*:*&rows=0&wt=json}
+      AIRFLOW_VAR_SOLR_COHORT_URL_DATA_UPDATE: ${PIRO_SOLR_COHORT_URL_DATA_UPDATE:-http://solr:8983/solr/PIROCohort/update?commit=true&overwrite=true&wt=json}
+      AIRFLOW_VAR_SOLR_COHORT_URL_STATUS: ${PIRO_SOLR_COHORT_URL_STATUS:-http://solr:8983/solr/admin/ping}
+      AIRFLOW_VAR_SOLR_COHORT_BATCH_DATA_UPDATE: ${PIRO_SOLR_COHORT_BATCH_DATA_UPDATE:-3000}
+      AIRFLOW_VAR_SOLR_COHORT_DB_RELOAD_DATA: ${PIRO_SOLR_COHORT_DB_RELOAD_DATA:-0}
+      AIRFLOW_VAR_SOLR_HEADER_AUTH: ${PIRO_SOLR_HEADER_AUTH:-}
+      AIRFLOW_VAR_SOLR_CERTIFICAT_NAME: ${PIRO_SOLR_CERT_FILENAME:-ca-certificates.crt}
+    volumes:
+      - ./piro-airflow:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+    ports:
+      - "8084:8080"
+    command: |
+      bash -c "airflow db upgrade && \
+      airflow users create --role Admin --username admin --password admin --firstname Air --lastname Flow --email admin@example.com || true && \
+      mkdir -p /opt/airflow/certificates && cp /etc/ssl/certs/ca-certificates.crt /opt/airflow/certificates/ca-certificates.crt 2>/dev/null || true && \
+      airflow scheduler & exec airflow webserver"
   sample-data:
+    profiles: ["local-mssql"]
     build:
       context: .
       dockerfile: piro-sample-data/Dockerfile
     platform: linux/amd64
     environment:
-      SQLSERVER_HOST: sqlserver
-      SQLSERVER_PORT: 1433
-      SQLSERVER_USER: sa
+      SQLSERVER_HOST: ${PIRO_MSSQL_HOST:-sqlserver}
+      SQLSERVER_PORT: ${PIRO_MSSQL_PORT:-1433}
+      SQLSERVER_USER: ${PIRO_MSSQL_USERNAME:-sa}
       SQLSERVER_PASSWORD: ${PIRO_MSSQL_SA_PASSWORD:-P1ro!LocalDev}
-      SQLSERVER_DB: PIRO
+      SQLSERVER_DB: ${PIRO_MSSQL_DB:-PIRO}
       PIRO_BOOTSTRAP_DB: ${PIRO_BOOTSTRAP_DB:-true}
       PIRO_FORCE_RESET: ${PIRO_FORCE_RESET:-true}
       PIRO_LOAD_SAMPLE_DATA: ${PIRO_LOAD_SAMPLE_DATA:-false}
@@ -61,10 +129,10 @@ services:
       PROJECT_NAME: PIRO
       PROJECT_VERSION: "1.0.0"
       DATABASE: MSSQL
-      MSSQL_USER: sa
+      MSSQL_USER: ${PIRO_MSSQL_USERNAME:-sa}
       MSSQL_PASSWORD: ${PIRO_MSSQL_SA_PASSWORD:-P1ro!LocalDev}
-      MSSQL_SERVER: sqlserver
-      MSSQL_DB: PIRO
+      MSSQL_SERVER: ${PIRO_MSSQL_HOST:-sqlserver}${PIRO_MSSQL_INSTANCE:+\\${PIRO_MSSQL_INSTANCE}}
+      MSSQL_DB: ${PIRO_MSSQL_DB:-PIRO}
       MSSQL_WINDOW_AUTH: "False"
       MSSQL_DRIVER: ODBC Driver 18 for SQL Server
       ACCESS_TOKEN_SECRET_KEY: ${PIRO_ACCESS_TOKEN_SECRET:-change-me}
@@ -84,8 +152,8 @@ services:
       AD_SECURITY_GROUP: ${AD_SECURITY_GROUP:-}
       AD_DOMAIN: ${AD_DOMAIN:-}
     depends_on:
-      sample-data:
-        condition: service_completed_successfully
+      solr:
+        condition: service_healthy
     ports:
       - "8001:8001"
   ui:
@@ -100,3 +168,6 @@ services:
         condition: service_started
 volumes:
   sql_data:
+  solr_data:
+  airflow_logs:
+  airflow_db_data:

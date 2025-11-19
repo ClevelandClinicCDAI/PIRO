@@ -40,47 +40,53 @@ We use an instance of the Apache Airflow application as a job scheduling tool fo
 
 ## Docker Compose Quickstart
 
-You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the Angular UI) with Docker Compose. Everything lives at the repository root now: the Compose file is `docker-compose.yml`, the sample-data container is built from `./piro-sample-data`, Solr builds from `./piro-solr`, and the UI reverse proxy ships with `./piro-ui/nginx.conf`.
+You can now run the **entire PIRO stack** locally – FastAPI, Angular UI, Solr (V9 configs), optional local SQL Server + sample data, **plus a full Airflow instance** that drives Solr indexing using the repository’s DAGs. Everything lives at the repository root: `docker-compose.yml` orchestrates it all.
 
 ### Repository layout for Compose assets
 
-- `docker-compose.yml` – defines the five core services (SQL Server, Solr, sample-data bootstrapper, FastAPI, Angular UI).
-- `piro-sample-data/` – Dockerfile, entrypoint script, SQL/Solr fixtures, and helpers (pulls schema scripts from `piro-sql/`).
-- `piro-solr/` – Solr Dockerfile, `create-cores.sh`, and versioned config sets under `V8/` and `V9/`.
-- `piro-ui/nginx.conf` – the nginx site definition used by the UI container to proxy `/api` to FastAPI.
+- `docker-compose.yml` – defines Solr, FastAPI, Angular UI, Airflow + Postgres metadata DB, and opt-in SQL Server + sample-data bootstrapper (via profiles).
+- `piro-airflow/` – DAGs and task code used by the stack’s Airflow container.
+- `piro-sample-data/` – Dockerfile, entrypoint script, SQL fixtures, and helpers (pulls schema scripts from `piro-sql/`).
+- `piro-solr/` – Solr Dockerfile, `create-cores.sh`, and versioned config sets under `V8/` and `V9/` (Compose builds V9 by default).
+- `piro-ui/nginx.conf` – nginx site definition used by the UI container to proxy `/api` to FastAPI.
 
 ### Prerequisites
 
 - Docker Desktop **or** the Docker Engine CLI plus the Compose plugin (`docker compose`).
 - ~8 GB of free RAM (SQL Server + Solr are memory hungry).
 
-### One-time bootstrap with sample data
+### Profiles and what they do
+
+- Default (no profile): starts Solr, Airflow (+ Postgres metadata DB), API, UI. Expects you to point at an **external SQL Server** via env vars.
+- `local-mssql` profile: adds the local `sqlserver` container **and** the `sample-data` bootstrapper so you can bring your own database if you want everything self-contained.
+
+### One-time bootstrap with local SQL + sample data
 
 ```bash
 # from the repo root
 PIRO_LOAD_SAMPLE_DATA=true \
 PIRO_MSSQL_SA_PASSWORD='ChooseA$trongPassword' \
-docker compose up --build
+docker compose --profile local-mssql up --build
 ```
 
-Behind the scenes:
+Behind the scenes (with `local-mssql`):
 
 - `sqlserver` (official SQL Server 2022 image) exposes `localhost:1433` and persists data in the `sql_data` Docker volume.
-- `solr` builds from `piro-solr/Dockerfile`, copies the checked-in config sets, runs `create-cores.sh`, and listens on `http://localhost:8983`.
-- `sample-data` builds from `piro-sample-data/Dockerfile`, waits for SQL + Solr, redeploys every schema from `piro-sql`, and optionally loads curated demo data into both systems when `PIRO_LOAD_SAMPLE_DATA=true`.
-- `api` builds from `./piro-api` with ODBC Driver 18, exposes Swagger UI on `http://localhost:8001/docs`, and expects Solr + SQL hostnames from Compose networking.
-- `ui` builds `./piro-ui`, copies the compiled Angular build artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
+- `sample-data` waits for SQL + Solr, deploys schemas from `piro-sql`, and only loads demo content when `PIRO_LOAD_SAMPLE_DATA=true`.
+- `solr` builds V9 cores and stores indexes in the named volume `solr_data` so restarts are fast.
+- `airflow-db` (Postgres) and `airflow` (Apache Airflow 2.8) run continuously; Airflow gets DAGs from `./piro-airflow` and uses env-injected Variables for SQL and Solr connection info.
+- `api` exposes Swagger UI on `http://localhost:8001/docs` and talks to the SQL/Solr hosts you provide.
+- `ui` serves the SPA on `http://localhost:8080`.
 
 ### Useful configuration knobs
 
-- `PIRO_ACCESS_TOKEN_SECRET` – JWT signing secret for FastAPI (defaults to `change-me`).
-- `PIRO_MSSQL_SA_PASSWORD` – SQL `sa` password used by SQL Server and every dependent container (defaults to `P1ro!LocalDev`).
-- `PIRO_BOOTSTRAP_DB` – `false` keeps existing MDF/LDF files and skips schema reapply on the next `docker compose up`.
-- `PIRO_FORCE_RESET` – `true` drops/recreates the PIRO database before schema deployment (defaults to `true`).
-- `PIRO_LOAD_SAMPLE_DATA` – `true` re-imports demo SQL + Solr docs, `false` leaves the schema empty.
-- `PIRO_SAMPLE_USER_*` – seeds a specific account into SQL + Solr for local testing (`NUID`, `FIRST_NAME`, `LAST_NAME`, `ROLE`).
-- `AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN` – plug real directory settings in when you want LDAP-backed auth inside the API container.
-- `ACCESS_TOKEN_TEST_USER` – comma-separated usernames allowed to bypass LDAP when running locally (unset by default; set explicitly, e.g., `ACCESS_TOKEN_TEST_USER=demo.user`, only when you need the bypass).
+- **SQL targeting** (works for both API and Airflow):
+  - `PIRO_MSSQL_HOST`, `PIRO_MSSQL_PORT` (default `1433`), `PIRO_MSSQL_INSTANCE` (optional), `PIRO_MSSQL_USERNAME`, `PIRO_MSSQL_SA_PASSWORD`, `PIRO_MSSQL_DB`.
+  - Add `--profile local-mssql` if you want the bundled SQL + sample-data instead of an external instance.
+- **Sample data/bootstrap**: `PIRO_BOOTSTRAP_DB` (default `true`), `PIRO_FORCE_RESET` (default `true`), `PIRO_LOAD_SAMPLE_DATA` (default `false`), `PIRO_SAMPLE_USER_*` for demo user seeding.
+- **Solr**: persists to `solr_data` volume; no DIH in V9—indexing is handled by the Airflow DAGs included in this repo.
+- **Airflow**: web UI on `http://localhost:8084` (admin/admin by default). Variables are fed from env (`AIRFLOW_VAR_*`) and already mapped from the `PIRO_*` settings above. If you point the stack at remote SQL/Solr, just set the corresponding `PIRO_*` envs before `docker compose up`.
+- **Auth + UI**: `PIRO_ACCESS_TOKEN_SECRET`, `ACCESS_TOKEN_TEST_USER` (local bypass), LDAP settings (`AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN`).
 
 Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` in your shell or `.env` file before running `docker compose up`, then sign in via the UI as `demo.user` with any password. Leave this variable unset in shared or production-like environments to avoid enabling the bypass.
 
@@ -88,7 +94,7 @@ Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` in your shell or `.en
 
 Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=Your-Security-Group,...`, etc.) with settings from your own environment before running the commands.
 
-**Offline demo (no LDAP required)** – loads curated data and enables the `demo.user` bypass account:
+**Offline demo (no LDAP required)** – runs local SQL + sample data + Airflow + Solr:
 
 ```bash
 ACCESS_TOKEN_TEST_USER=demo.user \
@@ -97,7 +103,7 @@ PIRO_SAMPLE_USER_NUID=demo.user \
 PIRO_SAMPLE_USER_FIRST_NAME=Demo \
 PIRO_SAMPLE_USER_LAST_NAME=User \
 PIRO_SAMPLE_USER_ROLE=USER \
-docker compose up --build
+docker compose --profile local-mssql up --build
 ```
 
 **First-time LDAP initialization with sample data** – run while connected to your corporate network so LDAP lookups succeed:
@@ -114,9 +120,14 @@ AD_DOMAIN=example.org \
 docker compose up --build
 ```
 
-**Production-like run (LDAP only, no sample data)** – skip demo content once you have real data restored locally:
+**Production-like run (LDAP only, no sample data; external SQL/Solr)** – point API+Airflow at your real hosts, skip local SQL and sample-data:
 
 ```bash
+PIRO_MSSQL_HOST=your-sql-host \
+PIRO_MSSQL_INSTANCE=YOURINSTANCE \
+PIRO_MSSQL_USERNAME=piro_etl \
+PIRO_MSSQL_SA_PASSWORD='strong' \
+PIRO_MSSQL_DB=PIRO \
 PIRO_LOAD_SAMPLE_DATA=false \
 AD_LDAP_PATH="ldaps://ldap.example.org:3269" \
 AD_SECURITY_GROUP="CN=PIRO-Prod,OU=Groups,DC=example,DC=org" \
@@ -129,7 +140,8 @@ docker compose up --build
 - UI: <http://localhost:8080>
 - API (direct): <http://localhost:8001/docs>
 - Solr: <http://localhost:8983/solr>
-- SQL Server: localhost:1433 (SQL authentication, database `PIRO`).
+- Airflow UI: <http://localhost:8084>
+- SQL Server (when `local-mssql` profile enabled): localhost:1433 (database `PIRO`).
 
 Press `Ctrl+C` to stop the stack. To remove containers/volumes afterwards:
 
