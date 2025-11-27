@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 from core.config import Settings
 from db.repository.search import get_search
 from openpyxl import Workbook, load_workbook
-from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE, Cell
 from pytest import Session
 from solr.models.document import document
 from solr.repository.piro import search_Q
@@ -133,11 +133,14 @@ def create_excel(searchId: int, data: List[document], fields: []):
                     str_data = str_data.replace("||--||", "\n\n")
                     if field.DataFieldSolrField == "final":
                         str_data = str_data.replace("-", "\n-")
-                    ws1.cell(
+                    cell: Cell = ws1.cell(
                         row + offset_row,
                         col + offset_col,
                         str_data,
                     )
+                    # Set the cell's data type to String ('s') to avoid text
+                    # being interpreted as a formula.
+                    cell.data_type = "s"
             else:
                 ws1.cell(
                     row + offset_row,
