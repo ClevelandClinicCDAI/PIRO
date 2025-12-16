@@ -40,6 +40,12 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES = float(
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
     )  # in mins
+    SLIDEROOM_ACCESS_TOKEN_EXPIRE_MINUTES = float(
+        os.getenv(
+            "SLIDEROOM_ACCESS_TOKEN_EXPIRE_MINUTES",
+            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"),
+        )
+    )
 
     TEST_USER_EMAIL = "test@example.com"
     API_CORS: str = os.getenv("API_CORS")

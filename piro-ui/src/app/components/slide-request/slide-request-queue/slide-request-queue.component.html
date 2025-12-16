@@ -1,0 +1,197 @@
+<div class="container pt-2">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card shadow p-3 bg-white rounded">
+        <div class="card-body">
+          <h4 class="card-title text-center mb-3">Slide Room Queue</h4>
+
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Pending</h5>
+              <div *ngIf="isLoadingPending">Loading...</div>
+              <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+              <div *ngIf="!isLoadingPending && pendingRequests.length === 0 && !errorMessage" class="alert alert-info">
+                No pending requests.
+              </div>
+              <div *ngFor="let request of pendingRequests; trackBy: trackById" class="card mb-2">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
+                      <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
+                      <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
+                      <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
+                      <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                    </div>
+                  </div>
+
+                  <div class="mt-2">
+                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <div *ngIf="isEditingNotes(request.id)">
+                      <textarea
+                        class="form-control notes-textarea"
+                        [(ngModel)]="editingNotes[request.id]"
+                        [disabled]="savingNotes[request.id]"
+                      ></textarea>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-primary" (click)="saveSlideRoomNotes(request)" [disabled]="savingNotes[request.id]">
+                          Save
+                        </button>
+                        <button class="btn btn-sm btn-link" (click)="cancelEditingNotes(request.id)" [disabled]="savingNotes[request.id]">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <div *ngIf="!isEditingNotes(request.id)">
+                      <p class="mb-1">{{ request.slideRoomNotes || '-' }}</p>
+                      <button class="btn btn-sm btn-link" (click)="startEditingNotes(request)">Edit</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <h5>In Process</h5>
+              <div *ngIf="isLoadingInProcess">Loading...</div>
+              <div *ngIf="inProcessErrorMessage" class="alert alert-danger">{{ inProcessErrorMessage }}</div>
+              <div *ngIf="!isLoadingInProcess && inProcessRequests.length === 0 && !inProcessErrorMessage" class="alert alert-info">
+                No in-process requests.
+              </div>
+              <div *ngFor="let request of inProcessRequests; trackBy: trackById" class="card mb-2">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
+                      <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Taken By:</strong> {{ request.takenBy || '-' }}</p>
+                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
+                      <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
+                      <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                    </div>
+                  </div>
+
+                  <div class="mt-2">
+                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <div *ngIf="isEditingNotes(request.id)">
+                      <textarea
+                        class="form-control notes-textarea"
+                        [(ngModel)]="editingNotes[request.id]"
+                        [disabled]="savingNotes[request.id]"
+                      ></textarea>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-primary" (click)="saveSlideRoomNotes(request)" [disabled]="savingNotes[request.id]">
+                          Save
+                        </button>
+                        <button class="btn btn-sm btn-link" (click)="cancelEditingNotes(request.id)" [disabled]="savingNotes[request.id]">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <div *ngIf="!isEditingNotes(request.id)">
+                      <p class="mb-1">{{ request.slideRoomNotes || '-' }}</p>
+                      <button class="btn btn-sm btn-link" (click)="startEditingNotes(request)">Edit</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="mt-3">Holding</h5>
+              <div *ngIf="isLoadingHolding">Loading...</div>
+              <div *ngIf="holdingErrorMessage" class="alert alert-danger">{{ holdingErrorMessage }}</div>
+              <div *ngIf="!isLoadingHolding && holdingRequests.length === 0 && !holdingErrorMessage" class="alert alert-info">
+                No holding requests.
+              </div>
+              <div *ngFor="let request of holdingRequests; trackBy: trackById" class="card mb-2">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
+                      <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
+                      <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
+                      <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                    </div>
+                  </div>
+
+                  <div class="mt-2">
+                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <div *ngIf="isEditingNotes(request.id)">
+                      <textarea
+                        class="form-control notes-textarea"
+                        [(ngModel)]="editingNotes[request.id]"
+                        [disabled]="savingNotes[request.id]"
+                      ></textarea>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-primary" (click)="saveSlideRoomNotes(request)" [disabled]="savingNotes[request.id]">
+                          Save
+                        </button>
+                        <button class="btn btn-sm btn-link" (click)="cancelEditingNotes(request.id)" [disabled]="savingNotes[request.id]">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <div *ngIf="!isEditingNotes(request.id)">
+                      <p class="mb-1">{{ request.slideRoomNotes || '-' }}</p>
+                      <button class="btn btn-sm btn-link" (click)="startEditingNotes(request)">Edit</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-md-12">
+              <h5>Completed / NIF</h5>
+              <div *ngIf="isLoadingCompleted">Loading...</div>
+              <div *ngIf="completedErrorMessage" class="alert alert-danger">{{ completedErrorMessage }}</div>
+              <div *ngIf="!isLoadingCompleted && completedRequests.length === 0 && !completedErrorMessage" class="alert alert-info">
+                No completed requests.
+              </div>
+              <div class="table-responsive" *ngIf="!isLoadingCompleted && completedRequests.length > 0">
+                <table class="table table-sm align-middle mb-0">
+                  <thead class="thead-light">
+                    <tr>
+                      <th scope="col">Accession</th>
+                      <th scope="col">Urgency</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Requester</th>
+                      <th scope="col">Taken By</th>
+                      <th scope="col">Completed</th>
+                      <th scope="col">Slide Room Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let request of completedRequests; trackBy: trackById">
+                      <td>{{ request.accessionNumber }}</td>
+                      <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
+                      <td>{{ request.status }}</td>
+                      <td>{{ request.requestedBy || '-' }}</td>
+                      <td>{{ request.takenBy || '-' }}</td>
+                      <td>{{ request.completedAt | date: 'short' }}</td>
+                      <td>{{ request.slideRoomNotes || '-' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

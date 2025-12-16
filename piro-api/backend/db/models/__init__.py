@@ -11,6 +11,7 @@ from db.models.Patient import Patient
 from db.models.Race import Race
 from db.models.Region import Region
 from db.models.Role import Role
+from db.models.SlideRequest import SlideRequest
 from db.models.Search import Search
 from db.models.SearchRequest import SearchRequest
 from db.models.SearchRequestStatus import SearchRequestStatus
@@ -37,6 +38,7 @@ __all__ = [
     "Race",
     "Region",
     "Role",
+    "SlideRequest",
     "Search",
     "SearchRequest",
     "SearchRequestStatus",

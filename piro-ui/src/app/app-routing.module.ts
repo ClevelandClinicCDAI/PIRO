@@ -47,6 +47,8 @@ import { DetailComponent } from './components/search/detail/detail.component';
 import { PagenotfoundComponent } from './pagenotfound/pagenotfound.component';
 import { CohortComponent } from './components/cohort/cohort.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
+import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
+import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -102,6 +104,18 @@ const routes: Routes = [
     path: 'extractrequest', component: ExtractRequestComponent, canActivate: [AuthGuard],
     data: {
       role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'slide-request', component: SlideRequestFormComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'slide-request-queue', component: SlideRequestQueueComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'SLIDEROOM']
     }
   },
   {

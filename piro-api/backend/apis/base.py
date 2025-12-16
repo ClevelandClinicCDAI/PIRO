@@ -12,6 +12,7 @@ from apis.version1 import (
     route_race,
     route_region,
     route_role,
+    route_slide_request,
     route_search,
     route_searchRequest,
     route_searchRequestStatus,
@@ -107,4 +108,9 @@ api_router.include_router(
 )
 api_router.include_router(
     route_concentriq.router, prefix="/concentriq", tags=["Concentriq"]
+)
+api_router.include_router(
+    route_slide_request.router,
+    prefix="/sliderequest",
+    tags=["Slide Requests"],
 )

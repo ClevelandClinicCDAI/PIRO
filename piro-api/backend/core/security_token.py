@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 from core.config import settings
 import jwt
@@ -6,9 +7,18 @@ from logger import logger
 
 
 def create_access_token(
-    userId: int, nuid: str, role: str, name: str, isAttest: bool = False
+    userId: int,
+    nuid: str,
+    role: str,
+    name: str,
+    isAttest: bool = False,
+    expire_minutes: Optional[float] = None,
 ):
-    expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expires_delta = timedelta(
+        minutes=expire_minutes
+        if expire_minutes is not None
+        else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     data = {"userId": 0, "nuid": "", "role": "", "name": ""}
     data["userId"] = userId
     data["nuid"] = nuid

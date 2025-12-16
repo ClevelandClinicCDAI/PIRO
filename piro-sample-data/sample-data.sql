@@ -122,7 +122,8 @@ BEGIN TRY
         ('Administrator', 'ADMIN', 'Full administrative access', 1, 'ROLE-ADMIN', @now, @seedUser, @now, @seedUser),
         ('Reviewer', 'REVIEW', 'Clinical reviewer', 1, 'ROLE-REVIEW', @now, @seedUser, @now, @seedUser),
         ('Researcher', 'RESEARCH', 'Research workspace access', 1, 'ROLE-RESEARCH', @now, @seedUser, @now, @seedUser),
-        ('User', 'USER', 'Standard PIRO user', 1, 'ROLE-USER', @now, @seedUser, @now, @seedUser);
+        ('User', 'USER', 'Standard PIRO user', 1, 'ROLE-USER', @now, @seedUser, @now, @seedUser),
+        ('Slide Room', 'SLIDEROOM', 'Slide room queue access only', 1, 'ROLE-SLIDEROOM', @now, @seedUser, @now, @seedUser);
 
     IF NOT EXISTS (SELECT 1 FROM @Role WHERE Code = @sampleUserRoleCode)
     BEGIN
