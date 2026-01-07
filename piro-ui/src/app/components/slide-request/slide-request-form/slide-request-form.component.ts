@@ -50,12 +50,12 @@ export class SlideRequestFormComponent implements OnInit {
     }
 
     const payloads = this.buildPayloads();
-    const results: { payload: SlideRequestFormPayload; result: any }[] = [];
-    for (const payload of payloads) {
-      // eslint-disable-next-line no-await-in-loop
-      const result = await this.slideRequestService.createRequest(payload);
-      results.push({ payload, result });
-    }
+    const results: { payload: SlideRequestFormPayload; result: any }[] = await Promise.all(
+      payloads.map(async (payload) => {
+        const result = await this.slideRequestService.createRequest(payload);
+        return { payload, result };
+      })
+    );
     this.submitting = false;
 
     const failed = results.filter((item) => !item.result?.status);
