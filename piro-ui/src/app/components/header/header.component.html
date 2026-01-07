@@ -64,6 +64,12 @@
         <li class="nav-item" *ngIf="isRequestReview">
           <a href="#" routerLink="my-requests" class="nav-link" routerLinkActive="active">Data Request Inbox</a>
         </li>
+        <li class="nav-item" *ngIf="canRequestSlides">
+          <a routerLink="slide-request" class="nav-link" routerLinkActive="active">Slide Request</a>
+        </li>
+        <li class="nav-item" *ngIf="canViewSlideQueue">
+          <a routerLink="slide-request-queue" class="nav-link" routerLinkActive="active">Slide Room Queue</a>
+        </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown"
             aria-expanded="false"><i class="fa fa-user"></i></a>

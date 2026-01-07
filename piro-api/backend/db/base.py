@@ -15,6 +15,7 @@ from db.models.Patient import Patient  # noqa
 from db.models.Race import Race  # noqa
 from db.models.Region import Region  # noqa
 from db.models.Role import Role  # noqa
+from db.models.SlideRequest import SlideRequest  # noqa
 from db.models.Search import Search  # noqa
 from db.models.SearchRequest import SearchRequest  # noqa
 from db.models.SearchRequestReason import SearchRequestReason  # noqa

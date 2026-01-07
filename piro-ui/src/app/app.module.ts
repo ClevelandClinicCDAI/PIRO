@@ -112,6 +112,8 @@ import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { AiAuditComponent } from './components/modal/ai-audit/ai-audit.component';
 import { AireviewcasedetailComponent } from './components/modal/aireviewcasedetail/aireviewcasedetail.component';
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
+import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
+import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -199,7 +201,9 @@ import { UserattestComponent } from './components/modal/userattest/userattest.co
     AireviewsComponent,
     AiAuditComponent,
     AireviewcasedetailComponent,
-    UserattestComponent
+    UserattestComponent,
+    SlideRequestFormComponent,
+    SlideRequestQueueComponent
   ],
   imports: [
     CommonModule, 

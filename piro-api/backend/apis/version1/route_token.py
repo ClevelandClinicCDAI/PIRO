@@ -23,6 +23,7 @@ from db.repository.userAttestation import (
     get_is_attested,
 )
 from db.repository.user import create_user_log
+from core.config import settings
 
 # from core.security_user import get_current_user_details
 router = APIRouter()
@@ -62,12 +63,18 @@ async def login_for_access_token(
         credentials.islog,
         db=db,
     )
+    expiry_minutes = (
+        settings.SLIDEROOM_ACCESS_TOKEN_EXPIRE_MINUTES
+        if user.Role == Constants.RoleSlideRoom
+        else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     access_token = create_access_token(
         user.UserId,
         user.NUID,
         user.Role,
         f"{user.LastName}, {user.FirstName}",
         isAttest,
+        expiry_minutes,
     )
     message: str = "Token created"
     logger.info(message)

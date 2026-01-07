@@ -1,0 +1,8 @@
+.urgency-badge {
+  font-size: 0.85rem;
+}
+
+.notes-textarea {
+  min-height: 100px;
+  width: 100%;
+}

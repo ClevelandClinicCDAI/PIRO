@@ -1,7 +1,7 @@
 from apis.base import api_router
 from core.config import settings
 from db.base_class import Base
-from db.session import engine_inst
+from db.session import SessionLocal, engine_inst
 from db.utils import check_db_connected, check_db_disconnected
 from exception_handlers import request_validation_exception_handler
 from fastapi import FastAPI
@@ -12,6 +12,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_pagination import add_pagination
 from logger import logger
+from core.constants import Constants
+from db.repository.role import ensure_role_exists
 from middleware import log_request_middleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
@@ -28,6 +30,24 @@ def configure_static(app):
 
 def create_tables():
     Base.metadata.create_all(bind=engine_inst)
+
+
+def seed_system_roles():
+    """Guarantee required system roles exist for admin drop-downs."""
+    db = SessionLocal()
+    try:
+        ensure_role_exists(
+            code=Constants.RoleSlideRoom,
+            short_name="Slide Room",
+            description="Slide room queue access only",
+            reference="ROLE-SLIDEROOM",
+            user="system",
+            db=db,
+        )
+    except Exception as exc:  # pragma: no cover - best-effort guard
+        logger.error("Unable to seed system roles: %s", exc)
+    finally:
+        db.close()
 
 
 def start_application():
@@ -95,6 +115,7 @@ async def unicorn_exception_handler(request: Request, exc: UnicornException):
 @app.on_event("startup")
 async def app_startup():
     await check_db_connected()
+    seed_system_roles()
 
 
 @app.on_event("shutdown")

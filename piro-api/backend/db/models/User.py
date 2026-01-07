@@ -18,5 +18,20 @@ class User(Base):
     UserRole = relationship("UserRole", back_populates="User")
     Search = relationship("Search", back_populates="User")
     SearchRequest = relationship("SearchRequest", back_populates="User")
+    SlideRequests = relationship(
+        "SlideRequest",
+        back_populates="Requester",
+        foreign_keys="SlideRequest.RequesterId",
+    )
+    SlideRequestsCompleted = relationship(
+        "SlideRequest",
+        back_populates="CompletedBy",
+        foreign_keys="SlideRequest.CompletedById",
+    )
+    SlideRequestsInProcess = relationship(
+        "SlideRequest",
+        back_populates="InProcessBy",
+        foreign_keys="SlideRequest.InProcessById",
+    )
     # AuditTrailSearch = relationship("AuditTrailSearch", back_populates="User")
     # AuditTrailCase = relationship("AuditTrailCase", back_populates="User")

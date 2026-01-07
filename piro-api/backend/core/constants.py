@@ -17,6 +17,17 @@ class Constants:
         EXPORT = (6,)
         UPDATE = 7
 
+    class SlideRequestStatus(Enum):
+        PENDING = "PENDING"
+        HOLDING = "HOLDING"
+        IN_PROCESS = "IN_PROCESS"
+        COMPLETED = "COMPLETED"
+        NIF = "NIF"
+
+    class SlideRequestUrgency(str, Enum):
+        SAMEDAY = "SameDay"
+        ROUTINE = "Routine"
+
     class StatusCode(Enum):
         S = 1
         W = 2
@@ -41,6 +52,7 @@ class Constants:
     RoleUser: str = "USER"
     RoleAnalyst: str = "ANALYST"
     RoleDemoAdmin: str = "DEMOADMIN"
+    RoleSlideRoom: str = "SLIDEROOM"
 
     # AttestationText: str = "<p>Attestation Text</p><br/>I <b>attest</b> the application....."
     # AttestationRequiredDate: str = "2024-06-12"
