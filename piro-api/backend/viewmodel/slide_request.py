@@ -11,7 +11,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from db.models.SlideRequest import SlideRequest
 
 
-_ACCESSION_PATTERN = re.compile(r"^[A-Za-z]{1,3}\d{2}-\d{3,6}$")
+ACCESSION_PATTERN = re.compile(r"^[A-Za-z]{1,3}\d{2}-\d{3,6}$")
 
 
 class SlideRequestCreateVM(BaseModel):
@@ -28,7 +28,7 @@ class SlideRequestCreateVM(BaseModel):
         cleaned = value.strip()
         if cleaned == "":
             raise ValueError("Accession number is required")
-        if not _ACCESSION_PATTERN.match(cleaned):
+        if not ACCESSION_PATTERN.match(cleaned):
             raise ValueError(
                 "Accession number must match format AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits)"
             )
