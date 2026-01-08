@@ -29,7 +29,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     Routine: 'Routine'
   };
   private refreshTimer: any;
-  private readonly refreshIntervalMs = 15000;
+  private readonly refreshIntervalMs = 300000;
 
   constructor(
     private slideRequestService: SlideRequestService,
