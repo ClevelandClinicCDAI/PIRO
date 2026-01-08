@@ -136,6 +136,29 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     }
   }
 
+  async resetRequest(request: SlideRequest) {
+    if (!request?.id) {
+      return;
+    }
+    this.updating[request.id] = true;
+    const result: any = await this.slideRequestService.resetRequest(request.id);
+    this.updating[request.id] = false;
+    if (result?.status && result.data) {
+      this.toastService.showInfoToast('Request reset', 'The request was moved back to Pending.', []);
+      this.pendingRequests = [
+        result.data,
+        ...this.pendingRequests.filter((item) => item.id !== request.id),
+      ];
+      this.inProcessRequests = this.inProcessRequests.filter((item) => item.id !== request.id);
+      this.holdingRequests = this.holdingRequests.filter((item) => item.id !== request.id);
+      this.completedRequests = this.completedRequests.filter((item) => item.id !== request.id);
+      delete this.editingNotes[request.id];
+      delete this.savingNotes[request.id];
+    } else {
+      this.toastService.showErrorToast('Unable to reset', 'Please try resetting the request again.', []);
+    }
+  }
+
   async moveToHolding(request: SlideRequest) {
     if (!request?.id) {
       return;

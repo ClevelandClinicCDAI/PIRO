@@ -147,6 +147,28 @@ def mark_slide_request_nif(
     return request
 
 
+def reset_slide_request(request_id: int, user: str, db: Session):
+    request = (
+        db.query(SlideRequest)
+        .filter(SlideRequest.SlideRequestId == request_id)
+        .first()
+    )
+    if request is None:
+        raise DataException("Slide request does not exist")
+
+    if request.Status == Constants.SlideRequestStatus.PENDING.value:
+        return request
+
+    request.Status = Constants.SlideRequestStatus.PENDING.value
+    request.CompletedById = None
+    request.InProcessById = None
+    request.CompletedDate = None
+    request.UpdateBy = user
+    db.commit()
+    db.refresh(request)
+    return request
+
+
 def update_slide_room_notes(
     request_id: int,
     input: SlideRoomNotesUpdateVM,

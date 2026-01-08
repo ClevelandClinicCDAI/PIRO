@@ -10,6 +10,7 @@ from db.repository.slide_request import (
     take_slide_request,
     list_slide_requests,
     mark_slide_request_nif,
+    reset_slide_request,
     update_slide_room_notes,
 )
 from db.session import get_db
@@ -205,6 +206,24 @@ async def mark_slide_request_nif_endpoint(
     request = mark_slide_request_nif(
         request_id=request_id,
         user_id=int(current_user_id),
+        user=current_user,
+        db=db,
+    )
+    return to_slide_request_vm(request)
+
+
+@router.post(
+    "/{request_id}/reset",
+    dependencies=[Depends(JWTBearer(_QUEUE_ROLES))],
+    response_model=SlideRequestVM,
+)
+async def reset_slide_request_endpoint(
+    request_id: int,
+    current_user: Annotated[str, Depends(get_current_user_nuid)],
+    db: Session = Depends(get_db),
+):
+    request = reset_slide_request(
+        request_id=request_id,
         user=current_user,
         db=db,
     )

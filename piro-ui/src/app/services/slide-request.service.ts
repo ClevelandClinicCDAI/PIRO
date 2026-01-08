@@ -153,4 +153,17 @@ export class SlideRequestService {
       });
     });
   }
+
+  resetRequest(requestId: number) {
+    return new Promise((resolve) => {
+      this.http.post<SlideRequest>(`${this.baseUrl}/${requestId}/reset`, {}).subscribe({
+        next: (res: SlideRequest) => {
+          resolve({ status: true, data: res });
+        },
+        error: (err: any) => {
+          resolve({ status: false, data: null, err });
+        }
+      });
+    });
+  }
 }
