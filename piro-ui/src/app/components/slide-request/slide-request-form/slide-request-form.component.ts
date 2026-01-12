@@ -15,6 +15,7 @@ export class SlideRequestFormComponent implements OnInit {
   myRequests: SlideRequest[] = [];
   pendingMyRequests: SlideRequest[] = [];
   completedMyRequests: SlideRequest[] = [];
+  canceling: { [key: number]: boolean } = {};
   errorMessage = '';
   urgencyOptions: { value: SlideRequestUrgency; label: string }[] = [
     { value: 'SameDay', label: 'Same Day' },
@@ -68,8 +69,7 @@ export class SlideRequestFormComponent implements OnInit {
       const successTitle = succeeded.length === 1 ? 'Slide requested' : 'Slides requested';
       this.toastService.showSuccessToast(successTitle, 'Your request has been submitted to the slide room queue.', []);
       this.myRequests = [...succeeded, ...this.myRequests];
-      this.pendingMyRequests = this.myRequests.filter((item) => item.status === 'PENDING');
-      this.completedMyRequests = this.myRequests.filter((item) => item.status !== 'PENDING');
+      this.splitRequests();
     }
 
     this.requestForm.reset({
@@ -100,10 +100,25 @@ export class SlideRequestFormComponent implements OnInit {
     const result: any = await this.slideRequestService.getMyRequests();
     if (result?.status) {
       this.myRequests = result.data || [];
-      this.pendingMyRequests = this.myRequests.filter((item) => item.status === 'PENDING');
-      this.completedMyRequests = this.myRequests.filter((item) => item.status !== 'PENDING');
+      this.splitRequests();
     } else {
       this.errorMessage = 'Unable to load your slide requests.';
+    }
+  }
+
+  async cancelRequest(request: SlideRequest) {
+    if (!request?.id) {
+      return;
+    }
+    this.canceling[request.id] = true;
+    const result: any = await this.slideRequestService.cancelRequest(request.id);
+    this.canceling[request.id] = false;
+    if (result?.status && result.data) {
+      this.toastService.showInfoToast('Request canceled', 'The slide request was canceled.', []);
+      this.myRequests = this.myRequests.map((item) => (item.id === request.id ? result.data : item));
+      this.splitRequests();
+    } else {
+      this.toastService.showErrorToast('Unable to cancel', 'Please try again.', []);
     }
   }
 
@@ -129,5 +144,21 @@ export class SlideRequestFormComponent implements OnInit {
       return 'badge rounded-pill bg-secondary';
     }
     return 'badge rounded-pill bg-light text-dark border';
+  }
+
+  getStatusLabel(status: string | undefined | null) {
+    if (status === 'CANCELED') {
+      return 'Canceled';
+    }
+    return status || '-';
+  }
+
+  private splitRequests() {
+    this.pendingMyRequests = this.myRequests.filter((item) => this.isPendingStatus(item.status));
+    this.completedMyRequests = this.myRequests.filter((item) => !this.isPendingStatus(item.status));
+  }
+
+  private isPendingStatus(status: string | undefined | null) {
+    return status === 'PENDING' || status === 'IN_PROCESS' || status === 'HOLDING';
   }
 }

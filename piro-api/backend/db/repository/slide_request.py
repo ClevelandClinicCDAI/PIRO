@@ -54,7 +54,10 @@ def complete_slide_request(
     if request is None:
         raise DataException("Slide request does not exist")
 
-    if request.Status == Constants.SlideRequestStatus.COMPLETED.value:
+    if request.Status in (
+        Constants.SlideRequestStatus.COMPLETED.value,
+        Constants.SlideRequestStatus.CANCELED.value,
+    ):
         return request
 
     completed_at = datetime.now().replace(tzinfo=None)
@@ -81,6 +84,7 @@ def hold_slide_request(request_id: int, user: str, db: Session):
     if request.Status in (
         Constants.SlideRequestStatus.COMPLETED.value,
         Constants.SlideRequestStatus.NIF.value,
+        Constants.SlideRequestStatus.CANCELED.value,
         Constants.SlideRequestStatus.HOLDING.value,
     ):
         return request
@@ -107,6 +111,7 @@ def take_slide_request(request_id: int, user_id: int, user: str, db: Session):
     if request.Status in (
         Constants.SlideRequestStatus.COMPLETED.value,
         Constants.SlideRequestStatus.NIF.value,
+        Constants.SlideRequestStatus.CANCELED.value,
         Constants.SlideRequestStatus.IN_PROCESS.value,
     ):
         return request
@@ -132,7 +137,10 @@ def mark_slide_request_nif(
     if request is None:
         raise DataException("Slide request does not exist")
 
-    if request.Status == Constants.SlideRequestStatus.NIF.value:
+    if request.Status in (
+        Constants.SlideRequestStatus.NIF.value,
+        Constants.SlideRequestStatus.CANCELED.value,
+    ):
         return request
 
     completed_at = datetime.now().replace(tzinfo=None)
@@ -163,6 +171,36 @@ def reset_slide_request(request_id: int, user: str, db: Session):
     request.CompletedById = None
     request.InProcessById = None
     request.CompletedDate = None
+    request.UpdateBy = user
+    db.commit()
+    db.refresh(request)
+    return request
+
+
+def cancel_slide_request(
+    request_id: int, user_id: int, user: str, db: Session
+):
+    request = (
+        db.query(SlideRequest)
+        .filter(SlideRequest.SlideRequestId == request_id)
+        .first()
+    )
+    if request is None:
+        raise DataException("Slide request does not exist")
+    if request.RequesterId != user_id:
+        raise DataException("Slide request does not belong to requester")
+    if request.Status == Constants.SlideRequestStatus.CANCELED.value:
+        return request
+    if request.Status in (
+        Constants.SlideRequestStatus.COMPLETED.value,
+        Constants.SlideRequestStatus.NIF.value,
+    ):
+        return request
+
+    completed_at = datetime.now().replace(tzinfo=None)
+    request.Status = Constants.SlideRequestStatus.CANCELED.value
+    request.CompletedById = user_id
+    request.CompletedDate = completed_at
     request.UpdateBy = user
     db.commit()
     db.refresh(request)

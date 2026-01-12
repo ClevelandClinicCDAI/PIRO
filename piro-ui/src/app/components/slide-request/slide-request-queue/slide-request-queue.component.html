@@ -182,7 +182,7 @@
                     <tr *ngFor="let request of completedRequests; trackBy: trackById">
                       <td>{{ request.accessionNumber }}</td>
                       <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
-                      <td>{{ request.status }}</td>
+                      <td>{{ getStatusLabel(request.status) }}</td>
                       <td>{{ request.requestedBy || '-' }}</td>
                       <td>{{ request.takenBy || '-' }}</td>
                       <td>{{ request.completedAt | date: 'short' }}</td>

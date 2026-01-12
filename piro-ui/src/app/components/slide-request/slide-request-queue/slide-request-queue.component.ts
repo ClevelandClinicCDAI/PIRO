@@ -222,6 +222,13 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     return 'badge rounded-pill bg-light text-dark border';
   }
 
+  getStatusLabel(status: string | undefined | null) {
+    if (status === 'CANCELED') {
+      return 'Canceled';
+    }
+    return status || '-';
+  }
+
   startEditingNotes(request: SlideRequest) {
     this.editingNotes[request.id] = request.slideRoomNotes || '';
   }
