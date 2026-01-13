@@ -197,10 +197,10 @@ def cancel_slide_request(
     ):
         return request
 
-    completed_at = datetime.now().replace(tzinfo=None)
+    canceled_at = datetime.now().replace(tzinfo=None)
     request.Status = Constants.SlideRequestStatus.CANCELED.value
     request.CompletedById = user_id
-    request.CompletedDate = completed_at
+    request.CompletedDate = canceled_at
     request.UpdateBy = user
     db.commit()
     db.refresh(request)
