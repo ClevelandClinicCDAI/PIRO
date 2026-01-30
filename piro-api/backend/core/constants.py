@@ -23,6 +23,7 @@ class Constants:
         IN_PROCESS = "IN_PROCESS"
         COMPLETED = "COMPLETED"
         NIF = "NIF"
+        CANCELED = "CANCELED"
 
     class SlideRequestUrgency(str, Enum):
         SAMEDAY = "SameDay"

@@ -91,6 +91,7 @@
                     <th scope="col">Urgency</th>
                     <th scope="col">Notes</th>
                     <th scope="col">Requested</th>
+                    <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -99,6 +100,15 @@
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.notes || '-' }}</td>
                     <td>{{ request.requestedAt | date: 'short' }}</td>
+                    <td>
+                      <button
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="cancelRequest(request)"
+                        [disabled]="canceling[request.id]"
+                      >
+                        Cancel
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -123,7 +133,7 @@
                     <td>{{ request.accessionNumber }}</td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.notes || '-' }}</td>
-                    <td>{{ request.status }}</td>
+                    <td>{{ getStatusLabel(request.status) }}</td>
                     <td>{{ request.completedAt | date: 'short' }}</td>
                   </tr>
                 </tbody>

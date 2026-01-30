@@ -77,6 +77,7 @@
                       <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
                       <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
                       <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                      <button class="btn btn-outline-dark" (click)="resetRequest(request)" [disabled]="updating[request.id]">Reset</button>
                     </div>
                   </div>
 
@@ -124,6 +125,7 @@
                       <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
                       <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
                       <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                      <button class="btn btn-outline-dark" (click)="resetRequest(request)" [disabled]="updating[request.id]">Reset</button>
                     </div>
                   </div>
 
@@ -173,17 +175,21 @@
                       <th scope="col">Taken By</th>
                       <th scope="col">Completed</th>
                       <th scope="col">Slide Room Notes</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr *ngFor="let request of completedRequests; trackBy: trackById">
                       <td>{{ request.accessionNumber }}</td>
                       <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
-                      <td>{{ request.status }}</td>
+                      <td>{{ getStatusLabel(request.status) }}</td>
                       <td>{{ request.requestedBy || '-' }}</td>
                       <td>{{ request.takenBy || '-' }}</td>
                       <td>{{ request.completedAt | date: 'short' }}</td>
                       <td>{{ request.slideRoomNotes || '-' }}</td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-dark" (click)="resetRequest(request)" [disabled]="updating[request.id]">Reset</button>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
