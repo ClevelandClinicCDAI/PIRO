@@ -158,7 +158,7 @@ export class SlideRequestFormComponent implements OnInit {
     this.completedMyRequests = this.myRequests.filter((item) => !this.isPendingStatus(item.status));
   }
 
-  private isPendingStatus(status: string | undefined | null) {
+  private isActiveStatus(status: string | undefined | null) {
     return status === 'PENDING' || status === 'IN_PROCESS' || status === 'HOLDING';
   }
 }
