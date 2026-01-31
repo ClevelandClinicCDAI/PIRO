@@ -55,6 +55,18 @@
               </div>
             </div>
 
+            <div class="form-check mb-3">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="ePath"
+                formControlName="ePath"
+              />
+              <label class="form-check-label" for="ePath">
+                ePath
+              </label>
+            </div>
+
             <div class="text-center">
               <button type="submit" class="btn btn-primary" [disabled]="submitting">
                 {{ submitting ? 'Submitting...' : 'Submit Request' }}
@@ -97,7 +109,10 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let request of pendingMyRequests; trackBy: trackById">
-                    <td>{{ request.accessionNumber }}</td>
+                    <td>
+                      {{ request.accessionNumber }}
+                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                    </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>
@@ -133,7 +148,10 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let request of completedMyRequests; trackBy: trackById">
-                    <td>{{ request.accessionNumber }}</td>
+                    <td>
+                      {{ request.accessionNumber }}
+                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                    </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>

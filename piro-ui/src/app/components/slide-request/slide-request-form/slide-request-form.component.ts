@@ -32,6 +32,7 @@ export class SlideRequestFormComponent implements OnInit {
     this.requestForm = this.formBuilder.group({
       accessionNumber: ['', [Validators.required, Validators.maxLength(100)]],
       requesterNotes: ['', [Validators.maxLength(2000)]],
+      ePath: [false],
       urgencyStatus: ['Routine', [Validators.required]]
     });
     await this.loadMyRequests();
@@ -75,7 +76,8 @@ export class SlideRequestFormComponent implements OnInit {
     this.requestForm.reset({
       accessionNumber: '',
       urgencyStatus: 'Routine',
-      requesterNotes: ''
+      requesterNotes: '',
+      ePath: false
     });
   }
 
@@ -87,11 +89,13 @@ export class SlideRequestFormComponent implements OnInit {
       .filter((item) => item.length > 0);
     const urgencyStatus = this.requestForm.value.urgencyStatus as SlideRequestUrgency;
     const requesterNotes = (this.requestForm.value.requesterNotes as string)?.trim();
+    const ePath = Boolean(this.requestForm.value.ePath);
 
     return caseNumbers.map((accessionNumber) => ({
       accessionNumber,
       urgencyStatus,
-      requesterNotes
+      requesterNotes,
+      ePath
     }));
   }
 
