@@ -6,65 +6,72 @@
           <h4 class="card-title text-center mb-3">Slide Request</h4>
 
           <form [formGroup]="requestForm" (ngSubmit)="onSubmit()" novalidate>
-            <div class="form-group mb-3">
-              <label for="accessionNumber">Accession Number(s)</label>
-              <textarea
-                class="form-control"
-                rows="3"
-                id="accessionNumber"
-                placeholder="Enter accession(s) e.g. S24-0001 or C24-0007 (comma-separated for multiple)"
-                formControlName="accessionNumber"
-                [ngClass]="{ 'is-invalid': submitting && f['accessionNumber'].errors }"
-              ></textarea>
-              <div *ngIf="submitting && f['accessionNumber'].errors" class="invalid-feedback">
-                <div *ngIf="f['accessionNumber'].errors?.['required']">Accession number is required</div>
-                <div *ngIf="f['accessionNumber'].errors?.['maxlength']">Accession number exceeds max length</div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="accessionNumber">Accession Number(s)</label>
+                  <textarea
+                    class="form-control"
+                    rows="3"
+                    id="accessionNumber"
+                    placeholder="Enter accession(s) e.g. S24-0001 or C24-0007 (comma-separated for multiple)"
+                    formControlName="accessionNumber"
+                    [ngClass]="{ 'is-invalid': submitting && f['accessionNumber'].errors }"
+                  ></textarea>
+                  <div *ngIf="submitting && f['accessionNumber'].errors" class="invalid-feedback">
+                    <div *ngIf="f['accessionNumber'].errors?.['required']">Accession number is required</div>
+                    <div *ngIf="f['accessionNumber'].errors?.['maxlength']">Accession number exceeds max length</div>
+                  </div>
+                  <small class="text-muted">Format: AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits). Use commas to submit multiple requests.</small>
+                </div>
               </div>
-              <small class="text-muted">Format: AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits). Use commas to submit multiple requests.</small>
-            </div>
 
-            <div class="form-group mb-3">
-              <label for="urgencyStatus">Urgency</label>
-              <select
-                id="urgencyStatus"
-                class="form-control"
-                formControlName="urgencyStatus"
-                [ngClass]="{ 'is-invalid': submitting && f['urgencyStatus'].errors }"
-              >
-                <option *ngFor="let option of urgencyOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <div *ngIf="submitting && f['urgencyStatus'].errors" class="invalid-feedback">
-                <div *ngIf="f['urgencyStatus'].errors?.['required']">Urgency is required</div>
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="ePath"
+                    formControlName="ePath"
+                  />
+                  <label class="form-check-label" for="ePath">
+                    ePath
+                  </label>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label for="urgencyStatus">Urgency</label>
+                  <select
+                    id="urgencyStatus"
+                    class="form-control"
+                    formControlName="urgencyStatus"
+                    [ngClass]="{ 'is-invalid': submitting && f['urgencyStatus'].errors }"
+                  >
+                    <option *ngFor="let option of urgencyOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="submitting && f['urgencyStatus'].errors" class="invalid-feedback">
+                    <div *ngIf="f['urgencyStatus'].errors?.['required']">Urgency is required</div>
+                  </div>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label for="requesterNotes">Requester Notes (optional)</label>
+                  <textarea
+                    class="form-control"
+                    rows="2"
+                    id="requesterNotes"
+                    placeholder="Any relevant details"
+                    formControlName="requesterNotes"
+                    [ngClass]="{ 'is-invalid': submitting && f['requesterNotes'].errors }"
+                  ></textarea>
+                  <div *ngIf="submitting && f['requesterNotes'].errors" class="invalid-feedback">
+                    <div *ngIf="f['requesterNotes'].errors?.['maxlength']">Notes exceed max length</div>
+                  </div>
+                </div>
+
               </div>
-            </div>
-
-            <div class="form-group mb-3">
-              <label for="requesterNotes">Requester Notes (optional)</label>
-              <textarea
-                class="form-control"
-                rows="2"
-                id="requesterNotes"
-                placeholder="Any relevant details"
-                formControlName="requesterNotes"
-                [ngClass]="{ 'is-invalid': submitting && f['requesterNotes'].errors }"
-              ></textarea>
-              <div *ngIf="submitting && f['requesterNotes'].errors" class="invalid-feedback">
-                <div *ngIf="f['requesterNotes'].errors?.['maxlength']">Notes exceed max length</div>
-              </div>
-            </div>
-
-            <div class="form-check mb-3">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="ePath"
-                formControlName="ePath"
-              />
-              <label class="form-check-label" for="ePath">
-                ePath
-              </label>
             </div>
 
             <div class="text-center">
