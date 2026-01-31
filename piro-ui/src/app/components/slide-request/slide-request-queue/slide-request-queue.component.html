@@ -7,7 +7,7 @@
 
           <div class="row">
             <div class="col-md-6">
-              <h5>Pending</h5>
+              <h5>New Requests</h5>
               <div *ngIf="isLoadingPending">Loading...</div>
               <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
               <div *ngIf="!isLoadingPending && pendingRequests.length === 0 && !errorMessage" class="alert alert-info">
@@ -57,7 +57,7 @@
             </div>
 
             <div class="col-md-6">
-              <h5>In Process</h5>
+              <h5>Taken</h5>
               <div *ngIf="isLoadingInProcess">Loading...</div>
               <div *ngIf="inProcessErrorMessage" class="alert alert-danger">{{ inProcessErrorMessage }}</div>
               <div *ngIf="!isLoadingInProcess && inProcessRequests.length === 0 && !inProcessErrorMessage" class="alert alert-info">
@@ -158,7 +158,7 @@
 
           <div class="row mt-4">
             <div class="col-md-12">
-              <h5>Completed / NIF</h5>
+              <h5>Completed</h5>
               <div *ngIf="isLoadingCompleted">Loading...</div>
               <div *ngIf="completedErrorMessage" class="alert alert-danger">{{ completedErrorMessage }}</div>
               <div *ngIf="!isLoadingCompleted && completedRequests.length === 0 && !completedErrorMessage" class="alert alert-info">
