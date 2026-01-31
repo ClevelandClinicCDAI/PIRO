@@ -41,17 +41,17 @@
             </div>
 
             <div class="form-group mb-3">
-              <label for="notes">Notes (optional)</label>
+              <label for="requesterNotes">Requester Notes (optional)</label>
               <textarea
                 class="form-control"
                 rows="2"
-                id="notes"
+                id="requesterNotes"
                 placeholder="Any relevant details"
-                formControlName="notes"
-                [ngClass]="{ 'is-invalid': submitting && f['notes'].errors }"
+                formControlName="requesterNotes"
+                [ngClass]="{ 'is-invalid': submitting && f['requesterNotes'].errors }"
               ></textarea>
-              <div *ngIf="submitting && f['notes'].errors" class="invalid-feedback">
-                <div *ngIf="f['notes'].errors?.['maxlength']">Notes exceed max length</div>
+              <div *ngIf="submitting && f['requesterNotes'].errors" class="invalid-feedback">
+                <div *ngIf="f['requesterNotes'].errors?.['maxlength']">Notes exceed max length</div>
               </div>
             </div>
 
@@ -89,7 +89,8 @@
                   <tr>
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
-                    <th scope="col">Notes</th>
+                    <th scope="col">Requester Notes</th>
+                    <th scope="col">Slide Room Notes</th>
                     <th scope="col">Requested</th>
                     <th scope="col">Actions</th>
                   </tr>
@@ -98,7 +99,8 @@
                   <tr *ngFor="let request of pendingMyRequests; trackBy: trackById">
                     <td>{{ request.accessionNumber }}</td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
-                    <td>{{ request.notes || '-' }}</td>
+                    <td>{{ request.requesterNotes || '-' }}</td>
+                    <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ request.requestedAt | date: 'short' }}</td>
                     <td>
                       <button
@@ -123,7 +125,8 @@
                   <tr>
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
-                    <th scope="col">Notes</th>
+                    <th scope="col">Requester Notes</th>
+                    <th scope="col">Slide Room Notes</th>
                     <th scope="col">Status</th>
                     <th scope="col">Completed</th>
                   </tr>
@@ -132,7 +135,8 @@
                   <tr *ngFor="let request of completedMyRequests; trackBy: trackById">
                     <td>{{ request.accessionNumber }}</td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
-                    <td>{{ request.notes || '-' }}</td>
+                    <td>{{ request.requesterNotes || '-' }}</td>
+                    <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ getStatusLabel(request.status) }}</td>
                     <td>{{ request.completedAt | date: 'short' }}</td>
                   </tr>

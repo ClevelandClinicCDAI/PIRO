@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
 from core.constants import Constants
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 if TYPE_CHECKING:  # pragma: no cover
     from db.models.SlideRequest import SlideRequest
@@ -17,7 +17,13 @@ ACCESSION_PATTERN = re.compile(r"^[A-Za-z]{1,3}\d{2}-\d{3,6}$")
 class SlideRequestCreateVM(BaseModel):
     accessionNumber: str = Field(..., min_length=1, max_length=100)
     urgencyStatus: Constants.SlideRequestUrgency
-    notes: Optional[str] = Field(default=None, max_length=2000)
+    requesterNotes: Optional[str] = Field(default=None, max_length=2000)
+
+    @root_validator(pre=True)
+    def _coerce_legacy_notes(cls, values):  # pylint: disable=no-self-argument
+        if not values.get("requesterNotes") and values.get("notes"):
+            values["requesterNotes"] = values["notes"]
+        return values
 
     @validator("accessionNumber")
     def _validate_accession(
@@ -34,8 +40,8 @@ class SlideRequestCreateVM(BaseModel):
             )
         return cleaned
 
-    @validator("notes")
-    def _normalize_notes(
+    @validator("requesterNotes")
+    def _normalize_requester_notes(
         cls, value: Optional[str]
     ):  # pylint: disable=no-self-argument
         return value.strip() if value else value
@@ -52,7 +58,7 @@ class SlideRequestCreateVM(BaseModel):
 class SlideRequestVM(BaseModel):
     id: int
     accessionNumber: str
-    notes: Optional[str]
+    requesterNotes: Optional[str]
     status: str
     urgencyStatus: Constants.SlideRequestUrgency
     requestedAt: datetime
@@ -92,7 +98,7 @@ def to_slide_request_vm(request: "SlideRequest") -> SlideRequestVM:
     return SlideRequestVM(
         id=request.SlideRequestId,
         accessionNumber=request.AccessionNumber,
-        notes=request.Notes,
+        requesterNotes=request.Notes,
         status=request.Status,
         urgencyStatus=request.UrgencyStatus,
         requestedAt=request.CreateDate,

@@ -3,7 +3,7 @@ export type SlideRequestUrgency = 'SameDay' | 'Routine';
 export interface SlideRequest {
   id: number;
   accessionNumber: string;
-  notes?: string | null;
+  requesterNotes?: string | null;
   slideRoomNotes?: string | null;
   status: string;
   urgencyStatus: SlideRequestUrgency;
@@ -19,5 +19,5 @@ export interface SlideRequest {
 export interface SlideRequestFormPayload {
   accessionNumber: string;
   urgencyStatus: SlideRequestUrgency;
-  notes?: string;
+  requesterNotes?: string;
 }

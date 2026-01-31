@@ -20,7 +20,7 @@
                       <h6 class="mb-1">{{ request.accessionNumber }}</h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
@@ -31,7 +31,7 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"
@@ -71,7 +71,7 @@
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
                       <p class="mb-1"><strong>Taken By:</strong> {{ request.takenBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
@@ -82,7 +82,7 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"
@@ -119,7 +119,7 @@
                       <h6 class="mb-1">{{ request.accessionNumber }}</h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
@@ -130,7 +130,7 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"

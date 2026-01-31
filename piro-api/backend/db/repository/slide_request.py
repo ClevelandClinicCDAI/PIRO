@@ -13,7 +13,7 @@ def create_slide_request(
 ):
     request = SlideRequest(
         AccessionNumber=input.accessionNumber.strip(),
-        Notes=input.notes.strip() if input.notes else None,
+        Notes=input.requesterNotes.strip() if input.requesterNotes else None,
         UrgencyStatus=input.urgencyStatus,
         RequesterId=user_id,
         Status=Constants.SlideRequestStatus.PENDING.value,

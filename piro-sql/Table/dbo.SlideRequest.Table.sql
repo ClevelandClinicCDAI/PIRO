@@ -43,4 +43,3 @@ REFERENCES [User] ([UserId])
 GO
 ALTER TABLE [SlideRequest] CHECK CONSTRAINT [FK_SlideRequest_User_InProcessBy]
 GO
-
