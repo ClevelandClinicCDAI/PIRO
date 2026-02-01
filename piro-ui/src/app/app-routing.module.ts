@@ -109,7 +109,7 @@ const routes: Routes = [
   {
     path: 'slide-request', component: SlideRequestFormComponent, canActivate: [AuthGuard],
     data: {
-      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER', 'SLIDEROOM']
     }
   },
   {

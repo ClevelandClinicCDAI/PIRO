@@ -35,7 +35,7 @@
                     formControlName="ePath"
                   />
                   <label class="form-check-label" for="ePath">
-                    Recent ePath Case
+                    Current ePath Case
                   </label>
                 </div>
 
@@ -118,7 +118,7 @@
                   <tr *ngFor="let request of pendingMyRequests; trackBy: trackById">
                     <td>
                       {{ request.accessionNumber }}
-                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">Recent ePath Case</span>
+                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.requesterNotes || '-' }}</td>
@@ -157,7 +157,7 @@
                   <tr *ngFor="let request of completedMyRequests; trackBy: trackById">
                     <td>
                       {{ request.accessionNumber }}
-                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">Recent ePath Case</span>
+                      <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.requesterNotes || '-' }}</td>

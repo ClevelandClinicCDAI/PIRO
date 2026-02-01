@@ -78,7 +78,7 @@ export class HeaderComponent {
     this.isRequestReview = ['ADMIN', 'DEMOADMIN', 'ANALYST'].includes(this.role);
     this.isMyHistory = ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER'].includes(this.role);
     this.isAdminSecurity = ['SECURITYADMIN'].includes(this.role);
-    this.canRequestSlides = ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER'].includes(this.role);
+    this.canRequestSlides = ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER', 'SLIDEROOM'].includes(this.role);
     this.canViewSlideQueue = ['ADMIN', 'DEMOADMIN', 'SLIDEROOM'].includes(this.role);
     // console.log("this.isSearch", this.isSearch);
     // console.log("this.isAdmin", this.isAdmin);
