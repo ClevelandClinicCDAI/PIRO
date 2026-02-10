@@ -1,5 +1,5 @@
 from db.base_class import Base
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -9,6 +9,7 @@ class SlideRequest(Base):
     SlideRequestId = Column(Integer, primary_key=True, index=True)
     AccessionNumber = Column(String, nullable=False)
     Notes = Column(String, nullable=True)
+    EPath = Column(Boolean, nullable=False, default=False)
     SlideRoomNotes = Column(String, nullable=True)
     Status = Column(String, nullable=False, default="PENDING")
     UrgencyStatus = Column(String, nullable=False)

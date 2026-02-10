@@ -7,7 +7,7 @@
 
           <div class="row">
             <div class="col-md-6">
-              <h5>Pending</h5>
+              <h5>New Requests</h5>
               <div *ngIf="isLoadingPending">Loading...</div>
               <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
               <div *ngIf="!isLoadingPending && pendingRequests.length === 0 && !errorMessage" class="alert alert-info">
@@ -17,10 +17,13 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <h6 class="mb-1">
+                        {{ request.accessionNumber }}
+                        <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                      </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
@@ -31,7 +34,57 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
+                    <div *ngIf="isEditingNotes(request.id)">
+                      <textarea
+                        class="form-control notes-textarea"
+                        [(ngModel)]="editingNotes[request.id]"
+                        [disabled]="savingNotes[request.id]"
+                      ></textarea>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-primary" (click)="saveSlideRoomNotes(request)" [disabled]="savingNotes[request.id]">
+                          Save
+                        </button>
+                        <button class="btn btn-sm btn-link" (click)="cancelEditingNotes(request.id)" [disabled]="savingNotes[request.id]">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                    <div *ngIf="!isEditingNotes(request.id)">
+                      <p class="mb-1">{{ request.slideRoomNotes || '-' }}</p>
+                      <button class="btn btn-sm btn-link" (click)="startEditingNotes(request)">Edit</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <h5 class="mt-3">ePath Case Requests</h5>
+              <div *ngIf="isLoadingPending">Loading...</div>
+              <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+              <div *ngIf="!isLoadingPending && ePathRequests.length === 0 && !errorMessage" class="alert alert-info">
+                No ePath requests.
+              </div>
+              <div *ngFor="let request of ePathRequests; trackBy: trackById" class="card mb-2">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <h6 class="mb-1">
+                        {{ request.accessionNumber }}
+                        <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                      </h6>
+                      <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
+                      <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
+                      <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
+                      <button class="btn btn-outline-success" (click)="markCompleted(request)" [disabled]="updating[request.id]">Complete</button>
+                      <button class="btn btn-outline-warning" (click)="markNotInFile(request)" [disabled]="updating[request.id]">NIF</button>
+                    </div>
+                  </div>
+
+                  <div class="mt-2">
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"
@@ -57,7 +110,7 @@
             </div>
 
             <div class="col-md-6">
-              <h5>In Process</h5>
+              <h5>Taken</h5>
               <div *ngIf="isLoadingInProcess">Loading...</div>
               <div *ngIf="inProcessErrorMessage" class="alert alert-danger">{{ inProcessErrorMessage }}</div>
               <div *ngIf="!isLoadingInProcess && inProcessRequests.length === 0 && !inProcessErrorMessage" class="alert alert-info">
@@ -67,11 +120,14 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <h6 class="mb-1">
+                        {{ request.accessionNumber }}
+                        <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                      </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
                       <p class="mb-1"><strong>Taken By:</strong> {{ request.takenBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-secondary" (click)="moveToHolding(request)" [disabled]="updating[request.id]">Hold</button>
@@ -82,7 +138,7 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"
@@ -116,10 +172,13 @@
                 <div class="card-body">
                   <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6 class="mb-1">{{ request.accessionNumber }}</h6>
+                      <h6 class="mb-1">
+                        {{ request.accessionNumber }}
+                        <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                      </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
-                      <p class="mb-1"><strong>Notes:</strong> {{ request.notes || '-' }}</p>
+                      <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-outline-primary" (click)="markInProcess(request)" [disabled]="updating[request.id]">Take</button>
@@ -130,7 +189,7 @@
                   </div>
 
                   <div class="mt-2">
-                    <h6 class="mb-1">Slide Room Notes</h6>
+                    <p class="mb-1"><strong>Slide Room Notes:</strong></p>
                     <div *ngIf="isEditingNotes(request.id)">
                       <textarea
                         class="form-control notes-textarea"
@@ -158,7 +217,7 @@
 
           <div class="row mt-4">
             <div class="col-md-12">
-              <h5>Completed / NIF</h5>
+              <h5>Completed</h5>
               <div *ngIf="isLoadingCompleted">Loading...</div>
               <div *ngIf="completedErrorMessage" class="alert alert-danger">{{ completedErrorMessage }}</div>
               <div *ngIf="!isLoadingCompleted && completedRequests.length === 0 && !completedErrorMessage" class="alert alert-info">
@@ -180,7 +239,10 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let request of completedRequests; trackBy: trackById">
-                      <td>{{ request.accessionNumber }}</td>
+                      <td>
+                        {{ request.accessionNumber }}
+                        <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
+                      </td>
                       <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                       <td>{{ getStatusLabel(request.status) }}</td>
                       <td>{{ request.requestedBy || '-' }}</td>

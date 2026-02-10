@@ -10,6 +10,7 @@ import { ToastService } from 'src/app/services/toast.service';
 })
 export class SlideRequestQueueComponent implements OnInit, OnDestroy {
   pendingRequests: SlideRequest[] = [];
+  ePathRequests: SlideRequest[] = [];
   inProcessRequests: SlideRequest[] = [];
   holdingRequests: SlideRequest[] = [];
   completedRequests: SlideRequest[] = [];
@@ -68,7 +69,9 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.isLoadingCompleted = false;
 
     if (pendingResult?.status) {
-      this.pendingRequests = pendingResult.data || [];
+      const pending: SlideRequest[] = pendingResult.data || [];
+      this.ePathRequests = pending.filter((item) => item?.ePath);
+      this.pendingRequests = pending.filter((item) => !item?.ePath);
     } else {
       this.errorMessage = 'Unable to load the slide request queue.';
     }
@@ -101,7 +104,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.updating[request.id] = false;
     if (result?.status) {
       this.toastService.showSuccessToast('Request completed', 'The slide request was closed.', []);
-      this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+      this.removeFromPendingQueues(request.id);
       this.inProcessRequests = this.inProcessRequests.filter((item) => item.id !== request.id);
       this.holdingRequests = this.holdingRequests.filter((item) => item.id !== request.id);
       delete this.editingNotes[request.id];
@@ -123,7 +126,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.updating[request.id] = false;
     if (result?.status) {
       this.toastService.showInfoToast('Marked NIF', 'Slides not found in file.', []);
-      this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+      this.removeFromPendingQueues(request.id);
       this.inProcessRequests = this.inProcessRequests.filter((item) => item.id !== request.id);
       this.holdingRequests = this.holdingRequests.filter((item) => item.id !== request.id);
       delete this.editingNotes[request.id];
@@ -145,10 +148,8 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.updating[request.id] = false;
     if (result?.status && result.data) {
       this.toastService.showInfoToast('Request reset', 'The request was moved back to Pending.', []);
-      this.pendingRequests = [
-        result.data,
-        ...this.pendingRequests.filter((item) => item.id !== request.id),
-      ];
+      this.removeFromPendingQueues(request.id);
+      this.addToPendingQueues(result.data);
       this.inProcessRequests = this.inProcessRequests.filter((item) => item.id !== request.id);
       this.holdingRequests = this.holdingRequests.filter((item) => item.id !== request.id);
       this.completedRequests = this.completedRequests.filter((item) => item.id !== request.id);
@@ -168,7 +169,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.updating[request.id] = false;
     if (result?.status) {
       this.toastService.showInfoToast('Moved to Holding', 'The request was placed in the holding queue.', []);
-      this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+      this.removeFromPendingQueues(request.id);
       this.inProcessRequests = this.inProcessRequests.filter((item) => item.id !== request.id);
       delete this.editingNotes[request.id];
       delete this.savingNotes[request.id];
@@ -189,7 +190,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.updating[request.id] = false;
     if (result?.status) {
       this.toastService.showSuccessToast('Request taken', 'The request is now marked as In Process.', []);
-      this.pendingRequests = this.pendingRequests.filter((item) => item.id !== request.id);
+      this.removeFromPendingQueues(request.id);
       this.holdingRequests = this.holdingRequests.filter((item) => item.id !== request.id);
       delete this.editingNotes[request.id];
       delete this.savingNotes[request.id];
@@ -260,9 +261,23 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
 
   private replaceRequestInQueues(updated: SlideRequest) {
     this.pendingRequests = this.pendingRequests.map((item) => (item.id === updated.id ? updated : item));
+    this.ePathRequests = this.ePathRequests.map((item) => (item.id === updated.id ? updated : item));
     this.inProcessRequests = this.inProcessRequests.map((item) => (item.id === updated.id ? updated : item));
     this.holdingRequests = this.holdingRequests.map((item) => (item.id === updated.id ? updated : item));
     this.completedRequests = this.completedRequests.map((item) => (item.id === updated.id ? updated : item));
+  }
+
+  private removeFromPendingQueues(requestId: number) {
+    this.pendingRequests = this.pendingRequests.filter((item) => item.id !== requestId);
+    this.ePathRequests = this.ePathRequests.filter((item) => item.id !== requestId);
+  }
+
+  private addToPendingQueues(request: SlideRequest) {
+    if (request?.ePath) {
+      this.ePathRequests = [request, ...this.ePathRequests.filter((item) => item.id !== request.id)];
+    } else {
+      this.pendingRequests = [request, ...this.pendingRequests.filter((item) => item.id !== request.id)];
+    }
   }
 
   private startAutoRefresh() {

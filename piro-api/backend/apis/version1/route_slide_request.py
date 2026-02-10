@@ -31,6 +31,7 @@ _REQUEST_ROLES = [
     Constants.RoleDemoAdmin,
     Constants.RoleAnalyst,
     Constants.RoleUser,
+    Constants.RoleSlideRoom,
 ]
 
 _QUEUE_ROLES = [

@@ -12,7 +12,7 @@
                 <span class="input-group-text" id="basic-addon1"><i class="fa fa-user"></i></span>
                 <input type="text" class="form-control" placeholder="Username" aria-label="Username"
                   aria-describedby="basic-addon1" formControlName="username"
-                  [ngClass]="{ 'is-invalid': submitted && f.username.errors }">
+                  [ngClass]="{ 'is-invalid': submitted && f.username.errors }" autofocus>
               </div>
               <div *ngIf="submitted && f.username.errors" class="invalid-feedback">
                 <div *ngIf="f.username.errors.required">Username is required</div>

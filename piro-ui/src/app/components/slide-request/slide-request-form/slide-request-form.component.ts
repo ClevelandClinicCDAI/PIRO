@@ -31,7 +31,8 @@ export class SlideRequestFormComponent implements OnInit {
   async ngOnInit() {
     this.requestForm = this.formBuilder.group({
       accessionNumber: ['', [Validators.required, Validators.maxLength(100)]],
-      notes: ['', [Validators.maxLength(2000)]],
+      requesterNotes: ['', [Validators.maxLength(2000)]],
+      ePath: [false],
       urgencyStatus: ['Routine', [Validators.required]]
     });
     await this.loadMyRequests();
@@ -75,7 +76,8 @@ export class SlideRequestFormComponent implements OnInit {
     this.requestForm.reset({
       accessionNumber: '',
       urgencyStatus: 'Routine',
-      notes: ''
+      requesterNotes: '',
+      ePath: false
     });
   }
 
@@ -86,12 +88,14 @@ export class SlideRequestFormComponent implements OnInit {
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
     const urgencyStatus = this.requestForm.value.urgencyStatus as SlideRequestUrgency;
-    const notes = (this.requestForm.value.notes as string)?.trim();
+    const requesterNotes = (this.requestForm.value.requesterNotes as string)?.trim();
+    const ePath = Boolean(this.requestForm.value.ePath);
 
     return caseNumbers.map((accessionNumber) => ({
       accessionNumber,
       urgencyStatus,
-      notes
+      requesterNotes,
+      ePath
     }));
   }
 

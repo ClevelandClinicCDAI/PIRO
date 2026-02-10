@@ -8,6 +8,7 @@ CREATE TABLE [SlideRequest](
 	[SlideRequestId] [int] IDENTITY(1,1) NOT NULL,
 	[AccessionNumber] [varchar](100) NOT NULL,
 	[Notes] [varchar](2000) NULL,
+	[EPath] [bit] NOT NULL CONSTRAINT [DF_SlideRequest_EPath] DEFAULT (0),
 	[SlideRoomNotes] [varchar](2000) NULL,
 	[Status] [varchar](50) NOT NULL CONSTRAINT [DF_SlideRequest_Status] DEFAULT ('PENDING'),
 	[UrgencyStatus] [varchar](20) NOT NULL,
@@ -43,4 +44,3 @@ REFERENCES [User] ([UserId])
 GO
 ALTER TABLE [SlideRequest] CHECK CONSTRAINT [FK_SlideRequest_User_InProcessBy]
 GO
-
