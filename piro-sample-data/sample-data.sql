@@ -150,7 +150,8 @@ BEGIN TRY
     VALUES
         ('Final Report', 'FINAL', 'Final diagnostic summary', 'COMMENT-FINAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
         ('General Comment', 'COMMENT', 'Author comments and notes', 'COMMENT-GENERAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
-        ('Synoptic', 'SYNOPTIC', 'Structured synoptic section', 'COMMENT-SYNOPTIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser);
+        ('Synoptic', 'SYNOPTIC', 'Structured synoptic section', 'COMMENT-SYNOPTIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
+        ('Microscopic', 'MICROSCOPIC', 'Microscopic description', 'COMMENT-MICROSCOPIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @User TABLE (UserId INT, Email VARCHAR(100));
     INSERT INTO dbo.[User] (NUID, FirstName, LastName, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
@@ -359,6 +360,9 @@ BEGIN TRY
     DECLARE @SynopticCommentTypeId INT = (
         SELECT CommentTypeId FROM @CommentType WHERE Code = 'SYNOPTIC'
     );
+    DECLARE @MicroscopicCommentTypeId INT = (
+        SELECT CommentTypeId FROM @CommentType WHERE Code = 'MICROSCOPIC'
+    );
 
     INSERT INTO dbo.CaseComment (
         CaseId,
@@ -402,6 +406,20 @@ BEGIN TRY
             @now,
             @seedUser,
             '2024-08-05T14:40:00'
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @MicroscopicCommentTypeId,
+            'Microscopic: Invasive ductal carcinoma with associated high-grade DCIS; lymphovascular invasion not identified.',
+            CAST(20240010001 AS DECIMAL(38, 0)),
+            CAST(90010003 AS DECIMAL(38, 0)),
+            'EPIC MICROSCOPIC',
+            'MICROSCOPIC',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            '2024-08-05T14:45:00'
         ),
         (
             (SELECT CaseId FROM @Case WHERE CaseNumber = 'C24-0007'),

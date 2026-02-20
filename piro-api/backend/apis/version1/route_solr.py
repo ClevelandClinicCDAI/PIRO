@@ -293,7 +293,7 @@ async def filter_details():
         {
             "name": "All Text Fields",
             "type": "text",
-            "value": "final;comment;addend",
+            "value": "final;comment;addend;microscopic",
             "show": "true",
             "placeholder": "Search text across all comment fields",
             "color": "#A52A2A",
@@ -352,6 +352,13 @@ async def filter_details():
             "value": "clinical",
             "show": "true",
             "color": "#954535",
+        },
+        {
+            "name": "Microscopic Description",
+            "type": "text",
+            "value": "microscopic",
+            "show": "true",
+            "color": "#6B8E23",
         },
         {
             "name": "Pathologist",
