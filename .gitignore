@@ -28,3 +28,6 @@ dist/
 build/
 
 *.log
+casecomment_dependency_graph.md
+casecomment_dependency_graph.txt
+casecomment_table_usage.txt

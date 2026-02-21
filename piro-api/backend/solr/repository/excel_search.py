@@ -1,13 +1,14 @@
 # If on Python 2.X
 
 import json
+import os
 from datetime import date
 from typing import List
 from urllib.parse import parse_qs, urlparse
 
 from core.config import Settings
 from db.repository.search import get_search
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE, Cell
 from pytest import Session
 from solr.models.document import document
@@ -98,10 +99,8 @@ def get_search_data(
 
 def create_excel(searchId: int, data: List[document], fields: []):
     wb = Workbook()
-    wb = load_workbook(
-        f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_SEARCH_REQUEST_Template_FILE}"
-    )
-    ws1 = wb["Data"]
+    ws1 = wb.active
+    ws1.title = "Data"
 
     offset_row = 0
     offset_col = 0
@@ -151,6 +150,9 @@ def create_excel(searchId: int, data: List[document], fields: []):
         row += 1
 
     file = f"PIRO_{searchId}.xlsx"
-    path = f"{Settings.EXCEL_Output_DIRECTORY}{file}"
+    output_dir = Settings.EXCEL_Output_DIRECTORY or ""
+    if output_dir != "":
+        os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, file)
     wb.save(path)
     return {"path": path, "file": file}

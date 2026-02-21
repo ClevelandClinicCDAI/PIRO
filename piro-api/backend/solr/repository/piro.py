@@ -379,6 +379,10 @@ def read_result(result: any, db: Session):
         doc.comment = result["comment"]
     else:
         doc.comment = ""
+    if "microscopic" in result:
+        doc.microscopic = result["microscopic"]
+    else:
+        doc.microscopic = ""
     if "addend" in result:
         doc.addend = result["addend"]
     else:
@@ -444,6 +448,10 @@ def read_result(result: any, db: Session):
         doc.commentcount = result["commentcount"]
     else:
         doc.commentcount = 0
+    if "microscopiccount" in result:
+        doc.microscopiccount = result["microscopiccount"]
+    else:
+        doc.microscopiccount = 0
     if "intraopcount" in result:
         doc.intraopcount = result["intraopcount"]
     else:
