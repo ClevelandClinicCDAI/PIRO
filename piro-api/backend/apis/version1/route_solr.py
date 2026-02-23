@@ -584,6 +584,11 @@ async def filter_advanced_details():
             "type": "string",
             "operators": ["contains", "not"],
         },
+        "microscopic": {
+            "name": "Microscopic Description",
+            "type": "string",
+            "operators": ["contains", "not"],
+        },
         "synoptic": {
             "name": "Synoptic Report",
             "type": "string",
