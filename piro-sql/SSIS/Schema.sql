@@ -123,8 +123,8 @@ DROP TABLE [dbo].[SSIS_ConfigRun]
  
 CREATE TABLE [dbo].[SSIS_ConfigRun](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Name] [varchar](1000) NOT NULL,
-	[Val] [varchar](4000) NOT NULL,
+	[Name] [varchar](50) NOT NULL,
+	[Val] [varchar](50) NOT NULL,
 	IsActive bit NOT NULL,
  CONSTRAINT [PK_SSISConfig] PRIMARY KEY CLUSTERED 
 (
