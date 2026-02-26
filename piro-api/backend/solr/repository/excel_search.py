@@ -2,7 +2,6 @@
 
 import json
 import os
-from datetime import date
 from typing import List
 from urllib.parse import parse_qs, urlparse
 
@@ -20,8 +19,6 @@ from core.search_util import filter_str_object
 
 def get_search_data(
     searchId: int,
-    fromDate: date,
-    toDate: date,
     reasonCode: str,
     db: Session,
     solr: Solr,
@@ -45,29 +42,6 @@ def get_search_data(
         obj = SearchFilterVM.parse_obj(item)
 
         filters.append(obj)
-
-    # Add dates filter
-    if fromDate is not None and toDate is not None:
-        filters.append(
-            SearchFilterVM(
-                field="collectiondate",
-                search=f'[{fromDate.strftime("%Y-%m-%d")}T00:00:00Z TO'
-                f' {toDate.strftime("%Y-%m-%d")}T00:00:00Z]',
-                category="collectiondate",
-                andcondition=True,
-                displaysingular="",
-            )
-        )
-    elif fromDate is not None and toDate is None:
-        filters.append(
-            SearchFilterVM(
-                field="collectiondate",
-                search=f'[{fromDate.strftime("%Y-%m-%d")}T00:00:00Z TO NOW]',
-                category="collectiondate",
-                andcondition=True,
-                displaysingular="",
-            )
-        )
 
     # Add deceased filter
     if reasonCode == "DEC":

@@ -6,11 +6,11 @@ import { SavedSearchContentService } from 'src/app/services/saved-search-content
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
-import { NgbAlertModule, NgbDatepickerModule, NgbDateStruct } from '@ng-bootstrap/ng-bootstrap';
 import { AuthService } from 'src/app/services/auth.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ExportfieldComponent } from '../../modal/exportfield/exportfield.component';
 import { DataService } from '../../../services/data.service';
+import { SavesearchService } from 'src/app/services/savesearch.service';
 
 @Component({
   selector: 'app-extract-request',
@@ -32,10 +32,12 @@ export class ExtractRequestComponent {
   isfileValid: boolean = false;
   isselectedFields: boolean = false;
   isirb: boolean = false;
+  pediatricFilterError: string = "";
   constructor(private modalService: NgbModal,
     private formBuilder: FormBuilder,
     private extractRequestService: ExtractRequestService,
     private savedSearchService: SavedSearchContentService,
+    private saveSearchService: SavesearchService,
     private confirmDialogService: ConfirmDialogService,
     private authService: AuthService,
     private dataService: DataService,
@@ -51,8 +53,6 @@ export class ExtractRequestComponent {
       comment: ['', [Validators.required]],
       reasonId: ['', [Validators.required]],
       request_file: ['', [Validators.nullValidator]],
-      dateFrom: ['', [Validators.required]],
-      dateTo: ['', [Validators.required]],
       irbNumber: ['', [Validators.required]],
       isPediatric: ['', [Validators.required]]
     });
@@ -72,6 +72,7 @@ export class ExtractRequestComponent {
   }
 
   onReasonChange() {
+    this.pediatricFilterError = "";
     var reasonId = this.dataRequestForm.get('reasonId').value;
     const reason = this.reasons.data.filter((r: any) => { return r.value.toLocaleString() === reasonId });
     if (reason.length > 0 && reason[0].code === "IRB") {
@@ -86,8 +87,65 @@ export class ExtractRequestComponent {
       this.dataRequestForm.get('irbNumber').updateValueAndValidity();
 
       this.dataRequestForm.get('isPediatric').clearValidators();
+      this.dataRequestForm.get('isPediatric').setValue('');
       this.dataRequestForm.get('isPediatric').updateValueAndValidity();
       this.isirb = false;
+    }
+  }
+
+  async onSearchChange() {
+    this.pediatricFilterError = "";
+    if (this.isirb && this.dataRequestForm.get('isPediatric').value === '0') {
+      await this.validatePediatricSelection();
+    }
+  }
+
+  async onIsPediatricChange() {
+    this.pediatricFilterError = "";
+    if (this.isirb && this.dataRequestForm.get('isPediatric').value === '0') {
+      await this.validatePediatricSelection();
+    }
+  }
+
+  async validatePediatricSelection() {
+    const hasAgeFilter = await this.hasCasePatientAgeFilter();
+    if (!hasAgeFilter) {
+      this.pediatricFilterError = "You must have an age filter in your search to exclude pediatric patients";
+      this.dataRequestForm.get('isPediatric').setValue('');
+      this.dataRequestForm.get('isPediatric').markAsTouched();
+      this.dataRequestForm.get('isPediatric').updateValueAndValidity();
+      return false;
+    }
+    return true;
+  }
+
+  async hasCasePatientAgeFilter() {
+    const searchId = this.dataRequestForm.get('searchId').value;
+    if (!searchId) {
+      return false;
+    }
+    const result: any = await this.saveSearchService.getSearch(searchId);
+    if (result.status != true || !result.data?.query) {
+      return false;
+    }
+    return this.queryHasCasePatientAgeFilter(result.data.query);
+  }
+
+  queryHasCasePatientAgeFilter(query: string) {
+    try {
+      const queryString = query.includes('?') ? query.split('?')[1] : query;
+      const searchParams = new URLSearchParams(queryString);
+      const searchFilter = searchParams.get('searchFilter');
+      if (!searchFilter) {
+        return query.includes('casepatientageyears');
+      }
+      const filters = JSON.parse(searchFilter);
+      if (!Array.isArray(filters)) {
+        return false;
+      }
+      return filters.some((item: any) => item?.field === 'casepatientageyears');
+    } catch (error) {
+      return query.includes('casepatientageyears');
     }
   }
 
@@ -100,7 +158,6 @@ export class ExtractRequestComponent {
     // console.log(reason[0]);
     if (reason.length > 0 && reason[0].code === "IRB") {
       this.isfileValid = this.file != null;
-      // this.isdateValid = this.dateFrom != null && this.dateTo != null;
       if (!this.isfileValid) {
         this.contentLoaded = true;
         return;
@@ -114,6 +171,17 @@ export class ExtractRequestComponent {
     } else {
       this.contentLoaded = true;
       return;
+    }
+
+    if (this.isirb && this.dataRequestForm.get('isPediatric').value === '0') {
+      const hasAgeFilter = await this.hasCasePatientAgeFilter();
+      if (!hasAgeFilter) {
+        this.pediatricFilterError = "You must have an age filter in your search to exclude pediatric patients";
+        this.dataRequestForm.get('isPediatric').setValue('');
+        this.dataRequestForm.get('isPediatric').updateValueAndValidity();
+        this.contentLoaded = true;
+        return;
+      }
     }
 
 
@@ -134,16 +202,6 @@ export class ExtractRequestComponent {
       }
     }
 
-
-    var dFrom = this.dataRequestForm.get('dateFrom').value;
-    var dTo = this.dataRequestForm.get('dateTo').value;
-    if ((new Date(dFrom.year, dFrom.month, dFrom.day)) > (new Date(dTo.year, dTo.month, dTo.day))) {
-      this.toastr.error('Date range is invalid', 'Error');
-      this.contentLoaded = true;
-      return;
-    }
-
-
     let that = this;
     this.confirmDialogService.confirmClassThis('<legal disclaimer here>.',
       'custom-alert-lg',
@@ -158,11 +216,6 @@ export class ExtractRequestComponent {
 
   async submitForm() {
     if (this.submitted) {
-      // console.log(JSON.stringify(this.dataRequestForm.get('dateFrom').value));
-      var dFrom = this.dataRequestForm.get('dateFrom').value;
-      var dTo = this.dataRequestForm.get('dateTo').value;
-      // console.log(`${dFrom.year}-${dFrom.month}-${dFrom.day}`);
-      // console.log(JSON.stringify(this.dataRequestForm.get('dateTo').value));
       const formData: FormData = new FormData();
       formData.append('name', this.dataRequestForm.get('name').value);
       formData.append('comment', this.dataRequestForm.get('comment').value);
@@ -171,8 +224,6 @@ export class ExtractRequestComponent {
       formData.append('isPediatric', this.dataRequestForm.get('isPediatric').value);
       formData.append('irb', this.dataRequestForm.get('irbNumber').value);
       formData.append('selectedFields', this.selectedFields.map(function (item: any) { return item.datafieldId; }));
-      formData.append('dateTo', `${dTo.year}-${dTo.month}-${dTo.day} 00:00:00`);
-      formData.append('dateFrom', `${dFrom.year}-${dFrom.month}-${dFrom.day} 00:00:00`);
       formData.append('file', this.file);
       const res: any = await this.extractRequestService.createRequest(formData, this.file != null);
       // console.log("upload done?")

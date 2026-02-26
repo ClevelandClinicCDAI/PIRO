@@ -3,7 +3,7 @@ from datetime import datetime
 from core.constants import Constants
 from db.models.SlideRequest import SlideRequest
 from exception.data_exception import DataException
-from sqlalchemy import asc
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload
 from viewmodel.slide_request import SlideRequestCreateVM, SlideRoomNotesUpdateVM
 
@@ -30,6 +30,8 @@ def list_slide_requests(
     db: Session,
     statuses: list[str] | None = None,
     requester_id: int | None = None,
+    order_by_completed_desc: bool = False,
+    limit: int | None = None,
 ):
     query = (
         db.query(SlideRequest)
@@ -41,7 +43,19 @@ def list_slide_requests(
         query = query.filter(SlideRequest.Status.in_(statuses))
     if requester_id:
         query = query.filter(SlideRequest.RequesterId == requester_id)
-    return query.order_by(asc(SlideRequest.CreateDate)).all()
+    if order_by_completed_desc:
+        query = query.order_by(
+            desc(SlideRequest.CompletedDate),
+            desc(SlideRequest.CreateDate),
+            desc(SlideRequest.SlideRequestId),
+        )
+    else:
+        query = query.order_by(asc(SlideRequest.CreateDate))
+
+    if limit is not None:
+        query = query.limit(limit)
+
+    return query.all()
 
 
 def complete_slide_request(
