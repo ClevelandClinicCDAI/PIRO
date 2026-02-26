@@ -124,6 +124,8 @@ class SearchDocumentVM(SearchDocumentBaseVM):
     addendtexts: Optional[List[str]] = []
     comment: Optional[str] = Field(exclude=True)
     commenttexts: Optional[List[str]] = []
+    microscopic: Optional[str] = Field(exclude=True)
+    microscopictexts: Optional[List[str]] = []
     intraop: Optional[str] = Field(exclude=True)
     intraoptexts: Optional[List[str]] = []
     resident: Optional[str] = Field(exclude=True)
@@ -147,6 +149,7 @@ class SearchDocumentVM(SearchDocumentBaseVM):
     finalcount: int = 0
     synopticcount: int = 0
     residentcount: int = 0
+    microscopiccount: int = 0
     isepic: bool = False
     isepicmigrated: bool = False
     iscopath: bool = False
@@ -162,6 +165,11 @@ class SearchDocumentVM(SearchDocumentBaseVM):
         SearchDocumentBaseVM.ParseComment("final", "finaltexts", values)
         SearchDocumentBaseVM.ParseComment("addend", "addendtexts", values)
         SearchDocumentBaseVM.ParseComment("comment", "commenttexts", values)
+        SearchDocumentBaseVM.ParseComment(
+            "microscopic",
+            "microscopictexts",
+            values,
+        )
         SearchDocumentBaseVM.ParseComment("intraop", "intraoptexts", values)
         SearchDocumentBaseVM.ParseComment("resident", "residenttexts", values)
         SearchDocumentBaseVM.ParseComment("synoptic", "synoptictexts", values)

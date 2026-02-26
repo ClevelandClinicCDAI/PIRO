@@ -27,6 +27,8 @@
     "finalcount": 1,
     "gross": "Specimen consists of lumpectomy tissue measuring 2.1 cm.",
     "grosscount": 1,
+    "microscopic": "Microscopic sections show invasive ductal carcinoma with associated ductal carcinoma in situ.",
+    "microscopiccount": 1,
     "synoptic": "Tumor size 2.1 cm; margins negative.",
     "synopticcount": 1,
     "pathologist": "Alex Smith, MD",

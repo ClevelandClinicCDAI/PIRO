@@ -13,8 +13,8 @@ class SearchRequestVMCreate(BaseModel):
     isPediatric: Optional[bool]
     comment: str
     fileData: Optional[bytes]
-    dateTo: datetime
-    dateFrom: datetime
+    dateTo: Optional[datetime] = None
+    dateFrom: Optional[datetime] = None
     fileType: Optional[str]
     fileName: Optional[str]
     fileSize: Optional[int]

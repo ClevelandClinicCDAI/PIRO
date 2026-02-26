@@ -18,7 +18,6 @@
                                     <li>Please list the exact data elements you want in your data extract. For
                                         IRB-approved
                                         research, these must be listed in your IRB Data Collection Sheet.</li>
-                                    <li>Please list the exact date range of your data-set.</li>
                                     <li>
                                         For the request name, please type in your last name, plus something relevant to
                                         your search, like "Goldblum sarcoma", or "Billings melanoma"
@@ -92,7 +91,7 @@
                         <div class="form-group">
                             <label for="searchId">Select Saved Search <span class="asterisk-danger">*</span></label>
                             <br>
-                            <select class="q-input-control" formControlName="searchId" id="searchId"
+                            <select class="q-input-control" (change)="onSearchChange()" formControlName="searchId" id="searchId"
                                 [ngClass]="{ 'is-invalid': submitted && f.searchId.errors }">
                                 <option value="">Select Option</option>
                                 <option value="{{search.value}}" *ngFor="let search of searches.data">{{search.text}}
@@ -100,31 +99,6 @@
                             </select>
                             <div *ngIf="submitted && f.searchId.errors" class="invalid-feedback">
                                 <div *ngIf="f.searchId.errors.required">Please select a option</div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="dateFrom">Date Range<span class="asterisk-danger">*</span></label>
-                            <br>
-                            <div class="row">
-                                <div class="col">
-                                    <div class="input-group">
-                                        <input class="form-control" placeholder="yyyy-mm-dd" name="dateFrom"
-                                            ngbDatepicker formControlName="dateFrom" id="dateFrom" #d="ngbDatepicker" />
-                                        <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()"
-                                            type="button"></button>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    <div class="input-group">
-                                        <input class="form-control" placeholder="yyyy-mm-dd" name="dateTo" ngbDatepicker
-                                            formControlName="dateTo" id="dateTo" #dd="ngbDatepicker" />
-                                        <button class="btn btn-outline-secondary bi bi-calendar3" (click)="dd.toggle()"
-                                            type="button"></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div *ngIf="submitted && (f.dateTo.errors || f.dateFrom.errors)" class="invalid-feedback">
-                                <div *ngIf="f.dateTo.errors || f.dateFrom.errors">Please select date range</div>
                             </div>
                         </div>
                         <div class="form-group" *ngIf="isirb">
@@ -140,7 +114,7 @@
                             <label for="searchId">IRB is approved for pediatric data <span
                                     class="asterisk-danger">*</span></label>
                             <br>
-                            <select class="q-input-control" formControlName="isPediatric" id="isPediatric"
+                            <select class="q-input-control" (change)="onIsPediatricChange()" formControlName="isPediatric" id="isPediatric"
                                 [ngClass]="{ 'is-invalid': submitted && f.isPediatric.errors }">
                                 <option value="">Select Option</option>
                                 <option value="1">Yes</option>
@@ -148,6 +122,9 @@
                             </select>
                             <div *ngIf="submitted && f.isPediatric.errors" class="invalid-feedback">
                                 <div *ngIf="f.isPediatric.errors.required">Please select a option</div>
+                            </div>
+                            <div *ngIf="pediatricFilterError" class="invalid-feedback d-block">
+                                <div>{{pediatricFilterError}}</div>
                             </div>
                         </div>
                         <div class="form-group" *ngIf="isirb">

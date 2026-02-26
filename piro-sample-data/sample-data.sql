@@ -150,7 +150,8 @@ BEGIN TRY
     VALUES
         ('Final Report', 'FINAL', 'Final diagnostic summary', 'COMMENT-FINAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
         ('General Comment', 'COMMENT', 'Author comments and notes', 'COMMENT-GENERAL', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
-        ('Synoptic', 'SYNOPTIC', 'Structured synoptic section', 'COMMENT-SYNOPTIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser);
+        ('Synoptic', 'SYNOPTIC', 'Structured synoptic section', 'COMMENT-SYNOPTIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser),
+        ('Microscopic', 'MICROSCOPIC', 'Microscopic description', 'COMMENT-MICROSCOPIC', 'SampleData', 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @User TABLE (UserId INT, Email VARCHAR(100));
     INSERT INTO dbo.[User] (NUID, FirstName, LastName, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
@@ -359,6 +360,9 @@ BEGIN TRY
     DECLARE @SynopticCommentTypeId INT = (
         SELECT CommentTypeId FROM @CommentType WHERE Code = 'SYNOPTIC'
     );
+    DECLARE @MicroscopicCommentTypeId INT = (
+        SELECT CommentTypeId FROM @CommentType WHERE Code = 'MICROSCOPIC'
+    );
 
     INSERT INTO dbo.CaseComment (
         CaseId,
@@ -402,6 +406,20 @@ BEGIN TRY
             @now,
             @seedUser,
             '2024-08-05T14:40:00'
+        ),
+        (
+            (SELECT CaseId FROM @Case WHERE CaseNumber = 'S24-0001'),
+            @MicroscopicCommentTypeId,
+            'Microscopic: Invasive ductal carcinoma with associated high-grade DCIS; lymphovascular invasion not identified.',
+            CAST(20240010001 AS DECIMAL(38, 0)),
+            CAST(90010003 AS DECIMAL(38, 0)),
+            'EPIC MICROSCOPIC',
+            'MICROSCOPIC',
+            @now,
+            @seedUser,
+            @now,
+            @seedUser,
+            '2024-08-05T14:45:00'
         ),
         (
             (SELECT CaseId FROM @Case WHERE CaseNumber = 'C24-0007'),
@@ -791,38 +809,85 @@ BEGIN TRY
     INSERT INTO dbo.SearchRequestReason (ShortName, Code, Description, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.SearchRequestReasonId, INSERTED.Code INTO @SearchRequestReason
     VALUES
-        ('IRB Protocol', 'IRB', 'IRB-approved research request', 1, @now, @seedUser, @now, @seedUser);
+        ('Not research', 'NR', '', 1, @now, @seedUser, @now, @seedUser),
+        ('IRB-approved research', 'IRB', '', 1, @now, @seedUser, @now, @seedUser),
+        ('Deceased Patients (not human subjects research)', 'DEC', 'Deceased Patients (not human subjects research)', 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @SearchRequestStatus TABLE (SearchRequestStatusId INT, Code VARCHAR(50));
     INSERT INTO dbo.SearchRequestStatus (ShortName, Code, Description, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.SearchRequestStatusId, INSERTED.Code INTO @SearchRequestStatus
     VALUES
-        ('Submitted', 'SUBMITTED', 'Request submitted', 1, @now, @seedUser, @now, @seedUser),
-        ('Fulfilled', 'FULFILLED', 'Request fulfilled', 1, @now, @seedUser, @now, @seedUser);
+        ('Submit', 'SUBMIT', 'Submitted', 1, @now, @seedUser, @now, @seedUser),
+        ('Approve', 'APPROVE', 'Approved', 1, @now, @seedUser, @now, @seedUser),
+        ('Deny', 'DENY', 'Denied', 1, @now, @seedUser, @now, @seedUser),
+        ('Close', 'CLOSE', 'Closed', 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @SearchRequest TABLE (SearchRequestId INT, Name VARCHAR(200));
     INSERT INTO dbo.SearchRequest (SearchId, RequesterId, SearchRequestReasonId, SearchRequestStatusId, RequestName, FromDate, ToDate, IRB, IsPediatric, RequestDocumentFile, RequestDocumentName, RequestDocumentSize, RequestDocumentType, RequestDocumentExtension, RequestComment, ResultDocumentFile, ResultDocumentName, ResultDocumentSize, ApprovedById, ApprovedDate, ApprovalComment, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.SearchRequestId, INSERTED.RequestName INTO @SearchRequest
     VALUES
-        ((SELECT SearchId FROM @Search WHERE Name = 'ER Negative Breast'), (SELECT UserId FROM @User WHERE Email = 'elena.cole@piro.local'), (SELECT SearchRequestReasonId FROM @SearchRequestReason WHERE Code = 'IRB'), (SELECT SearchRequestStatusId FROM @SearchRequestStatus WHERE Code = 'SUBMITTED'), 'ER- Breast Study 2024', '2020-01-01', '2024-10-01', 'IRB-2024-001', 0, NULL, NULL, NULL, NULL, NULL, 'Need signed-out ER- cases for biomarker study.', NULL, NULL, NULL, NULL, NULL, NULL, 1, @now, @seedUser, @now, @seedUser);
+        ((SELECT SearchId FROM @Search WHERE Name = 'ER Negative Breast'), (SELECT UserId FROM @User WHERE Email = 'elena.cole@piro.local'), (SELECT SearchRequestReasonId FROM @SearchRequestReason WHERE Code = 'IRB'), (SELECT SearchRequestStatusId FROM @SearchRequestStatus WHERE Code = 'SUBMIT'), 'ER- Breast Study 2024', '2020-01-01', '2024-10-01', 'IRB-2024-001', 0, NULL, NULL, NULL, NULL, NULL, 'Need signed-out ER- cases for biomarker study.', NULL, NULL, NULL, NULL, NULL, NULL, 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @DataFieldCategory TABLE (DataFieldCategoryId INT, Code VARCHAR(50));
     INSERT INTO dbo.DataFieldCategory (DisplayName, Code, Sequence, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.DataFieldCategoryId, INSERTED.Code INTO @DataFieldCategory
     VALUES
-        ('Clinical', 'CLIN', 1, 1, @now, @seedUser, @now, @seedUser);
+        ('Case Info', 'CASE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ('Patient Details', 'PATIENT', 2, 1, @now, @seedUser, @now, @seedUser),
+        ('Hospital', 'HOSPITAL', 3, 1, @now, @seedUser, @now, @seedUser),
+        ('Case Comments', 'CASECOMMENT', 4, 1, @now, @seedUser, @now, @seedUser);
 
     DECLARE @DataField TABLE (DataFieldId INT, Code VARCHAR(50));
     INSERT INTO dbo.DataField (DataFieldCategoryId, DisplayName, SolrField, Code, Sequence, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     OUTPUT INSERTED.DataFieldId, INSERTED.Code INTO @DataField
     VALUES
-        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CLIN'), 'Patient Age', 'patient_age', 'AGE', 1, 1, @now, @seedUser, @now, @seedUser),
-        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CLIN'), 'Diagnosis', 'diagnosis', 'DX', 2, 1, @now, @seedUser, @now, @seedUser);
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Specimen Year', 'specimenyear', 'SPECIMENYEAR', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Case Number', 'casenumber', 'CASENUMBER', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Accession Date', 'accessiondate', 'ACCESSIONDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Receive Date', 'receivedate', 'RECEIVEDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Overdue Date', 'overduedate', 'OVERDUEDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Collection Date', 'collectiondate', 'COLLECTIONDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Signout Date', 'signoutdate', 'SIGNOUTDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Case Status', 'casestatus', 'CASESTATUS', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Case Type', 'casetype', 'CASETYPE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Review Type', 'reviewtype', 'REVIEWTYPE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Case Category', 'casetypecategory', 'CASETYPECATEGORY', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Specialty', 'specialty', 'SPECIALTY', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Specialty Code', 'specialtycode', 'SPECIALTYCODE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Specialty Category', 'specialtycategory', 'SPECIALTYCATEGORY', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Pathologist', 'interpreter', 'INTERPRETER', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Procedure Category', 'procedurecategory', 'PROCEDURECATEGORY', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Staff Name', 'staffname', 'STAFFNAME', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Specimen Number', 'specimennumber', 'SPECIMENNUMBER', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASE'), 'Results Contributors', 'pathologist', 'PATHOLOGIST', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Addendum', 'addend', 'ADDEND', 3, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Comments', 'comment', 'COMMENT', 2, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Final', 'final', 'FINAL', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Gross', 'gross', 'GROSS', 6, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'IntraOp', 'intraop', 'INTRAOP', 7, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Resident', 'resident', 'RESIDENT', 8, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Synoptic', 'synoptic', 'SYNOPTIC', 4, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Clinical', 'clinical', 'CLINICAL', 5, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'CASECOMMENT'), 'Microscopic Description', 'microscopic', 'MICROSCOPIC', 9, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Name', 'patientname', 'PATIENTNAME', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'DOB', 'dob', 'PATIENTDOB', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Epi', 'epi', 'PATIENTEPI', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Mrn', 'mrn', 'PATIENTMRN', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Language', 'language', 'PATIENTLANGUAGE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Ethnicity', 'ethnicity', 'PATIENTETHNICITY', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Sex', 'gender', 'PATIENTGENDER', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Death Date', 'deathdate', 'PATIENTDEATHDATE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Deceased', 'isdeceased', 'PATIENTISDECEASED', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Race', 'race', 'PATIENTRACE', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'PATIENT'), 'Age', 'casepatientageyears', 'CASEPATIENTAGEYEARS', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'HOSPITAL'), 'Hospital', 'hospital', 'HOSPITAL', 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT DataFieldCategoryId FROM @DataFieldCategory WHERE Code = 'HOSPITAL'), 'Region', 'region', 'REGION', 1, 1, @now, @seedUser, @now, @seedUser);
 
     INSERT INTO dbo.SearchRequestDataField (SearchRequestId, DataFieldId, IsSelected, IsActive, CreateDate, CreateBy, UpdateDate, UpdateBy)
     VALUES
-        ((SELECT SearchRequestId FROM @SearchRequest WHERE Name = 'ER- Breast Study 2024'), (SELECT DataFieldId FROM @DataField WHERE Code = 'AGE'), 1, 1, @now, @seedUser, @now, @seedUser),
-        ((SELECT SearchRequestId FROM @SearchRequest WHERE Name = 'ER- Breast Study 2024'), (SELECT DataFieldId FROM @DataField WHERE Code = 'DX'), 1, 1, @now, @seedUser, @now, @seedUser);
+        ((SELECT SearchRequestId FROM @SearchRequest WHERE Name = 'ER- Breast Study 2024'), (SELECT DataFieldId FROM @DataField WHERE Code = 'CASEPATIENTAGEYEARS'), 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT SearchRequestId FROM @SearchRequest WHERE Name = 'ER- Breast Study 2024'), (SELECT DataFieldId FROM @DataField WHERE Code = 'FINAL'), 1, 1, @now, @seedUser, @now, @seedUser),
+        ((SELECT SearchRequestId FROM @SearchRequest WHERE Name = 'ER- Breast Study 2024'), (SELECT DataFieldId FROM @DataField WHERE Code = 'MICROSCOPIC'), 1, 1, @now, @seedUser, @now, @seedUser);
 
     COMMIT;
     PRINT 'Sample data load completed successfully.';

@@ -60,8 +60,6 @@ async def create_searchRequest(
     comment: Annotated[str, Form()],
     reasonId: Annotated[str, Form()],
     searchId: Annotated[str, Form()],
-    dateFrom: Annotated[str, Form()],
-    dateTo: Annotated[str, Form()],
     irb: Annotated[str, Form()],
     isPediatric: Annotated[bool, Form()],
     selectedFields: Annotated[str, Form()],
@@ -69,13 +67,19 @@ async def create_searchRequest(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
     file: UploadFile = File(...),  # noqa B008
+    dateFrom: Annotated[str | None, Form()] = None,
+    dateTo: Annotated[str | None, Form()] = None,
 ):
     if not file:
         raise HTTPException(status_code=510, detail="File is empty")
     file_extension = pathlib.Path(file.filename).suffix
 
-    date_from = datetime.strptime(dateFrom, "%Y-%m-%d %H:%M:%S")
-    date_to = datetime.strptime(dateTo, "%Y-%m-%d %H:%M:%S")
+    date_from = None
+    if dateFrom:
+        date_from = datetime.strptime(dateFrom, "%Y-%m-%d %H:%M:%S")
+    date_to = None
+    if dateTo:
+        date_to = datetime.strptime(dateTo, "%Y-%m-%d %H:%M:%S")
     selectedFieldArr = [int(x) for x in selectedFields.split(",")]
 
     search_request: SearchRequestVMCreate = SearchRequestVMCreate(
@@ -139,15 +143,19 @@ async def create_searchRequestLite(
     comment: Annotated[str, Form()],
     reasonId: Annotated[str, Form()],
     searchId: Annotated[str, Form()],
-    dateFrom: Annotated[str, Form()],
-    dateTo: Annotated[str, Form()],
     selectedFields: Annotated[str, Form()],
     current_user: Annotated[str, Depends(get_current_user_nuid)],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
+    dateFrom: Annotated[str | None, Form()] = None,
+    dateTo: Annotated[str | None, Form()] = None,
 ):
-    date_from = datetime.strptime(dateFrom, "%Y-%m-%d %H:%M:%S")
-    date_to = datetime.strptime(dateTo, "%Y-%m-%d %H:%M:%S")
+    date_from = None
+    if dateFrom:
+        date_from = datetime.strptime(dateFrom, "%Y-%m-%d %H:%M:%S")
+    date_to = None
+    if dateTo:
+        date_to = datetime.strptime(dateTo, "%Y-%m-%d %H:%M:%S")
 
     selectedFieldArr = [int(x) for x in selectedFields.split(",")]
 
@@ -543,8 +551,6 @@ async def export(
     )
     data = get_search_data(
         search_request.SearchId,
-        fromDate=search_request.FromDate,
-        toDate=search_request.ToDate,
         reasonCode=search_request.SearchRequestReasonCode,
         db=db,
         solr=solr,

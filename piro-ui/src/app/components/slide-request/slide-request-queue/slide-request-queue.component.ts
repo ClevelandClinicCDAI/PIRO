@@ -9,6 +9,7 @@ import { ToastService } from 'src/app/services/toast.service';
   styleUrls: ['./slide-request-queue.component.css']
 })
 export class SlideRequestQueueComponent implements OnInit, OnDestroy {
+  private readonly completedRequestLimit = 100;
   pendingRequests: SlideRequest[] = [];
   ePathRequests: SlideRequest[] = [];
   inProcessRequests: SlideRequest[] = [];
@@ -89,7 +90,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     }
 
     if (completedResult?.status) {
-      this.completedRequests = completedResult.data || [];
+      this.completedRequests = this.normalizeCompletedRequests(completedResult.data || []);
     } else {
       this.completedErrorMessage = 'Unable to load completed slide requests.';
     }
@@ -110,7 +111,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
       delete this.editingNotes[request.id];
       delete this.savingNotes[request.id];
       if (result.data) {
-        this.completedRequests = [result.data, ...this.completedRequests];
+        this.completedRequests = this.normalizeCompletedRequests([result.data, ...this.completedRequests]);
       }
     } else {
       this.toastService.showErrorToast('Unable to complete', 'Please try marking the request as done again.', []);
@@ -132,7 +133,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
       delete this.editingNotes[request.id];
       delete this.savingNotes[request.id];
       if (result.data) {
-        this.completedRequests = [result.data, ...this.completedRequests];
+        this.completedRequests = this.normalizeCompletedRequests([result.data, ...this.completedRequests]);
       }
     } else {
       this.toastService.showErrorToast('Unable to update', 'Please try marking as NIF again.', []);
@@ -264,7 +265,9 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.ePathRequests = this.ePathRequests.map((item) => (item.id === updated.id ? updated : item));
     this.inProcessRequests = this.inProcessRequests.map((item) => (item.id === updated.id ? updated : item));
     this.holdingRequests = this.holdingRequests.map((item) => (item.id === updated.id ? updated : item));
-    this.completedRequests = this.completedRequests.map((item) => (item.id === updated.id ? updated : item));
+    this.completedRequests = this.normalizeCompletedRequests(
+      this.completedRequests.map((item) => (item.id === updated.id ? updated : item))
+    );
   }
 
   private removeFromPendingQueues(requestId: number) {
@@ -292,5 +295,16 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
       clearInterval(this.refreshTimer);
       this.refreshTimer = null;
     }
+  }
+
+  private normalizeCompletedRequests(requests: SlideRequest[]) {
+    return requests
+      .slice()
+      .sort((a, b) => {
+        const aDate = new Date(a.completedAt || a.requestedAt || 0).getTime();
+        const bDate = new Date(b.completedAt || b.requestedAt || 0).getTime();
+        return bDate - aDate;
+      })
+      .slice(0, this.completedRequestLimit);
   }
 }

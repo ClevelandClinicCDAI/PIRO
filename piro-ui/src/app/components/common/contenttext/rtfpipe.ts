@@ -35,10 +35,12 @@ export class CatImageUrlPipe implements PipeTransform {
         }
        
         arrSearchFilter.forEach(function myFunction(item: any, index: any, arr: any) {
-            if(item.field === "final;comment;addend" || 
+            if(item.field === "final;comment;addend;microscopic" ||
+            item.field === "final;comment;addend" || 
             item.field === "final"  || 
             item.field === "comment" || 
             item.field === "addend" || 
+            item.field === "microscopic" ||
             item.field === "synoptic" || 
             item.field === "intraop" || 
             item.field === "gross" || 

@@ -535,6 +535,8 @@
   <field name="synopticcount" type="pint" uninvertible="true" indexed="true" stored="true"/>
   <field name="clinical" type="text_en" uninvertible="true" indexed="true" stored="true"/>
   <field name="clinicalcount" type="pint" uninvertible="true" indexed="true" stored="true"/>
+  <field name="microscopic" type="text_en" uninvertible="true" indexed="true" stored="true"/>
+  <field name="microscopiccount" type="pint" uninvertible="true" indexed="true" stored="true"/>
   <field name="annotationmalignant" type="string" uninvertible="true" indexed="true" stored="true"/>
   <field name="updatedate" type="pdate" uninvertible="true" indexed="true" stored="true"/>
   <field name="isconcentriq" type="boolean" uninvertible="true" indexed="true" stored="true"/>

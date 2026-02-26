@@ -83,6 +83,12 @@ services:
       AD_LDAP_PATH: ${AD_LDAP_PATH:-}
       AD_SECURITY_GROUP: ${AD_SECURITY_GROUP:-}
       AD_DOMAIN: ${AD_DOMAIN:-}
+      EXCEL_Template_DIRECTORY: template/
+      EXCEL_Output_DIRECTORY: excel/
+      EXCEL_SearchRequst_Template_FILE: PIRO_SearchRequest_Template.xlsx
+      EXCEL_Cohort_MRN_Template_FILE: PIRO_Cohort_MRN_Template.xlsx
+      EXCEL_Cohort_Case_Template_FILE: PIRO_Cohort_Case_Template.xlsx
+      EXCEL_Cohort_EID_Template_FILE: PIRO_Cohort_EID_Template.xlsx
     depends_on:
       sample-data:
         condition: service_completed_successfully

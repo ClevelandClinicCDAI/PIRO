@@ -95,6 +95,8 @@ let i = index;" [ngClass]="i != 0 ? 'mt-3' : ''">
             [app-contenttext]="{heading:'Final Diagnosis: ',content:item.finaltexts }"></div>
         <div *ngIf="item.commenttexts?.length > 0" [app-contenttext]="{heading:'Comment: ',content:item.commenttexts}">
         </div>
+        <div *ngIf="item.microscopictexts?.length > 0"
+            [app-contenttext]="{heading:'Microscopic Description: ',content:item.microscopictexts}"></div>
         <div *ngIf="item.addendtexts?.length > 0" [app-contenttext]="{heading:'Addendum: ',content:item.addendtexts}">
         </div>
         <!-- <div [app-contenttext]="{heading:'Gross: ',content:item.grosstexts}"></div> -->

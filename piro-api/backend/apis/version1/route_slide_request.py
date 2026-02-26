@@ -133,6 +133,8 @@ async def list_completed_slide_requests(
             Constants.SlideRequestStatus.NIF.value,
             Constants.SlideRequestStatus.CANCELED.value,
         ],
+        order_by_completed_desc=True,
+        limit=100,
     )
     return [to_slide_request_vm(item) for item in requests]
 

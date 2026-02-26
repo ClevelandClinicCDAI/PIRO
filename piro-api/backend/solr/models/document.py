@@ -30,6 +30,7 @@ class document:
     gross: str
     comment: str
     addend: str
+    microscopic: str
     intraop: str
     resident: str
     synoptic: str
@@ -51,6 +52,7 @@ class document:
     finalcount: int
     synopticcount: int
     residentcount: int
+    microscopiccount: int
     annotationmalignant: str
     isepic: bool
     isepicmigrated: bool
