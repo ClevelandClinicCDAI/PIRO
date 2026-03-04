@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DacOrigin xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <PackageProperties>
+    <Version>3.0.0.0</Version>
+    <ContainsExportedData>false</ContainsExportedData>
+    <StreamVersions>
+      <Version StreamName="Data">2.0.0.0</Version>
+      <Version StreamName="DeploymentContributors">1.0.0.0</Version>
+    </StreamVersions>
+  </PackageProperties>
+  <Operation>
+    <Identity>c48252bb-3afc-4749-8098-50877bcea2ff</Identity>
+    <Start>2026-03-03T10:49:24.1031520-05:00</Start>
+    <End>0001-01-01T00:00:00.0000000</End>
+    <ProductName>Microsoft.SqlServer.Dac, Version=170.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91</ProductName>
+    <ProductVersion>170.3.93.6</ProductVersion>
+    <ProductSchema>http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02</ProductSchema>
+  </Operation>
+  <Server>
+    <ServerVersion>Microsoft SQL Server 2022 (RTM-CU22) (KB5068450) - 16.0.4225.2 (X64) 
+	Oct 22 2025 23:44:36 
+	Copyright (C) 2022 Microsoft Corporation
+	Developer Edition (64-bit) on Linux (Ubuntu 22.04.5 LTS) &lt;X64&gt;</ServerVersion>
+    <ObjectCounts>
+      <ComputedColumn>509</ComputedColumn>
+      <DatabaseOptions>1</DatabaseOptions>
+      <DefaultConstraint>10</DefaultConstraint>
+      <ForeignKeyConstraint>26</ForeignKeyConstraint>
+      <Index>107</Index>
+      <PrimaryKeyConstraint>94</PrimaryKeyConstraint>
+      <Procedure>91</Procedure>
+      <ScalarFunction>7</ScalarFunction>
+      <ScriptFunctionImplementation>7</ScriptFunctionImplementation>
+      <SimpleColumn>1436</SimpleColumn>
+      <SubroutineParameter>51</SubroutineParameter>
+      <Table>110</Table>
+      <View>32</View>
+    </ObjectCounts>
+  </Server>
+  <ExportStatistics>
+    <SourceDatabaseSize>13136</SourceDatabaseSize>
+    <TableRowCountTotalTag>0</TableRowCountTotalTag>
+  </ExportStatistics>
+  <Checksums>
+    <Checksum Uri="/model.xml">B2199C7C7B83AEA0BD9308A2701E72C7E62679D30EB54757B2E38840315F5814</Checksum>
+  </Checksums>
+  <ModelSchemaVersion>2.9</ModelSchemaVersion>
+</DacOrigin>

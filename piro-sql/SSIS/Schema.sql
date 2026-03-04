@@ -123,8 +123,8 @@ DROP TABLE [dbo].[SSIS_ConfigRun]
  
 CREATE TABLE [dbo].[SSIS_ConfigRun](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Name] [varchar](50) NOT NULL,
-	[Val] [varchar](50) NOT NULL,
+	[Name] [varchar](1000) NOT NULL,
+	[Val] [varchar](4000) NOT NULL,
 	IsActive bit NOT NULL,
  CONSTRAINT [PK_SSISConfig] PRIMARY KEY CLUSTERED 
 (
@@ -198,6 +198,12 @@ Insert into [dbo].[SSIS_ConfigRun]
 Values ('Truncate.OnLoad', 'SSIS_CommentPlainText', 0)
 Insert into [dbo].[SSIS_ConfigRun]
 Values ('Truncate.OnLoad', 'SSIS_CommentRTFText', 0)
+Insert into [dbo].[SSIS_ConfigRun]
+Values (
+	'Query.CommentPlainText.CommentType.CategorizationClause',
+	'CASE WHEN COMP.NAME LIKE ''%FINAL%'' THEN ''FINAL'' WHEN COMP.NAME LIKE ''%GROSS%'' THEN ''GROSS'' WHEN COMP.NAME LIKE ''%INTRAOP%'' THEN ''INTRAOP'' WHEN COMP.NAME LIKE ''%COMMENT%'' THEN ''COMMENT'' WHEN COMP.NAME LIKE ''%SYNOPTIC%'' THEN ''SYNOPTIC'' WHEN COMP.NAME LIKE ''%RESIDENT%'' THEN ''RESIDENT'' WHEN COMP.NAME LIKE ''%ADDEND%'' THEN ''ADDEND'' WHEN COMP.NAME LIKE ''%MICROSCOPIC%'' THEN ''MICROSCOPIC'' WHEN COMP.NAME LIKE ''FLOW CYTOMETRY RESULTS'' THEN ''FINAL'' ELSE ''OTHER'' END',
+	1
+)
  
 
 IF OBJECT_ID(N'dbo.SSIS_SpecimenSource', N'U') IS NOT NULL
