@@ -86,6 +86,9 @@ class SecurityUtil:
             doc.final = SecurityUtil.mask_date(doc.final)
             doc.final = SecurityUtil.mask_case(doc.final)
 
+            doc.microscopic = SecurityUtil.mask_date(doc.microscopic)
+            doc.microscopic = SecurityUtil.mask_case(doc.microscopic)
+
     @staticmethod
     def case(vcase: VCase, role, isAttest):
         """Remove protected attributes from a VCase object."""

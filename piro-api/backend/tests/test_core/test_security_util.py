@@ -62,6 +62,18 @@ def test_search_user_attested():
     assert doc.__dict__ == original_attrs_list
 
 
+def test_search_demoadmin_masks_microscopic():
+    """Test DemoAdmin masking also redacts microscopic text content."""
+
+    doc = document()
+    for field in ["comment", "addend", "intraop", "resident", "final", "microscopic"]:
+        setattr(doc, field, "MICROSCOPIC Patient 12/12/2020 case AB12-12345")
+
+    SecurityUtil.search(doc, role=Constants.RoleDemoAdmin, isAttest=False)
+
+    assert doc.microscopic == "MICROSCOPIC Patient MM/dd/yyyy case X01-XXXXXX"
+
+
 def test_case_user_not_attested(vcase_one):
     """Test the 'case' method with 'user' role for a user who hasn't done the attestation.
 
