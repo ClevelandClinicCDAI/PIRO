@@ -5,10 +5,12 @@ from sqlalchemy.sql import func
 
 
 class Patient(Base):
-    __tablename__ = "Patient"
+    __tablename__ = "Patient"  # type:ignore
     PatientId = Column(Integer, primary_key=True, index=True)
     GenderId = Column(Integer, ForeignKey("Gender.GenderId"), nullable=False)
-    EthnicityId = Column(Integer, ForeignKey("Ethnicity.EthnicityId"), nullable=False)
+    EthnicityId = Column(
+        Integer, ForeignKey("Ethnicity.EthnicityId"), nullable=False
+    )
     RaceId = Column(Integer, ForeignKey("Race.RaceId"), nullable=False)
     FirstName = Column(String, nullable=False)
     LastName = Column(String, nullable=False)
@@ -26,3 +28,5 @@ class Patient(Base):
     Ethnicity = relationship("Ethnicity", back_populates="Patient")
     Race = relationship("Race", back_populates="Patient")
     Case = relationship("Case", back_populates="Patient")
+    IsDeceased = Column(Boolean, nullable=True)
+    DeathDate = Column(DateTime, nullable=True)
