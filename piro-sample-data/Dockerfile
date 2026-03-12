@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/mssql-tools
 USER root
-RUN apt-get update && apt-get install -y curl python3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends bash curl python3 && rm -rf /var/lib/apt/lists/*
 WORKDIR /seed
 COPY piro-sql /seed/piro-sql
 COPY piro-sample-data/sample-data.sql /seed/sample-data.sql
@@ -11,5 +11,5 @@ COPY piro-sample-data/solr-suggest-comment.json /seed/solr-suggest-comment.json
 COPY piro-sample-data/solr-suggest-staff.json /seed/solr-suggest-staff.json
 COPY piro-sample-data/entrypoint.sh /usr/local/bin/seed.sh
 COPY piro-sample-data/table_order.py /usr/local/bin/table-order.py
-RUN chmod +x /usr/local/bin/seed.sh /usr/local/bin/table-order.py
-ENTRYPOINT ["/usr/local/bin/seed.sh"]
+RUN sed -i 's/\r$//' /usr/local/bin/seed.sh && chmod +x /usr/local/bin/seed.sh /usr/local/bin/table-order.py
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/seed.sh"]

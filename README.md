@@ -12,7 +12,7 @@ The files for this application are served up by Nginx on the webserver.  The fil
 
 ## Python/FastAPI Application
 
-This application is a RESTful API serving up content from the MS SQL Server Database and SOLR to the Angular application.  It's responsibilities include user authentication and authorization checks, data validation (no validation is performed in the Angular Web Interface), creation/retrieval/updating/deleting of user-specific profile information, and it acts as an interface to the Solr instance.  
+This application is a RESTful API serving up content from the MS SQL Server Database and SOLR to the Angular application.  It's responsibilities include user authentication and authorization checks, data validation (no validation is performed in the Angular Web Interface), creation/retrieval/updating/deleting of user-specific profile information, and it acts as an interface to the Solr instance.
 
 NGINX is used as a reverse proxy, enforcing HTTPS for all web requests. It proxies to a gunicorn instance, which in turn proxies to the uvicorn workers used by FastAPI.
 
@@ -56,10 +56,21 @@ You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the 
 
 ### One-time bootstrap with sample data
 
+macOS / Linux:
+
 ```bash
 # from the repo root
 PIRO_LOAD_SAMPLE_DATA=true \
 PIRO_MSSQL_SA_PASSWORD='ChooseA$trongPassword' \
+docker compose up --build
+```
+
+Windows (PowerShell):
+
+```powershell
+# from the repo root
+$env:PIRO_LOAD_SAMPLE_DATA="true"
+$env:PIRO_MSSQL_SA_PASSWORD="ChooseA`$trongPassword"
 docker compose up --build
 ```
 
@@ -90,6 +101,8 @@ Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=You
 
 **Offline demo (no LDAP required)** – loads curated data and enables the `demo.user` bypass account:
 
+macOS / Linux:
+
 ```bash
 ACCESS_TOKEN_TEST_USER=demo.user \
 PIRO_LOAD_SAMPLE_DATA=true \
@@ -100,7 +113,21 @@ PIRO_SAMPLE_USER_ROLE=USER \
 docker compose up --build
 ```
 
+Windows (PowerShell):
+
+```powershell
+$env:ACCESS_TOKEN_TEST_USER="demo.user"
+$env:PIRO_LOAD_SAMPLE_DATA="true"
+$env:PIRO_SAMPLE_USER_NUID="demo.user"
+$env:PIRO_SAMPLE_USER_FIRST_NAME="Demo"
+$env:PIRO_SAMPLE_USER_LAST_NAME="User"
+$env:PIRO_SAMPLE_USER_ROLE="USER"
+docker compose up --build
+```
+
 **First-time LDAP initialization with sample data** – run while connected to your corporate network so LDAP lookups succeed:
+
+macOS / Linux:
 
 ```bash
 PIRO_LOAD_SAMPLE_DATA=true \
@@ -114,7 +141,23 @@ AD_DOMAIN=example.org \
 docker compose up --build
 ```
 
+Windows (PowerShell):
+
+```powershell
+$env:PIRO_LOAD_SAMPLE_DATA="true"
+$env:PIRO_SAMPLE_USER_NUID="your.user@your-domain.org"
+$env:PIRO_SAMPLE_USER_FIRST_NAME="YourName"
+$env:PIRO_SAMPLE_USER_LAST_NAME="YourLast"
+$env:PIRO_SAMPLE_USER_ROLE="USER"
+$env:AD_LDAP_PATH="ldaps://ldap.example.org:3269"
+$env:AD_SECURITY_GROUP="CN=PIRO-Dev,OU=Groups,DC=example,DC=org"
+$env:AD_DOMAIN="example.org"
+docker compose up --build
+```
+
 **Production-like run (LDAP only, no sample data)** – skip demo content once you have real data restored locally:
+
+macOS / Linux:
 
 ```bash
 PIRO_LOAD_SAMPLE_DATA=false \
@@ -123,6 +166,18 @@ AD_SECURITY_GROUP="CN=PIRO-Prod,OU=Groups,DC=example,DC=org" \
 AD_DOMAIN=example.org \
 docker compose up --build
 ```
+
+Windows (PowerShell):
+
+```powershell
+$env:PIRO_LOAD_SAMPLE_DATA="false"
+$env:AD_LDAP_PATH="ldaps://ldap.example.org:3269"
+$env:AD_SECURITY_GROUP="CN=PIRO-Prod,OU=Groups,DC=example,DC=org"
+$env:AD_DOMAIN="example.org"
+docker compose up --build
+```
+
+> **Tip (Windows):** `$env:` assignments are session-scoped and will not persist after you close the terminal. To unset a variable after use, run `Remove-Item Env:\VARIABLE_NAME` (e.g. `Remove-Item Env:\ACCESS_TOKEN_TEST_USER`).
 
 ### Ports, health, and tear-down
 
