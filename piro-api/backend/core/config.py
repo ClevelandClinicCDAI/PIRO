@@ -65,7 +65,8 @@ class Settings:
     EXCEL_Template_DIRECTORY: str = os.getenv("EXCEL_Template_DIRECTORY")
     EXCEL_Output_DIRECTORY: str = os.getenv("EXCEL_Output_DIRECTORY")
     EXCEL_SEARCH_REQUEST_Template_FILE: str = os.getenv(
-        "EXCEL_SearchRequst_Template_FILE"
+        "EXCEL_SearchRequest_Template_FILE",
+        os.getenv("EXCEL_SearchRequst_Template_FILE"),
     )
     EXCEL_Cohort_MRN_Template_FILE: str = os.getenv(
         "EXCEL_Cohort_MRN_Template_FILE"
