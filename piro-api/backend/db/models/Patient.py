@@ -5,7 +5,7 @@ from sqlalchemy.sql import func
 
 
 class Patient(Base):
-    __tablename__ = "Patient"  # type:ignore
+    __tablename__: str = "Patient"
     PatientId = Column(Integer, primary_key=True, index=True)
     GenderId = Column(Integer, ForeignKey("Gender.GenderId"), nullable=False)
     EthnicityId = Column(
