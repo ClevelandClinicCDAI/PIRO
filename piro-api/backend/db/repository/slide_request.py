@@ -200,10 +200,8 @@ def cancel_slide_request(
         .filter(SlideRequest.SlideRequestId == request_id)
         .first()
     )
-    if request is None:
+    if request is None or request.RequesterId != user_id:
         raise DataException("Slide request does not exist")
-    if request.RequesterId != user_id:
-        raise DataException("Slide request does not belong to requester")
     if request.Status == Constants.SlideRequestStatus.CANCELED.value:
         return request
     if request.Status in (

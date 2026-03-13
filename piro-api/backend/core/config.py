@@ -64,8 +64,11 @@ class Settings:
     AD_LDAP_PATH: str | None = os.getenv("AD_LDAP_PATH")
     AD_SECURITY_GROUP: str | None = os.getenv("AD_SECURITY_GROUP")
     AD_DOMAIN: str | None = os.getenv("AD_DOMAIN")
-    EXCEL_Template_DIRECTORY: str | None = os.getenv(
-        "EXCEL_Template_DIRECTORY"
+    EXCEL_Template_DIRECTORY: str | None = os.getenv("EXCEL_Template_DIRECTORY")
+    EXCEL_Output_DIRECTORY: str | None = os.getenv("EXCEL_Output_DIRECTORY")
+    EXCEL_SEARCH_REQUEST_Template_FILE: str | None = os.getenv(
+        "EXCEL_SearchRequest_Template_FILE",
+        os.getenv("EXCEL_SearchRequst_Template_FILE"),
     )
     EXCEL_Output_DIRECTORY: str | None = os.getenv("EXCEL_Output_DIRECTORY")
     EXCEL_Cohort_MRN_Template_FILE: str | None = os.getenv(
