@@ -28,5 +28,5 @@ class Patient(Base):
     Ethnicity = relationship("Ethnicity", back_populates="Patient")
     Race = relationship("Race", back_populates="Patient")
     Case = relationship("Case", back_populates="Patient")
-    IsDeceased = Column(Boolean, nullable=True)
+    IsDeceased = Column(Boolean, nullable=False)
     DeathDate = Column(DateTime, nullable=True)

@@ -25,18 +25,16 @@ class Settings:
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "tdd")
     POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"  # noqa:E501
 
-    MSSQL_USER: str | None = os.getenv("MSSQL_USER")
+    MSSQL_USER: str | None = quote_plus(os.getenv("MSSQL_USER"))
     MSSQL_PASSWORD = quote_plus(os.getenv("MSSQL_PASSWORD", ""))
     MSSQL_SERVER: str = os.getenv("MSSQL_SERVER", "localhost")
     MSSQL_DB: str | None = os.getenv("MSSQL_DB")
     MSSQL_WINDOW_AUTH: str | None = os.getenv("MSSQL_WINDOW_AUTH")
-    MSSQL_DRIVER: str | None = os.getenv("MSSQL_DRIVER")
+    MSSQL_DRIVER: str | None = quote_plus(os.getenv("MSSQL_DRIVER"))
     MSSQL_DB_URL_SQL = f"mssql+pyodbc://{MSSQL_USER}:{MSSQL_PASSWORD}@{MSSQL_SERVER}/{MSSQL_DB}?driver={MSSQL_DRIVER}&TrustServerCertificate=yes"  # noqa:E501
     MSSQL_DB_URL_WIN = (
         f"mssql+pyodbc://{MSSQL_SERVER}/{MSSQL_DB}?driver={MSSQL_DRIVER}"
     )
-
-    DATABASE: str = os.getenv("DATABASE")
 
     ACCESS_TOKEN_SECRET_KEY: str | None = os.getenv("ACCESS_TOKEN_SECRET_KEY")
     ACCESS_TOKEN_ALGORITHM: str | None = os.getenv("ACCESS_TOKEN_ALGORITHM")

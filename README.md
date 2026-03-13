@@ -12,7 +12,7 @@ The files for this application are served up by Nginx on the webserver.  The fil
 
 ## Python/FastAPI Application
 
-This application is a RESTful API serving up content from the MS SQL Server Database and SOLR to the Angular application.  It's responsibilities include user authentication and authorization checks, data validation (no validation is performed in the Angular Web Interface), creation/retrieval/updating/deleting of user-specific profile information, and it acts as an interface to the Solr instance.
+This application is a RESTful API serving up content from the MS SQL Server Database and SOLR to the Angular application.  Its responsibilities include user authentication and authorization checks, data validation (no validation is performed in the Angular Web Interface), creation/retrieval/updating/deleting of user-specific profile information, and it acts as an interface to the Solr instance.
 
 NGINX is used as a reverse proxy, enforcing HTTPS for all web requests. It proxies to a gunicorn instance, which in turn proxies to the uvicorn workers used by FastAPI.
 
