@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+fuzzy.db
 
 # Translations
 *.mo
@@ -179,3 +180,4 @@ labs
 *.sql
 /test_results/
 /.ruff_cache/
+.vscode
