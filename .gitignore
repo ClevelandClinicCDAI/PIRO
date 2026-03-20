@@ -31,3 +31,10 @@ build/
 casecomment_dependency_graph.md
 casecomment_dependency_graph.txt
 casecomment_table_usage.txt
+
+# Generated DACPAC migration artifacts
+artifacts/db-migration/*
+!artifacts/db-migration/.gitkeep
+
+# Local region seed extract (environment-specific)
+/Region.csv

@@ -77,6 +77,11 @@ apply_file() {
     *) cp ${file} ${tmp} ;;
   esac
 
+  # Some checked-in SQL files carry repeated BOM bytes in the file body.
+  # Strip any leading UTF-8 BOM sequences after normalization so sqlcmd
+  # does not choke on them.
+  perl -0pi -e 's/^(?:\xEF\xBB\xBF)+//; s/^\s*USE\s+\[[^]]+\]\s*\r?\nGO\s*\r?\n//i' ${tmp}
+
   if output=$(run_sql_file ${tmp} 2>&1); then
     [ -n "${output}" ] && echo "${output}"
     rm -f ${tmp}
@@ -160,7 +165,7 @@ apply_dir_with_retries() {
   [ -d ${dir} ] || return 0
 
   list_file=$(mktemp /tmp/piro_list_XXXXXX)
-  find ${dir} -type f -name '*.sql' | sort | awk '!seen[$0]++' > ${list_file}
+  build_sql_file_list ${dir} | awk '!seen[$0]++' > ${list_file}
 
   if [ ! -s ${list_file} ]; then
     rm -f ${list_file}
@@ -169,6 +174,54 @@ apply_dir_with_retries() {
 
   apply_list_with_retries ${list_file} ${dir#${ROOT}/}
   rm -f ${list_file}
+}
+
+build_sql_file_list() {
+  local dir=$1
+  local file
+  local -a prioritized_files
+  local -A emitted_files
+
+  if [[ ${dir} == ${ROOT}/piro-sql/View/PIRO ]]; then
+    prioritized_files=(
+      ${dir}/dbo.V_Patient.View.sql
+      ${dir}/dbo.V_Patient_Hash.View.sql
+      ${dir}/dbo.V_Hospital.View.sql
+      ${dir}/dbo.V_Interpreter.View.sql
+      ${dir}/dbo.V_InterpreterAll.View.sql
+      ${dir}/dbo.V_Specimen.View.sql
+      ${dir}/dbo.V_SpecimenAll.View.sql
+      ${dir}/dbo.V_CaseCommentCopath.View.sql
+      ${dir}/dbo.V_CaseCommentEpic.View.sql
+      ${dir}/dbo.V_CaseCommentText.View.sql
+      ${dir}/dbo.V_CaseComment.View.sql
+      ${dir}/dbo.V_CaseComment_Consolidated.View.sql
+      ${dir}/dbo.V_CaseStaff.View.sql
+      ${dir}/dbo.V_CaseStaffAll.View.sql
+      ${dir}/dbo.V_Case_MRN.View.sql
+      ${dir}/dbo.V_Case.View.sql
+      ${dir}/dbo.V_CaseAll.View.sql
+      ${dir}/dbo.V_CaseAll_Consolidated.View.sql
+      ${dir}/dbo.V_AuditTrail_Report.View.sql
+      ${dir}/dbo.V_SearchRequest.View.sql
+    )
+
+    for file in ${prioritized_files}; do
+      if [ -f ${file} ]; then
+        echo "${file}"
+        emitted_files[${file}]=1
+      fi
+    done
+
+    while IFS= read -r file; do
+      if [[ -z ${emitted_files[$file]-} ]]; then
+        echo "${file}"
+      fi
+    done < <(find ${dir} -type f -name '*.sql' | sort)
+    return 0
+  fi
+
+  find ${dir} -type f -name '*.sql' | sort
 }
 
 apply_tables_with_retries() {

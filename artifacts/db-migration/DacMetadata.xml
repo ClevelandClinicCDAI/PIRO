@@ -1,5 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<DacType xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
-  <Name>PIRO_DACPAC_SRC</Name>
-  <Version>1.0</Version>
-</DacType>

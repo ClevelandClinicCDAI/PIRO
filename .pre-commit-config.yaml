@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: scripts-no-hardcoded-secrets
+        name: Prevent hardcoded secrets in scripts
+        entry: scripts/check_no_hardcoded_secrets.sh
+        language: system
+        pass_filenames: false
