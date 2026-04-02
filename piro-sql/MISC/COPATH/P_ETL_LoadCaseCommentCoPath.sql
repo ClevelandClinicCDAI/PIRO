@@ -23,12 +23,19 @@ BEGIN
 	DECLARE @RowsToBeUpdated INT = 0 
 	DECLARE @Table Varchar(100) = 'CaseCommentCoPath'
 	DECLARE @CommentTypeIdNull INT
+	DECLARE @EndTime datetime
+	DECLARE @StartTime datetime, @LoadTime INT
+	SELECT @StartTime=GETDATE() 
 	 
 
-	BEGIN TRY
-		 
-		IF @Insert = 1
-		BEGIN
+		BEGIN TRY
+			IF ISNULL(@Insert, 0) = 0 AND ISNULL(@Update, 0) = 0
+			BEGIN
+				;THROW 50001, 'P_ETL_LoadCaseCommentCoPath requires @Insert = 1 and/or @Update = 1.', 1;
+			END
+			 
+			IF @Insert = 1
+			BEGIN
 			DROP INDEX IF EXISTS idx_CaseCommentCoPath_CaseId
 			ON CaseCommentCoPath;
 
@@ -60,16 +67,19 @@ BEGIN
 			   ,IsTextUpdated)
 			SELECT  
 				C.CaseId
-				,CASE texttype_id
-					WHEN '$n-final' THEN 3
-					WHEN '$final' THEN 3
-					WHEN '$n-gross' THEN 3
-					WHEN '$gross' THEN 4
-					WHEN '$othgross' THEN 4
-					WHEN '$n-othergross' THEN 4
-					WHEN '$synop' THEN 7
-					ELSE 8
-				END
+					,CASE texttype_id
+						WHEN '$n-final' THEN 3
+						WHEN '$final' THEN 3
+						WHEN '$n-gross' THEN 3
+						WHEN '$frodx1' THEN 5
+						WHEN '$gross' THEN 4
+						WHEN '$othgross' THEN 4
+						WHEN '$n-othergross' THEN 4
+						WHEN '$clindx' THEN 10
+						WHEN '$micro' THEN 12
+						WHEN '$synop' THEN 7
+						ELSE 8
+					END
 				--,[text_data_text]
 				--,[text_data_rtf]
 				,NULL
@@ -103,51 +113,68 @@ BEGIN
 		END
 
 
-		IF @Update = 1 
-		BEGIN
-			DECLARE @MaxId INT, @FromId INT = 0, @ToId INT = 0, @BulkSize INT = 100000;
-		
-			SET @MaxId = (select MAx(Id) from [ETLCopathCaseComment] )
-		
-			While (@ToId < @MaxId)
+			IF @Update = 1 
 			BEGIN
-				SET @ToId = @FromId + @BulkSize;
-				PRINT CAST(@FromId as VARCHAR) + ' -- ' + CAST(@ToId as VARCHAR) 
-				Update C
-				SET 		
-				[RtfText] = EC.text_data_rtf,
-				[Text] = EC.text_data_text,
-				IsTextUpdated = 1
+				DECLARE @MaxId INT, @FromId INT = 0, @ToId INT = 0, @BulkSize INT = 100000;
+				SELECT @RowsToBeUpdated = COUNT(0)
 				FROM [dbo].CaseCommentCoPath C
 				JOIN [dbo].[ETLCopathCaseComment] EC on C.RefId = EC.id
-				WHERE EC.Id >= @FromId AND EC.Id < @ToId AND IsTextUpdated = 0
+				WHERE C.IsTextUpdated = 0;
+			
+				SET @MaxId = (select MAx(Id) from [ETLCopathCaseComment] )
 
-				SET @RowsUpdated = @RowsUpdated + @@ROWCOUNT
+				IF ISNULL(@RowsToBeUpdated, 0) > 0 AND @MaxId IS NOT NULL
+				BEGIN
+					While (@ToId < @MaxId)
+					BEGIN
+						SET @ToId = @FromId + @BulkSize;
+						PRINT CAST(@FromId as VARCHAR) + ' -- ' + CAST(@ToId as VARCHAR) 
+						Update C
+						SET 		
+						[RtfText] = EC.text_data_rtf,
+						[Text] = EC.text_data_text,
+						IsTextUpdated = 1
+						FROM [dbo].CaseCommentCoPath C
+						JOIN [dbo].[ETLCopathCaseComment] EC on C.RefId = EC.id
+						WHERE EC.Id >= @FromId AND EC.Id < @ToId AND IsTextUpdated = 0
 
-				SET @FromId = @ToId
+						SET @RowsUpdated = @RowsUpdated + @@ROWCOUNT
 
+						SET @FromId = @ToId
+
+					END
+				END
 			END
-		END
 		print 'Insert End'
-		EXEC dbo.P_ETL_LogData @Table,
+		SELECT @EndTime=GETDATE()
+		SET @LoadTime = DATEDIFF(SECOND, @StartTime, @EndTime)
+		EXEC dbo.P_SSIS_LogMainTable @Table,
 									@RowsToBeInserted,
 									@RowsInserted,
 									@RowsToBeUpdated,
 									@RowsUpdated,
 									1,
-									''
+									'',
+									@LoadTime
 	
-	END TRY 
-	BEGIN CATCH 
-		DECLARE @ERROR VARCHAR(MAX) = ERROR_MESSAGE()
-		EXEC dbo.P_ETL_LogData @Table,
-								@RowsToBeInserted,
-								@RowsInserted,
-								@RowsToBeUpdated,
-								@RowsUpdated,
-								0,
-								@ERROR
-	END CATCH
+		END TRY 
+		BEGIN CATCH 
+			DECLARE @ERROR VARCHAR(MAX) = ERROR_MESSAGE()
+			SELECT @EndTime=GETDATE()
+			SET @LoadTime = DATEDIFF(SECOND, @StartTime, @EndTime)
+			IF XACT_STATE() <> -1
+			BEGIN
+				EXEC dbo.P_SSIS_LogMainTable @Table,
+									@RowsToBeInserted,
+									@RowsInserted,
+									@RowsToBeUpdated,
+									@RowsUpdated,
+									0,
+									@ERROR,
+									@LoadTime
+			END
+			;THROW;
+		END CATCH
 END
 GO
 
