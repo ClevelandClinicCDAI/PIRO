@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
-import { SlideRequest, SlideRequestFormPayload } from '../models/slide-request';
+import { SlideRequest, SlideRequestCaseType, SlideRequestFormPayload } from '../models/slide-request';
 
 @Injectable({
   providedIn: 'root'
@@ -10,6 +10,10 @@ export class SlideRequestService {
   private baseUrl = environment.apiBaseUrl + environment.slideRequestUrl;
 
   constructor(private http: HttpClient) { }
+
+  private buildQueueOptions(caseType?: SlideRequestCaseType) {
+    return caseType ? { params: { caseType } } : {};
+  }
 
   createRequest(payload: SlideRequestFormPayload) {
     return new Promise((resolve) => {
@@ -37,9 +41,9 @@ export class SlideRequestService {
     });
   }
 
-  getPendingRequests() {
+  getPendingRequests(caseType?: SlideRequestCaseType) {
     return new Promise((resolve) => {
-      this.http.get<SlideRequest[]>(`${this.baseUrl}/pending`).subscribe({
+      this.http.get<SlideRequest[]>(`${this.baseUrl}/pending`, this.buildQueueOptions(caseType)).subscribe({
         next: (res: SlideRequest[]) => {
           resolve({ status: true, data: res });
         },
@@ -50,9 +54,9 @@ export class SlideRequestService {
     });
   }
 
-  getInProcessRequests() {
+  getInProcessRequests(caseType?: SlideRequestCaseType) {
     return new Promise((resolve) => {
-      this.http.get<SlideRequest[]>(`${this.baseUrl}/in-process`).subscribe({
+      this.http.get<SlideRequest[]>(`${this.baseUrl}/in-process`, this.buildQueueOptions(caseType)).subscribe({
         next: (res: SlideRequest[]) => {
           resolve({ status: true, data: res });
         },
@@ -63,9 +67,9 @@ export class SlideRequestService {
     });
   }
 
-  getCompletedRequests() {
+  getCompletedRequests(caseType?: SlideRequestCaseType) {
     return new Promise((resolve) => {
-      this.http.get<SlideRequest[]>(`${this.baseUrl}/completed`).subscribe({
+      this.http.get<SlideRequest[]>(`${this.baseUrl}/completed`, this.buildQueueOptions(caseType)).subscribe({
         next: (res: SlideRequest[]) => {
           resolve({ status: true, data: res });
         },
@@ -76,9 +80,9 @@ export class SlideRequestService {
     });
   }
 
-  getHoldingRequests() {
+  getHoldingRequests(caseType?: SlideRequestCaseType) {
     return new Promise((resolve) => {
-      this.http.get<SlideRequest[]>(`${this.baseUrl}/holding`).subscribe({
+      this.http.get<SlideRequest[]>(`${this.baseUrl}/holding`, this.buildQueueOptions(caseType)).subscribe({
         next: (res: SlideRequest[]) => {
           resolve({ status: true, data: res });
         },

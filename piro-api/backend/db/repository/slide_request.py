@@ -5,7 +5,11 @@ from db.models.SlideRequest import SlideRequest
 from exception.data_exception import DataException
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload
-from viewmodel.slide_request import SlideRequestCreateVM, SlideRoomNotesUpdateVM
+from viewmodel.slide_request import (
+    SlideRequestCreateVM,
+    SlideRoomNotesUpdateVM,
+    derive_slide_request_case_type,
+)
 
 
 def create_slide_request(
@@ -13,6 +17,7 @@ def create_slide_request(
 ):
     request = SlideRequest(
         AccessionNumber=input.accessionNumber.strip(),
+        CaseType=derive_slide_request_case_type(input.accessionNumber).value,
         Notes=input.requesterNotes.strip() if input.requesterNotes else None,
         EPath=bool(input.ePath),
         UrgencyStatus=input.urgencyStatus,
@@ -30,6 +35,7 @@ def list_slide_requests(
     db: Session,
     statuses: list[str] | None = None,
     requester_id: int | None = None,
+    case_type: Constants.SlideRequestCaseType | None = None,
     order_by_completed_desc: bool = False,
     limit: int | None = None,
 ):
@@ -43,6 +49,8 @@ def list_slide_requests(
         query = query.filter(SlideRequest.Status.in_(statuses))
     if requester_id:
         query = query.filter(SlideRequest.RequesterId == requester_id)
+    if case_type:
+        query = query.filter(SlideRequest.CaseType == case_type.value)
     if order_by_completed_desc:
         query = query.order_by(
             desc(SlideRequest.CompletedDate),

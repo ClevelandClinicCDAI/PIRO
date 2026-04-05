@@ -1,8 +1,10 @@
 export type SlideRequestUrgency = 'SameDay' | 'Routine';
+export type SlideRequestCaseType = 'Surgical' | 'Cytology';
 
 export interface SlideRequest {
   id: number;
   accessionNumber: string;
+  caseType: SlideRequestCaseType;
   ePath?: boolean | null;
   requesterNotes?: string | null;
   slideRoomNotes?: string | null;

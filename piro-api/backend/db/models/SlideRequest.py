@@ -8,6 +8,7 @@ class SlideRequest(Base):
     __tablename__ = "SlideRequest"
     SlideRequestId = Column(Integer, primary_key=True, index=True)
     AccessionNumber = Column(String, nullable=False)
+    CaseType = Column(String, nullable=False)
     Notes = Column(String, nullable=True)
     EPath = Column(Boolean, nullable=False, default=False)
     SlideRoomNotes = Column(String, nullable=True)

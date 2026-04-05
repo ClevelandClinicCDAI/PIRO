@@ -29,6 +29,10 @@ class Constants:
         SAMEDAY = "SameDay"
         ROUTINE = "Routine"
 
+    class SlideRequestCaseType(str, Enum):
+        SURGICAL = "Surgical"
+        CYTOLOGY = "Cytology"
+
     class StatusCode(Enum):
         S = 1
         W = 2
