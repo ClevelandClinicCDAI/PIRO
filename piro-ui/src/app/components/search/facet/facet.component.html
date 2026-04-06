@@ -82,7 +82,7 @@
           <li class="facet-group-item" *ngFor="let region of regions; index as i">
             <input class="form-check-input" type="checkbox" value="{{region.key}}" [checked]="region.checked"
               (change)="checkRegionValue($event)" id="region-{{i}}">
-            <label class="facetKey" for="region-{{i}}">{{region.key}}</label>
+            <label class="facetKey" for="region-{{i}}">{{getRegionFacetLabel(region.key)}}</label>
             <app-facetloader [value]="region.val" [contentLoaded]="contentLoaded"></app-facetloader>
           </li>
         </ul>
