@@ -16,6 +16,11 @@ import { CohortService } from '../../../services/cohort.service';
 	styleUrls: ['./facet.component.css']
 })
 export class FacetComponent {
+	private readonly regionFacetLabels: Record<string, string> = {
+		Florida: 'Weston',
+		Ohio: 'Ohio (other)'
+	};
+
 	minValue: number = 0;
 	maxValue: number = 100;
 
@@ -321,6 +326,10 @@ export class FacetComponent {
 			}
 		});
 		return arr;
+	}
+
+	getRegionFacetLabel(regionKey: string) {
+		return this.regionFacetLabels[regionKey] || regionKey;
 	}
 
 	//Events to track the facet changes and update the data strore

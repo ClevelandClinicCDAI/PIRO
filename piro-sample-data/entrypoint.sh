@@ -31,6 +31,23 @@ run_sql(){
   shift
   /opt/mssql-tools/bin/sqlcmd -S "${SQL_HOST},${SQL_PORT}" -U "${SQL_USER}" -P "${SQL_PASS}" -d "$database" -b "$@"
 }
+normalize_sql_file(){
+  local file=$1
+  local tmp
+  local bom
+
+  tmp=$(mktemp)
+  bom=$(xxd -p -l 2 "$file" | tr -d '\n')
+
+  case "$bom" in
+    fffe) iconv -f UTF-16LE -t UTF-8 "$file" > "$tmp" ;;
+    feff) iconv -f UTF-16BE -t UTF-8 "$file" > "$tmp" ;;
+    *) cp "$file" "$tmp" ;;
+  esac
+
+  perl -0pi -e 's/^(?:\xEF\xBB\xBF)+//; s/^\s*USE\s+\[[^]]+\]\s*\r?\nGO\s*\r?\n//i' "$tmp"
+  printf '%s\n' "$tmp"
+}
 wait_for_sql(){
   local attempts=0
   until run_sql master -Q "SELECT 1" >/dev/null 2>&1; do
@@ -52,6 +69,8 @@ apply_dir(){
       log "Falling back to alphabetical order for $dir"
       mapfile -t files < <(find "$dir" -type f -name '*.sql' | sort)
     fi
+  elif [ "$dir" = "${SCRIPTS_ROOT}/View/PIRO" ]; then
+    mapfile -t files < <(ordered_piro_view_files "$dir")
   else
     mapfile -t files < <(find "$dir" -type f -name '*.sql' | sort)
   fi
@@ -66,6 +85,8 @@ apply_dir(){
     deferred=()
     for file in "${pending[@]}"; do
       log "Applying ${file#/seed/}"
+      local sql_input
+      sql_input=$(normalize_sql_file "$file")
       if [[ "$file" == */SSIS/TABLES/* ]]; then
         local base table_name
         base=$(basename "$file")
@@ -73,10 +94,11 @@ apply_dir(){
         table_name=${table_name%%.*}
         run_sql "$SQL_DB" -Q "IF OBJECT_ID('[dbo].[$table_name]', 'U') IS NOT NULL DROP TABLE [dbo].[$table_name]" >/dev/null 2>&1 || true
       fi
-      if ! run_sql "$SQL_DB" -i "$file"; then
+      if ! run_sql "$SQL_DB" -i "$sql_input"; then
         log "Deferring ${file#/seed/}; see error above"
         deferred+=("$file")
       fi
+      rm -f "$sql_input"
     done
     if [ ${#deferred[@]} -eq ${#pending[@]} ]; then
       log "Failed to apply scripts in $dir"
@@ -93,6 +115,47 @@ apply_dir(){
       exit 1
     fi
   done
+}
+
+ordered_piro_view_files(){
+  local dir=$1
+  local file
+  local prioritized=(
+    "$dir/dbo.V_Patient.View.sql"
+    "$dir/dbo.V_Patient_Hash.View.sql"
+    "$dir/dbo.V_Hospital.View.sql"
+    "$dir/dbo.V_Interpreter.View.sql"
+    "$dir/dbo.V_InterpreterAll.View.sql"
+    "$dir/dbo.V_Specimen.View.sql"
+    "$dir/dbo.V_SpecimenAll.View.sql"
+    "$dir/dbo.V_CaseCommentCopath.View.sql"
+    "$dir/dbo.V_CaseCommentEpic.View.sql"
+    "$dir/dbo.V_CaseCommentText.View.sql"
+    "$dir/dbo.V_CaseComment.View.sql"
+    "$dir/dbo.V_CaseComment_Consolidated.View.sql"
+    "$dir/dbo.V_CaseStaff.View.sql"
+    "$dir/dbo.V_CaseStaffAll.View.sql"
+    "$dir/dbo.V_Case_MRN.View.sql"
+    "$dir/dbo.V_Case.View.sql"
+    "$dir/dbo.V_CaseAll.View.sql"
+    "$dir/dbo.V_CaseAll_Consolidated.View.sql"
+    "$dir/dbo.V_AuditTrail_Report.View.sql"
+    "$dir/dbo.V_SearchRequest.View.sql"
+  )
+  declare -A emitted=()
+
+  for file in "${prioritized[@]}"; do
+    if [ -f "$file" ]; then
+      printf '%s\n' "$file"
+      emitted["$file"]=1
+    fi
+  done
+
+  while IFS= read -r file; do
+    if [ -z "${emitted[$file]:-}" ]; then
+      printf '%s\n' "$file"
+    fi
+  done < <(find "$dir" -type f -name '*.sql' | sort)
 }
 seed_sql_data(){
   if [ ! -f "$SAMPLE_SQL" ]; then
