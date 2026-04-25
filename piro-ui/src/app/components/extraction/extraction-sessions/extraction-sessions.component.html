@@ -1,0 +1,81 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-table me-2"></i>Extraction Suite</h3>
+    <small class="text-muted">Select reports from search, then open a session to extract structured data using AI.</small>
+  </div>
+
+  <!-- New session form -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Create New Extraction Session</h5>
+      <div class="input-group">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Session name (e.g. Lung Carcinoma Q1 2025)"
+          [(ngModel)]="newSessionName"
+          (keyup.enter)="createSession()"
+          [disabled]="creating"
+        />
+        <button class="btn btn-primary" (click)="createSession()" [disabled]="!newSessionName.trim() || creating">
+          <span *ngIf="creating" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!creating" class="bi bi-plus-circle me-1"></i>
+          Create &amp; Open Schema Builder
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions list -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Loading sessions…</p>
+  </div>
+
+  <div *ngIf="!loading && sessions.length === 0" class="alert alert-info">
+    No extraction sessions yet. Create one above, or select reports from <a routerLink="/search">Search</a> and use <strong>Send to Extraction Suite</strong>.
+  </div>
+
+  <div *ngIf="!loading && sessions.length > 0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Session</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sessions">
+            <td>
+              <strong>{{ s.Name }}</strong>
+              <div *ngIf="s.SchemaJson" class="text-muted small">Schema defined</div>
+              <div *ngIf="!s.SchemaJson" class="text-warning small">No schema yet</div>
+            </td>
+            <td>
+              <span [class]="statusClass(s.Status)">{{ statusLabel(s.Status) }}</span>
+            </td>
+            <td class="text-muted small">{{ s.CreateDate | date:'medium' }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="openSchema(s.ExtractionSessionId)" title="Open schema builder">
+                <i class="bi bi-pencil-square"></i> Schema
+              </button>
+              <button
+                class="btn btn-sm btn-outline-success me-1"
+                (click)="openReview(s.ExtractionSessionId)"
+                [disabled]="s.Status === 'draft'"
+                title="Review extracted results">
+                <i class="bi bi-grid-3x3"></i> Review
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteSession(s)" title="Delete session">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

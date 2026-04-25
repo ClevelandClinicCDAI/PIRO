@@ -49,7 +49,13 @@ import { CohortComponent } from './components/cohort/cohort.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
+
+import { ExtractionSessionsComponent } from './components/extraction/extraction-sessions/extraction-sessions.component';
+import { ExtractionSchemaComponent } from './components/extraction/extraction-schema/extraction-schema.component';
+import { ExtractionReviewComponent } from './components/extraction/extraction-review/extraction-review.component';
+>>>>>>> 6a81bf3 (Initial UI and Database changes)
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -319,6 +325,21 @@ const routes: Routes = [
   },
   {
     path: 'cohort', component: CohortComponent, canActivate: [AuthGuard], data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'extraction', component: ExtractionSessionsComponent, canActivate: [AuthGuard], data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'extraction/schema/:id', component: ExtractionSchemaComponent, canActivate: [AuthGuard], data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'extraction/review/:id', component: ExtractionReviewComponent, canActivate: [AuthGuard], data: {
       role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
     }
   },

@@ -21,6 +21,11 @@
         <li class="nav-item" *ngIf="isSearch">
           <a routerLink="cohort" class="nav-link" routerLinkActive="active">Cohort</a>
         </li>
+        <li class="nav-item" *ngIf="isSearch">
+          <a routerLink="extraction" class="nav-link" routerLinkActive="active">
+            <i class="bi bi-table me-1"></i>Extraction Suite
+          </a>
+        </li>
         <li class="nav-item" *ngIf="isAdminSecurity">
           <a routerLink="adminuser" class="nav-link" routerLinkActive="active">User Management</a>
         </li>

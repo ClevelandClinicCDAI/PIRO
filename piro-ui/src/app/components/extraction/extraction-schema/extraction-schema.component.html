@@ -1,0 +1,227 @@
+<div *ngIf="loadingSession" class="d-flex justify-content-center align-items-center" style="height: 300px;">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div *ngIf="!loadingSession" class="container-fluid mt-3">
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/extraction">Extraction Suite</a></li>
+          <li class="breadcrumb-item active">{{ session?.Name || 'Schema Builder' }}</li>
+        </ol>
+      </nav>
+      <div class="d-flex align-items-center gap-3">
+        <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Schema Builder</h4>
+        <span class="badge bg-secondary">{{ fields.length }} field(s)</span>
+      </div>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="suggestFields()" [disabled]="suggesting || queuedCases.length === 0">
+        <span *ngIf="suggesting" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!suggesting" class="bi bi-stars me-1"></i>
+        Suggest Fields with AI
+      </button>
+      <button class="btn btn-outline-primary" (click)="saveSchema()" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!saving" class="bi bi-floppy me-1"></i>
+        Save Schema
+      </button>
+      <button class="btn btn-success" (click)="runExtraction()" [disabled]="fields.length === 0 || queuedCases.length === 0">
+        <i class="bi bi-play-fill me-1"></i>
+        Run Extraction
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="queuedCases.length === 0" class="alert alert-warning mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    No cases in the queue. Go to <a routerLink="/search">Search</a> and use <strong>Send to Extraction Suite</strong> to add cases.
+  </div>
+
+  <!-- Two-panel layout -->
+  <div class="row g-3">
+
+    <!-- ── Left panel: Schema definition ── -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Fields to Extract</strong>
+          <button class="btn btn-sm btn-primary" (click)="addField()">
+            <i class="bi bi-plus-circle me-1"></i> Add Field
+          </button>
+        </div>
+        <div class="card-body overflow-auto" style="max-height: calc(100vh - 250px);">
+          <div *ngIf="fields.length === 0" class="text-center text-muted py-4">
+            <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+            Click <strong>Add Field</strong> to define what to extract, or use <strong>Suggest Fields with AI</strong>.
+          </div>
+
+          <div *ngFor="let field of fields; let i = index" class="card mb-3 border-0 shadow-sm">
+            <div class="card-body p-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <!-- Reorder -->
+                <div class="d-flex flex-column gap-1">
+                  <button class="btn btn-xs btn-outline-secondary p-0 px-1" (click)="moveField(i, -1)" [disabled]="i === 0" title="Move up">
+                    <i class="bi bi-chevron-up small"></i>
+                  </button>
+                  <button class="btn btn-xs btn-outline-secondary p-0 px-1" (click)="moveField(i, 1)" [disabled]="i === fields.length - 1" title="Move down">
+                    <i class="bi bi-chevron-down small"></i>
+                  </button>
+                </div>
+
+                <!-- Field name -->
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Field name (e.g. tumor_grade)"
+                  [(ngModel)]="field.name"
+                  (ngModelChange)="onFieldChange()"
+                />
+
+                <!-- Type selector -->
+                <select class="form-select" style="width: 150px; flex-shrink: 0;" [(ngModel)]="field.type" (ngModelChange)="onFieldChange()">
+                  <option value="text">Text</option>
+                  <option value="categorical">Categorical</option>
+                  <option value="boolean">Yes/No</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                </select>
+
+                <button class="btn btn-sm btn-outline-danger" (click)="removeField(i)" title="Remove field">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <!-- Extraction hint -->
+              <div class="mb-2">
+                <textarea
+                  class="form-control form-control-sm"
+                  rows="2"
+                  placeholder="Extraction hint — plain English instruction for the AI (e.g. Use WHO 2021 grading system)"
+                  [(ngModel)]="field.hint"
+                  (ngModelChange)="onFieldChange()"
+                ></textarea>
+              </div>
+
+              <!-- Categorical: enum values -->
+              <div *ngIf="field.type === 'categorical'" class="mb-1">
+                <label class="form-label small fw-semibold">Allowed values</label>
+                <div class="d-flex flex-wrap gap-1 mb-1">
+                  <span *ngFor="let val of field.enumValues; let vi = index" class="badge bg-primary d-flex align-items-center gap-1">
+                    {{ val }}
+                    <button class="btn-close btn-close-white" style="font-size: 0.5rem;" (click)="removeEnumValue(field, vi)"></button>
+                  </span>
+                </div>
+                <div class="input-group input-group-sm">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Add value…"
+                    [(ngModel)]="field._enumInput"
+                    (keyup.enter)="addEnumValue(field)"
+                  />
+                  <button class="btn btn-outline-secondary" (click)="addEnumValue(field)">Add</button>
+                </div>
+              </div>
+
+              <!-- Number: min/max -->
+              <div *ngIf="field.type === 'number'" class="row g-2 mt-0">
+                <div class="col-6">
+                  <label class="form-label small">Min (optional)</label>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="field.minimum" (ngModelChange)="onFieldChange()" />
+                </div>
+                <div class="col-6">
+                  <label class="form-label small">Max (optional)</label>
+                  <input type="number" class="form-control form-control-sm" [(ngModel)]="field.maximum" (ngModelChange)="onFieldChange()" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right panel: Live preview ── -->
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong>Live Preview</strong>
+          <div *ngIf="queuedCases.length > 0">
+            <select class="form-select form-select-sm" style="width: 250px;" [(ngModel)]="selectedCaseId" (ngModelChange)="onCaseChange()">
+              <option *ngFor="let c of previewCasesShown" [value]="c.CaseId">Case {{ c.CaseId }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body overflow-auto p-0" style="max-height: calc(100vh - 250px);">
+          <div *ngIf="queuedCases.length === 0" class="text-center text-muted py-4 px-3">
+            <i class="bi bi-eye-slash fs-2 d-block mb-2"></i>
+            Add cases to the queue to see a live preview.
+          </div>
+
+          <div *ngIf="queuedCases.length > 0 && fields.length === 0" class="text-center text-muted py-4 px-3">
+            <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+            Add fields to see the preview.
+          </div>
+
+          <div *ngIf="queuedCases.length > 0 && fields.length > 0">
+            <!-- Preview loading -->
+            <div *ngIf="previewLoading" class="d-flex align-items-center gap-2 p-3 border-bottom bg-light">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
+              <span class="small text-muted">Running preview with AI…</span>
+            </div>
+
+            <!-- Preview error -->
+            <div *ngIf="previewError && !previewLoading" class="alert alert-warning m-2">
+              {{ previewError }}
+            </div>
+
+            <!-- Preview results table -->
+            <div *ngIf="previewResult && !previewLoading" class="p-2">
+              <table class="table table-sm table-bordered mb-2">
+                <thead class="table-light">
+                  <tr>
+                    <th>Field</th>
+                    <th>Extracted Value</th>
+                    <th style="width: 90px;">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let key of previewFields()">
+                    <td class="small fw-semibold">{{ key }}</td>
+                    <td class="small">
+                      <span *ngIf="previewResult.extracted_fields[key]?.value !== null && previewResult.extracted_fields[key]?.value !== undefined">
+                        {{ previewResult.extracted_fields[key].value }}
+                      </span>
+                      <span *ngIf="previewResult.extracted_fields[key]?.value === null || previewResult.extracted_fields[key]?.value === undefined" class="text-muted fst-italic">
+                        not found
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <i
+                        [class]="'bi ' + confidenceIcon(previewResult.extracted_fields[key]?.confidence) + ' ' + confidenceClass(previewResult.extracted_fields[key]?.confidence)"
+                        [title]="previewResult.extracted_fields[key]?.confidence | number:'1.0-2'"
+                      ></i>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Report text with highlights -->
+            <div *ngIf="reportText" class="border-top">
+              <div class="p-2 bg-light border-bottom">
+                <small class="text-muted fw-semibold">Report text</small>
+                <small class="text-muted ms-2">(highlighted spans = provenance)</small>
+              </div>
+              <pre class="p-3 small mb-0" style="white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto;"
+                   [innerHTML]="highlightedReportHtml"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- row -->
+</div>

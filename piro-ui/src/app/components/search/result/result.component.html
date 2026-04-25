@@ -20,8 +20,16 @@
 
 <div *ngIf="contentLoaded">
     <div class="container" *ngIf="content.length > 0">
-        <div class="row">
+        <div class="row align-items-center">
             <div class="col-md-2">
+                <!-- Send to Extraction Suite -->
+                <button
+                  *ngIf="selectedCaseIds.size > 0"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="openSendToExtraction()">
+                  <i class="bi bi-table me-1"></i>
+                  Send {{ selectedCaseIds.size }} to Extraction Suite
+                </button>
             </div>
             <div class="col-md-8">
                 <div class="d-flex justify-content-center" style="display: table-cell; vertical-align: middle;"
@@ -43,6 +51,16 @@
   };
 let i = index;" [ngClass]="i != 0 ? 'mt-3' : ''">
         <div class="row">
+            <div class="col-auto d-flex align-items-start pt-1">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  [checked]="selectedCaseIds.has(item.caseid)"
+                  (change)="toggleCase(item.caseid)"
+                  (click)="$event.stopPropagation()"
+                  title="Select for Extraction Suite"
+                />
+            </div>
             <div class="col-md-3">
                 <div><i class="bi bi-person-square"></i> {{item.patientname}} </div>
                 <span>

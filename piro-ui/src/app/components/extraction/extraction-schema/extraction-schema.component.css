@@ -1,0 +1,16 @@
+.prov-highlight {
+  background-color: #fff3cd;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.btn-xs {
+  padding: 0 4px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+/* Make the two panels fill the viewport height */
+.card {
+  min-height: 0;
+}

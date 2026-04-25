@@ -28,6 +28,7 @@ from apis.version1 import (
     route_searchRequestDataField,
     route_annotation,
     route_concentriq,
+    route_extraction,
 )
 from fastapi import APIRouter
 
@@ -119,4 +120,9 @@ api_router.include_router(
     route_slide_request.router,
     prefix="/sliderequest",
     tags=["Slide Requests"],
+)
+api_router.include_router(
+    route_extraction.router,
+    prefix="/extraction",
+    tags=["Extraction Suite"],
 )

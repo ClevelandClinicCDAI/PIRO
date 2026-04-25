@@ -1,0 +1,94 @@
+.review-grid th, .review-grid td {
+  vertical-align: middle;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.case-col {
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 2;
+  min-width: 90px;
+}
+
+.field-col {
+  min-width: 130px;
+}
+
+.field-cell {
+  cursor: pointer;
+  position: relative;
+}
+
+.field-cell:hover {
+  background-color: #f0f4ff;
+}
+
+.field-cell.selected {
+  outline: 2px solid #0d6efd;
+  outline-offset: -2px;
+}
+
+/* Confidence colours */
+.cell-high { background-color: #d1fae5; }
+.cell-medium { background-color: #fef3c7; }
+.cell-low { background-color: #fee2e2; }
+.cell-reviewed { background-color: #e0f2fe; }
+
+.cell-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.cell-actions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.field-cell:hover .cell-actions {
+  opacity: 1;
+}
+
+.edit-icon {
+  cursor: pointer;
+  color: #0d6efd;
+  font-size: 0.8rem;
+}
+
+.cell-edit input {
+  min-width: 100px;
+}
+
+/* Side panel */
+.side-panel {
+  width: 380px;
+  min-width: 320px;
+  max-width: 40vw;
+  flex-shrink: 0;
+}
+
+.prov-highlight {
+  background-color: #fff3cd;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* Legend */
+.legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.legend-dot.high { background-color: #d1fae5; border: 1px solid #6ee7b7; }
+.legend-dot.medium { background-color: #fef3c7; border: 1px solid #fcd34d; }
+.legend-dot.low { background-color: #fee2e2; border: 1px solid #fca5a5; }
+.legend-dot.reviewed { background-color: #e0f2fe; border: 1px solid #7dd3fc; }

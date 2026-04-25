@@ -1,0 +1,157 @@
+<div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="height: 300px;">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div *ngIf="!loading" class="d-flex flex-column" style="height: calc(100vh - 70px);">
+
+  <!-- Top bar -->
+  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white shadow-sm flex-shrink-0">
+    <div class="d-flex align-items-center gap-3">
+      <nav aria-label="breadcrumb" class="mb-0">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a routerLink="/extraction">Extraction Suite</a></li>
+          <li class="breadcrumb-item"><a [routerLink]="['/extraction/schema', sessionId]">{{ session?.Name }}</a></li>
+          <li class="breadcrumb-item active">Review</li>
+        </ol>
+      </nav>
+
+      <!-- Progress bar when running -->
+      <div *ngIf="isRunning" class="d-flex align-items-center gap-2" style="width: 250px;">
+        <div class="progress flex-grow-1" style="height: 8px;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" [style.width.%]="progressPercent"></div>
+        </div>
+        <small class="text-muted text-nowrap">{{ statusInfo?.completed }}/{{ statusInfo?.total }}</small>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-success" (click)="approveAll()" [disabled]="approving || rows.length === 0">
+        <span *ngIf="approving" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!approving" class="bi bi-check2-all me-1"></i>
+        Accept all high-confidence
+      </button>
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-download me-1"></i> Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="#" (click)="$event.preventDefault(); exportCsv()"><i class="bi bi-filetype-csv me-1"></i>CSV</a></li>
+          <li><a class="dropdown-item" href="#" (click)="$event.preventDefault(); exportJson()"><i class="bi bi-filetype-json me-1"></i>JSON</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main area: grid + side panel -->
+  <div class="d-flex flex-grow-1 overflow-hidden">
+
+    <!-- Data grid -->
+    <div class="flex-grow-1 overflow-auto p-2">
+      <div *ngIf="rows.length === 0 && !isRunning" class="text-center py-5 text-muted">
+        <i class="bi bi-grid-3x3 fs-2 d-block mb-2"></i>
+        No results yet.
+        <a [routerLink]="['/extraction/schema', sessionId]">Go back to the Schema Builder</a> and run extraction.
+      </div>
+
+      <div *ngIf="rows.length === 0 && isRunning" class="text-center py-5 text-muted">
+        <div class="spinner-border text-primary mb-2"></div>
+        <p>Extraction in progress… results will appear here as they complete.</p>
+      </div>
+
+      <table *ngIf="rows.length > 0" class="table table-bordered table-sm review-grid">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th class="case-col">Case ID</th>
+            <th *ngFor="let f of fields" class="field-col">{{ f }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td class="case-col text-muted small fw-semibold">{{ row.caseId }}</td>
+            <td
+              *ngFor="let f of fields"
+              [class]="'field-cell ' + cellClass(row.cells[f])"
+              (click)="selectCell(row.cells[f], row.caseId, f)"
+              [class.selected]="selectedCaseId === row.caseId && selectedField === f"
+            >
+              <!-- Viewing mode -->
+              <div *ngIf="!row.cells[f]?.editing" class="cell-view">
+                <span *ngIf="row.cells[f]?.displayValue !== null && row.cells[f]?.displayValue !== undefined">
+                  {{ row.cells[f].displayValue }}
+                </span>
+                <span *ngIf="row.cells[f]?.displayValue === null || row.cells[f]?.displayValue === undefined" class="text-muted fst-italic small">—</span>
+                <div class="cell-actions">
+                  <i class="bi bi-pencil edit-icon" (click)="$event.stopPropagation(); startEdit(row.cells[f])" title="Edit"></i>
+                  <span *ngIf="row.cells[f]?.isReviewed" class="badge bg-success-subtle text-success ms-1 small">✓</span>
+                </div>
+              </div>
+
+              <!-- Editing mode -->
+              <div *ngIf="row.cells[f]?.editing" class="cell-edit" (click)="$event.stopPropagation()">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  [(ngModel)]="row.cells[f].editValue"
+                  (keyup.enter)="commitEdit(row.cells[f])"
+                  (keyup.escape)="cancelEdit(row.cells[f])"
+                  (blur)="commitEdit(row.cells[f])"
+                  autofocus
+                />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Side panel: provenance -->
+    <div *ngIf="selectedCell" class="side-panel border-start bg-white d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom flex-shrink-0">
+        <div>
+          <strong>{{ selectedField }}</strong>
+          <div class="text-muted small">Case {{ selectedCaseId }}</div>
+        </div>
+        <button class="btn-close" (click)="closePanel()"></button>
+      </div>
+
+      <!-- Cell detail -->
+      <div class="p-3 border-bottom flex-shrink-0">
+        <div class="mb-2">
+          <span class="small text-muted">AI extracted:</span>
+          <div class="fw-semibold">{{ selectedCell.extractedValue ?? '—' }}</div>
+        </div>
+        <div *ngIf="selectedCell.isReviewed" class="mb-2">
+          <span class="small text-muted">Reviewed value:</span>
+          <div class="fw-semibold text-success">{{ selectedCell.reviewedValue }}</div>
+        </div>
+        <div *ngIf="selectedCell.confidence !== null" class="small text-muted">
+          Confidence: {{ selectedCell.confidence | number:'1.0-2' }}
+        </div>
+        <div *ngIf="selectedCell.provenanceText" class="mt-2">
+          <span class="small text-muted">Evidence:</span>
+          <blockquote class="blockquote-sm text-muted fst-italic border-start border-2 ps-2 mb-0">
+            "{{ selectedCell.provenanceText }}"
+          </blockquote>
+        </div>
+      </div>
+
+      <!-- Report text with highlights -->
+      <div class="flex-grow-1 overflow-auto p-2">
+        <div *ngIf="sidePanelLoading" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary"></div>
+        </div>
+        <pre *ngIf="!sidePanelLoading" class="small mb-0" style="white-space: pre-wrap; word-wrap: break-word;"
+             [innerHTML]="reportHtml"></pre>
+      </div>
+    </div>
+
+  </div><!-- main area -->
+
+  <!-- Legend -->
+  <div class="px-3 py-1 bg-light border-top d-flex gap-3 flex-shrink-0">
+    <small><span class="legend-dot high"></span> High confidence (&ge;0.8)</small>
+    <small><span class="legend-dot medium"></span> Medium confidence (0.5–0.8)</small>
+    <small><span class="legend-dot low"></span> Low confidence (&lt;0.5)</small>
+    <small><span class="legend-dot reviewed"></span> Reviewed</small>
+  </div>
+</div>
