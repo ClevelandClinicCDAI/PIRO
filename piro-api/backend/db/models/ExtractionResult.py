@@ -43,6 +43,7 @@ class ExtractionResult(Base):
     ProvenanceStart = Column(Integer, nullable=True)
     ProvenanceEnd = Column(Integer, nullable=True)
     IsReviewed = Column(Boolean, nullable=False, default=False)
+    IsIncorrect = Column(Boolean, nullable=False, default=False)
     ReviewedBy = Column(String(255), nullable=True)
     ReviewedDate = Column(DateTime(timezone=True), nullable=True)
     CreateDate = Column(DateTime(timezone=True), default=func.now())

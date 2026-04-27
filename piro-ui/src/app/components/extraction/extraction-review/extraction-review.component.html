@@ -25,10 +25,24 @@
     </div>
 
     <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-success" (click)="runFullExtraction()"
+              [disabled]="runningFull || isRunning"
+              title="Run extraction over all cases in the queue">
+        <span *ngIf="runningFull" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!runningFull" class="bi bi-play-fill me-1"></i>
+        Run Full Extraction
+      </button>
       <button class="btn btn-sm btn-outline-success" (click)="approveAll()" [disabled]="approving || rows.length === 0">
         <span *ngIf="approving" class="spinner-border spinner-border-sm me-1"></span>
         <i *ngIf="!approving" class="bi bi-check2-all me-1"></i>
         Accept all high-confidence
+      </button>
+      <button class="btn btn-sm btn-outline-warning" (click)="refineOnIncorrect()"
+              [disabled]="refiningLowConf || rows.length === 0"
+              title="Go back to schema builder focused on incorrect cases">
+        <span *ngIf="refiningLowConf" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!refiningLowConf" class="bi bi-arrow-left-circle me-1"></i>
+        Refine Schema on Incorrect Cases
       </button>
       <div class="dropdown">
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -61,12 +75,14 @@
       <table *ngIf="rows.length > 0" class="table table-bordered table-sm review-grid">
         <thead class="table-light sticky-top">
           <tr>
+            <th class="text-muted small" style="width:42px;">#</th>
             <th class="case-col">Case Number</th>
             <th *ngFor="let f of fields" class="field-col">{{ f }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let row of rows">
+          <tr *ngFor="let row of rows; let i = index">
+            <td class="text-muted small text-end pe-2" style="width:42px;">{{ i + 1 }}</td>
             <td class="case-col text-muted small fw-semibold">{{ row.caseNumber }}</td>
             <td
               *ngFor="let f of fields"
@@ -74,29 +90,23 @@
               (click)="selectCell(row.cells[f], row.caseId, row.caseNumber, f)"
               [class.selected]="selectedCaseId === row.caseId && selectedField === f"
             >
-              <!-- Viewing mode -->
-              <div *ngIf="!row.cells[f]?.editing" class="cell-view">
+              <div class="cell-view">
                 <span *ngIf="row.cells[f]?.displayValue !== null && row.cells[f]?.displayValue !== undefined">
                   {{ row.cells[f].displayValue }}
                 </span>
                 <span *ngIf="row.cells[f]?.displayValue === null || row.cells[f]?.displayValue === undefined" class="text-muted fst-italic small">—</span>
                 <div class="cell-actions">
-                  <i class="bi bi-pencil edit-icon" (click)="$event.stopPropagation(); startEdit(row.cells[f])" title="Edit"></i>
-                  <span *ngIf="row.cells[f]?.isReviewed" class="badge bg-success-subtle text-success ms-1 small">✓</span>
+                  <button
+                    class="verdict-btn correct-btn"
+                    [class.active]="row.cells[f]?.isReviewed && !row.cells[f]?.isIncorrect"
+                    (click)="markPrediction(row.cells[f], true, $event)"
+                    title="Mark correct">✓</button>
+                  <button
+                    class="verdict-btn incorrect-btn"
+                    [class.active]="row.cells[f]?.isReviewed && row.cells[f]?.isIncorrect"
+                    (click)="markPrediction(row.cells[f], false, $event)"
+                    title="Mark incorrect">✗</button>
                 </div>
-              </div>
-
-              <!-- Editing mode -->
-              <div *ngIf="row.cells[f]?.editing" class="cell-edit" (click)="$event.stopPropagation()">
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  [(ngModel)]="row.cells[f].editValue"
-                  (keyup.enter)="commitEdit(row.cells[f])"
-                  (keyup.escape)="cancelEdit(row.cells[f])"
-                  (blur)="commitEdit(row.cells[f])"
-                  autofocus
-                />
               </div>
             </td>
           </tr>
@@ -116,13 +126,23 @@
 
       <!-- Cell detail -->
       <div class="p-3 border-bottom flex-shrink-0">
-        <div class="mb-2">
-          <span class="small text-muted">AI extracted:</span>
-          <div class="fw-semibold">{{ selectedCell.extractedValue ?? '—' }}</div>
-        </div>
-        <div *ngIf="selectedCell.isReviewed" class="mb-2">
-          <span class="small text-muted">Reviewed value:</span>
-          <div class="fw-semibold text-success">{{ selectedCell.reviewedValue }}</div>
+        <div class="mb-2 d-flex align-items-center justify-content-between">
+          <div>
+            <span class="small text-muted">AI extracted:</span>
+            <div class="fw-semibold">{{ selectedCell.extractedValue ?? '—' }}</div>
+          </div>
+          <div class="d-flex gap-1">
+            <button
+              class="verdict-btn correct-btn lg"
+              [class.active]="selectedCell.isReviewed && !selectedCell.isIncorrect"
+              (click)="markPrediction(selectedCell, true, $event)"
+              title="Mark correct">✓</button>
+            <button
+              class="verdict-btn incorrect-btn lg"
+              [class.active]="selectedCell.isReviewed && selectedCell.isIncorrect"
+              (click)="markPrediction(selectedCell, false, $event)"
+              title="Mark incorrect">✗</button>
+          </div>
         </div>
         <div *ngIf="selectedCell.confidence !== null" class="small text-muted">
           Confidence: {{ selectedCell.confidence | number:'1.0-2' }}
@@ -135,13 +155,20 @@
         </div>
       </div>
 
-      <!-- Report text with highlights -->
+      <!-- Report text: labeled sections -->
       <div class="flex-grow-1 overflow-auto p-2">
         <div *ngIf="sidePanelLoading" class="text-center py-3">
           <div class="spinner-border spinner-border-sm text-primary"></div>
         </div>
-        <pre *ngIf="!sidePanelLoading" class="small mb-0" style="white-space: pre-wrap; word-wrap: break-word;"
-             [innerHTML]="reportHtml"></pre>
+        <ng-container *ngIf="!sidePanelLoading">
+          <div *ngIf="reportSegments.length === 0" class="text-muted small fst-italic p-2">No report text available.</div>
+          <div *ngFor="let seg of reportSegments" class="mb-3">
+            <div class="fw-semibold small text-uppercase text-secondary border-bottom pb-1 mb-1"
+                 style="letter-spacing: 0.05em;">{{ seg.CommentType }}</div>
+            <pre class="small mb-0" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;"
+                 [innerHTML]="seg.html"></pre>
+          </div>
+        </ng-container>
       </div>
     </div>
 
@@ -152,6 +179,7 @@
     <small><span class="legend-dot high"></span> High confidence (&ge;0.8)</small>
     <small><span class="legend-dot medium"></span> Medium confidence (0.5–0.8)</small>
     <small><span class="legend-dot low"></span> Low confidence (&lt;0.5)</small>
-    <small><span class="legend-dot reviewed"></span> Reviewed</small>
+    <small><span class="legend-dot correct"></span> Marked correct</small>
+    <small><span class="legend-dot incorrect"></span> Marked incorrect</small>
   </div>
 </div>

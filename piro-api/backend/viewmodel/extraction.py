@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -43,6 +43,8 @@ class ExtractionRunVM(BaseModel):
     LlmProvider: str
     LlmModel: str
     Status: str
+    RunType: str = "full"
+    ValidationSize: Optional[int] = None
     StartedAt: Optional[datetime] = None
     CompletedAt: Optional[datetime] = None
     ErrorMessage: Optional[str] = None
@@ -86,6 +88,15 @@ class ExtractionQueueItemVM(BaseModel):
 
 class ExtractionRunRequest(BaseModel):
     session_id: int
+    run_type: Literal["validation", "full"] = "full"
+    validation_size: Optional[int] = None
+
+    @validator("validation_size", always=True)
+    def check_validation_size(cls, v, values):
+        if values.get("run_type") == "validation":
+            if v is None or v <= 0:
+                raise ValueError("validation_size must be a positive integer for validation runs")
+        return v
 
 
 class ExtractionStatusVM(BaseModel):
@@ -114,6 +125,7 @@ class ExtractionResultVM(BaseModel):
     ProvenanceText: Optional[str] = None
     SourceCommentId: Optional[int] = None
     IsReviewed: bool
+    IsIncorrect: bool = False
     ReviewedBy: Optional[str] = None
     ReviewedDate: Optional[datetime] = None
 
@@ -124,6 +136,7 @@ class ExtractionResultVM(BaseModel):
 class ExtractionResultPatch(BaseModel):
     reviewed_value: Optional[str] = None
     is_reviewed: Optional[bool] = None
+    is_incorrect: Optional[bool] = None
 
 
 # ──────────────────────────────────────────────────────────────────────────────

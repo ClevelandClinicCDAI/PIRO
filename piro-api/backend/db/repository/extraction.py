@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from typing import List, Optional
 
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 
 from db.models.CommentType import CommentType as CommentTypeModel
@@ -16,8 +18,29 @@ from db.models.ExtractionSession import ExtractionSession
 from db.views.VCaseCommentText import VCaseCommentText
 
 # Comment types included in extraction, in the order they appear in the report.
-_EXTRACTION_COMMENT_CODES = ["FINAL", "COMMENT", "ADDEND", "MICROSCOPIC"]
-_EXTRACTION_CODE_ORDER = {code: i for i, code in enumerate(_EXTRACTION_COMMENT_CODES)}
+# Both ADDEND and ADDENDUM are accepted to handle production databases with either naming.
+_EXTRACTION_COMMENT_CODES = ["FINAL", "COMMENT", "ADDEND", "ADDENDUM", "MICROSCOPIC"]
+
+# Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report text.
+# Uses flexible whitespace matching to handle formatting variations.
+_LDT_DISCLAIMER_RE = re.compile(
+    r"Laboratory\s+Developed\s+Test\s*\(LDT\)\s+Disclaimer\s*:.*?"
+    r"Positive\s+and\s+negative\s+controls\s+stain\s+appropriately\s*\.",
+    re.IGNORECASE | re.DOTALL,
+)
+
+def _segment_order(code: str) -> int:
+    """Map a CommentType.Code to a display-order index."""
+    c = (code or "").upper()
+    if c == "FINAL":
+        return 0
+    if c == "COMMENT":
+        return 1
+    if "ADDEND" in c:   # matches ADDEND and ADDENDUM
+        return 2
+    if c == "MICROSCOPIC":
+        return 3
+    return 99
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -116,6 +139,8 @@ def create_run(
     llm_model: str,
     user: str,
     db: Session,
+    run_type: str = "full",
+    validation_size: Optional[int] = None,
 ) -> ExtractionRun:
     run = ExtractionRun(
         ExtractionSessionId=session_id,
@@ -123,6 +148,8 @@ def create_run(
         LlmProvider=llm_provider,
         LlmModel=llm_model,
         Status="pending",
+        RunType=run_type,
+        ValidationSize=validation_size,
         CreateBy=user,
     )
     db.add(run)
@@ -156,7 +183,7 @@ def update_run_status(
     run.Status = status
     if status == "running":
         run.StartedAt = datetime.now(timezone.utc)
-    elif status in ("completed", "failed"):
+    elif status in ("completed", "failed", "completed_with_errors"):
         run.CompletedAt = datetime.now(timezone.utc)
     if error:
         run.ErrorMessage = error
@@ -240,6 +267,14 @@ def update_queue_item_status(
     db.commit()
 
 
+def reset_queue_statuses(session_id: int, db: Session) -> None:
+    """Reset all queue items to 'pending' before a full run."""
+    db.query(ExtractionQueue).filter(
+        ExtractionQueue.ExtractionSessionId == session_id
+    ).update({"Status": "pending", "ErrorMessage": None}, synchronize_session=False)
+    db.commit()
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Result CRUD
 # ──────────────────────────────────────────────────────────────────────────────
@@ -314,6 +349,56 @@ def get_results_for_session(session_id: int, db: Session) -> List[ExtractionResu
     )
 
 
+def get_incorrect_case_ids(session_id: int, db: Session) -> List[int]:
+    """Return distinct case IDs from the latest run that have any field marked incorrect."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    rows = (
+        db.query(ExtractionResult.CaseId)
+        .filter(
+            ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId,
+            ExtractionResult.IsReviewed == True,  # noqa: E712
+            ExtractionResult.IsIncorrect == True,  # noqa: E712
+        )
+        .distinct()
+        .all()
+    )
+    return [r.CaseId for r in rows]
+
+
+def get_low_confidence_case_ids(
+    session_id: int, threshold: float, db: Session
+) -> List[int]:
+    """Return distinct case IDs from the latest run that have any field with
+    confidence below threshold OR that are not yet reviewed."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    rows = (
+        db.query(ExtractionResult.CaseId)
+        .filter(
+            ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId,
+            (ExtractionResult.Confidence < threshold)
+            | (ExtractionResult.IsReviewed == False),  # noqa: E712
+        )
+        .distinct()
+        .all()
+    )
+    return [r.CaseId for r in rows]
+    """Return results from the latest run for a session."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    return (
+        db.query(ExtractionResult)
+        .options(joinedload(ExtractionResult.Case))
+        .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
+        .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
+        .all()
+    )
+
+
 def get_result_by_id(result_id: int, db: Session) -> Optional[ExtractionResult]:
     return db.query(ExtractionResult).filter(
         ExtractionResult.ExtractionResultId == result_id
@@ -326,6 +411,7 @@ def update_result_review(
     is_reviewed: Optional[bool],
     reviewer: str,
     db: Session,
+    is_incorrect: Optional[bool] = None,
 ) -> Optional[ExtractionResult]:
     result = get_result_by_id(result_id, db)
     if result is None:
@@ -337,6 +423,8 @@ def update_result_review(
         if is_reviewed:
             result.ReviewedBy = reviewer
             result.ReviewedDate = datetime.now(timezone.utc)
+    if is_incorrect is not None:
+        result.IsIncorrect = is_incorrect
     result.UpdateBy = reviewer
     db.commit()
     db.refresh(result)
@@ -384,15 +472,29 @@ def get_case_text_segments(case_id: int, db: Session) -> List[VCaseCommentText]:
         db.query(VCaseCommentText, CommentTypeModel.Code)
         .join(CommentTypeModel, VCaseCommentText.CommentTypeId == CommentTypeModel.CommentTypeId)
         .filter(VCaseCommentText.CaseId == case_id)
-        .filter(CommentTypeModel.Code.in_(_EXTRACTION_COMMENT_CODES))
+        .filter(or_(
+            CommentTypeModel.Code.in_(_EXTRACTION_COMMENT_CODES),
+            func.lower(CommentTypeModel.ShortName).like('%addend%'),
+        ))
         .all()
     )
-    rows.sort(key=lambda r: _EXTRACTION_CODE_ORDER.get(r[1], 99))
+    rows.sort(key=lambda r: _segment_order(r[1]))
     return [r[0] for r in rows]
+
+
+def _strip_ldt_disclaimer(text: str) -> str:
+    """Remove the Cleveland Clinic LDT disclaimer boilerplate from report text."""
+    if not text:
+        return text
+    cleaned = _LDT_DISCLAIMER_RE.sub("", text)
+    return cleaned.strip()
 
 
 def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
     """Build a structured, labelled text string from comment segments.
+
+    The LDT disclaimer boilerplate is stripped from each segment before assembly
+    so it is neither displayed to users nor sent to the LLM.
 
     Example output:
         Final Diagnosis:
@@ -403,7 +505,9 @@ def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
     """
     parts = []
     for seg in segments:
-        parts.append(f"{seg.CommentType}:\n{seg.CommentText}")
+        clean_text = _strip_ldt_disclaimer(seg.CommentText)
+        if clean_text:
+            parts.append(f"{seg.CommentType}:\n{clean_text}")
     return "\n\n".join(parts)
 
 
@@ -437,13 +541,13 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
     """Return progress counts for the latest run of a session."""
     latest_run = get_latest_run(session_id, db)
     session = get_session(session_id, db)
-    total = (
-        db.query(ExtractionQueue)
-        .filter(ExtractionQueue.ExtractionSessionId == session_id)
-        .count()
-    )
 
     if latest_run is None:
+        total = (
+            db.query(ExtractionQueue)
+            .filter(ExtractionQueue.ExtractionSessionId == session_id)
+            .count()
+        )
         return {
             "session_id": session_id,
             "run_id": None,
@@ -453,22 +557,46 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             "failed": 0,
         }
 
-    completed = (
-        db.query(ExtractionQueue)
-        .filter(
-            ExtractionQueue.ExtractionSessionId == session_id,
-            ExtractionQueue.Status == "completed",
+    # For validation runs, scope progress to the run itself so the counter
+    # reflects the validation set size, not the full queue.
+    if latest_run.RunType == "validation" and latest_run.ValidationSize:
+        total = latest_run.ValidationSize
+        completed = (
+            db.query(ExtractionResult.CaseId)
+            .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
+            .distinct()
+            .count()
         )
-        .count()
-    )
-    failed = (
-        db.query(ExtractionQueue)
-        .filter(
-            ExtractionQueue.ExtractionSessionId == session_id,
-            ExtractionQueue.Status == "failed",
+        failed = max(0, total - completed) if latest_run.Status in ("completed", "completed_with_errors", "failed") else (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "failed",
+            )
+            .count()
         )
-        .count()
-    )
+    else:
+        total = (
+            db.query(ExtractionQueue)
+            .filter(ExtractionQueue.ExtractionSessionId == session_id)
+            .count()
+        )
+        completed = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "completed",
+            )
+            .count()
+        )
+        failed = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "failed",
+            )
+            .count()
+        )
 
     return {
         "session_id": session_id,

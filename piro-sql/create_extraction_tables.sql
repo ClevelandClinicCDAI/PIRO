@@ -36,6 +36,8 @@ BEGIN
         [LlmProvider]           NVARCHAR(100) NOT NULL,
         [LlmModel]              NVARCHAR(255) NOT NULL,
         [Status]                NVARCHAR(50) NOT NULL DEFAULT 'pending',
+        [RunType]               NVARCHAR(50) NOT NULL DEFAULT 'full',
+        [ValidationSize]        INT NULL,
         [StartedAt]             DATETIMEOFFSET NULL,
         [CompletedAt]           DATETIMEOFFSET NULL,
         [ErrorMessage]          NVARCHAR(MAX) NULL,
@@ -94,6 +96,7 @@ BEGIN
         [ProvenanceStart]       INT NULL,                -- Char offset in labelled text
         [ProvenanceEnd]         INT NULL,                -- Char offset in labelled text
         [IsReviewed]            BIT NOT NULL DEFAULT 0,
+        [IsIncorrect]           BIT NOT NULL DEFAULT 0,
         [ReviewedBy]            NVARCHAR(255) NULL,
         [ReviewedDate]          DATETIMEOFFSET NULL,
         [CreateDate]            DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
@@ -118,5 +121,34 @@ BEGIN
 END
 ELSE
     PRINT 'Table ExtractionResult already exists';
+
+-- Add RunType and ValidationSize to ExtractionRun (idempotent)
+IF COL_LENGTH('dbo.ExtractionRun', 'RunType') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ExtractionRun]
+        ADD [RunType] NVARCHAR(50) NOT NULL DEFAULT 'full';
+    PRINT 'Added column ExtractionRun.RunType';
+END
+ELSE
+    PRINT 'Column ExtractionRun.RunType already exists';
+
+IF COL_LENGTH('dbo.ExtractionRun', 'ValidationSize') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ExtractionRun]
+        ADD [ValidationSize] INT NULL;
+    PRINT 'Added column ExtractionRun.ValidationSize';
+END
+ELSE
+    PRINT 'Column ExtractionRun.ValidationSize already exists';
+
+-- Add IsIncorrect to ExtractionResult (idempotent — for databases created before this column was added)
+IF COL_LENGTH('dbo.ExtractionResult', 'IsIncorrect') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ExtractionResult]
+        ADD [IsIncorrect] BIT NOT NULL DEFAULT 0;
+    PRINT 'Added column ExtractionResult.IsIncorrect';
+END
+ELSE
+    PRINT 'Column ExtractionResult.IsIncorrect already exists';
 
 PRINT 'Migration complete.';

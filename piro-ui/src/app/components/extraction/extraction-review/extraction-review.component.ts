@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ExtractionService } from '../../../services/extraction.service';
 
@@ -20,8 +19,7 @@ interface GridCell {
   confidence: number | null;
   provenanceText: string | null;
   isReviewed: boolean;
-  editing: boolean;
-  editValue: string;
+  isIncorrect: boolean;
 }
 
 @Component({
@@ -37,13 +35,18 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   fields: string[] = [];
   rows: GridRow[] = [];
 
+  // Stable insertion-order tracking — cases stay in the order they first appear.
+  // Subsequent polls update cells in place without reordering.
+  private caseOrder: number[] = [];
+  private caseRowMap = new Map<number, GridRow>();
+
   // Side panel
   selectedCell: GridCell | null = null;
   selectedCaseId: number | null = null;
   selectedCaseNumber: string | null = null;
   selectedField: string | null = null;
-  reportText = '';
-  reportHtml = '';
+  reportSegments: { CommentType: string; CommentText: string; html: string }[] = [];
+  reportText = '';   // kept for provenance search
   sidePanelLoading = false;
 
   // Status polling
@@ -52,9 +55,12 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   loading = true;
   approving = false;
+  runningFull = false;
+  refiningLowConf = false;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private extractionService: ExtractionService,
     private toastr: ToastrService
   ) {}
@@ -84,8 +90,8 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   async loadResults() {
     const results: any[] = await this.extractionService.getResults(this.sessionId) ?? [];
 
-    // Determine field order from schema
-    if (this.session?.SchemaJson) {
+    // Determine field order from schema (only set once)
+    if (this.fields.length === 0 && this.session?.SchemaJson) {
       try {
         this.fields = Object.keys(JSON.parse(this.session.SchemaJson));
       } catch { }
@@ -94,14 +100,16 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
       this.fields = [...new Set(results.map((r: any) => r.FieldName))];
     }
 
-    // Build grid rows
-    const caseMap = new Map<number, GridRow>();
+    // Update cells in place; append new cases in arrival order.
+    // This prevents reordering as results stream in during a run.
     for (const r of results) {
-      if (!caseMap.has(r.CaseId)) {
-        caseMap.set(r.CaseId, { caseId: r.CaseId, caseNumber: r.CaseNumber ?? String(r.CaseId), cells: {} });
+      if (!this.caseRowMap.has(r.CaseId)) {
+        const newRow: GridRow = { caseId: r.CaseId, caseNumber: r.CaseNumber ?? String(r.CaseId), cells: {} };
+        this.caseOrder.push(r.CaseId);
+        this.caseRowMap.set(r.CaseId, newRow);
       }
-      const row = caseMap.get(r.CaseId)!;
-      const displayValue = r.IsReviewed ? this.parseJsonValue(r.ReviewedValue) : this.parseJsonValue(r.ExtractedValue);
+      const row = this.caseRowMap.get(r.CaseId)!;
+      const displayValue = this.parseJsonValue(r.ExtractedValue);
       row.cells[r.FieldName] = {
         resultId: r.ExtractionResultId,
         extractedValue: this.parseJsonValue(r.ExtractedValue),
@@ -110,11 +118,18 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
         confidence: r.Confidence,
         provenanceText: r.ProvenanceText,
         isReviewed: r.IsReviewed,
-        editing: false,
-        editValue: String(displayValue ?? '')
+        isIncorrect: r.IsIncorrect ?? false,
       };
     }
-    this.rows = Array.from(caseMap.values());
+
+    this.rows = this.caseOrder.map(id => this.caseRowMap.get(id)!);
+  }
+
+  private resetResultState() {
+    this.caseOrder = [];
+    this.caseRowMap.clear();
+    this.rows = [];
+    this.fields = [];
   }
 
   parseJsonValue(jsonStr: string | null): any {
@@ -126,37 +141,30 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── Inline editing ────────────────────────────────────────────────────────
+  // ── Correct / Incorrect marking ───────────────────────────────────────────
 
-  startEdit(cell: GridCell) {
-    cell.editing = true;
-    cell.editValue = cell.displayValue !== null && cell.displayValue !== undefined
-      ? String(cell.displayValue) : '';
-  }
+  async markPrediction(cell: GridCell, correct: boolean, event: Event) {
+    event.stopPropagation();
+    // Toggle off if clicking the already-active verdict; otherwise apply new verdict
+    const isTogglingOff = cell.isReviewed && (correct ? !cell.isIncorrect : cell.isIncorrect);
+    const nextReviewed = !isTogglingOff;
+    const nextIncorrect = !isTogglingOff ? !correct : false;
 
-  async commitEdit(cell: GridCell) {
-    cell.editing = false;
-    const newValue = JSON.stringify(cell.editValue);
     try {
-      await this.extractionService.patchResult(cell.resultId, newValue, true);
-      cell.reviewedValue = cell.editValue;
-      cell.displayValue = cell.editValue;
-      cell.isReviewed = true;
+      await this.extractionService.patchResult(cell.resultId, undefined, nextReviewed, nextIncorrect);
+      cell.isReviewed = nextReviewed;
+      cell.isIncorrect = nextIncorrect;
     } catch {
-      this.toastr.error('Failed to save edit.');
+      this.toastr.error('Failed to save.');
     }
-  }
-
-  cancelEdit(cell: GridCell) {
-    cell.editing = false;
-    cell.editValue = String(cell.displayValue ?? '');
   }
 
   // ── Confidence styling ────────────────────────────────────────────────────
 
   cellClass(cell: GridCell | undefined): string {
     if (!cell) return '';
-    if (cell.isReviewed) return 'cell-reviewed';
+    if (cell.isReviewed && cell.isIncorrect) return 'cell-incorrect';
+    if (cell.isReviewed && !cell.isIncorrect) return 'cell-correct';
     if (cell.confidence === null || cell.confidence === undefined) return '';
     if (cell.confidence >= 0.8) return 'cell-high';
     if (cell.confidence >= 0.5) return 'cell-medium';
@@ -167,18 +175,25 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   async selectCell(cell: GridCell | undefined, caseId: number, caseNumber: string, field: string) {
     if (!cell) return;
+    const previousCaseId = this.selectedCaseId;
     this.selectedCell = cell;
     this.selectedCaseId = caseId;
     this.selectedCaseNumber = caseNumber;
     this.selectedField = field;
 
-    if (this.reportText === '' || this.selectedCaseId !== caseId) {
+    if (this.reportText === '' || previousCaseId !== caseId) {
       this.sidePanelLoading = true;
       try {
         const data = await this.extractionService.getCaseText(caseId);
-        this.reportText = data.full_text;
+        this.reportText = data.full_text ?? '';
+        this.reportSegments = (data.segments ?? []).map((s: any) => ({
+          CommentType: s.CommentType,
+          CommentText: s.CommentText,
+          html: ''
+        }));
       } catch {
         this.reportText = 'Could not load report text.';
+        this.reportSegments = [];
       } finally {
         this.sidePanelLoading = false;
       }
@@ -187,12 +202,14 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   }
 
   updateReportHtml(prov: string | null) {
-    let html = this.escapeHtml(this.reportText);
-    if (prov) {
-      const escapedProv = this.escapeHtml(prov);
-      html = html.replace(escapedProv, `<mark class="prov-highlight">${escapedProv}</mark>`);
-    }
-    this.reportHtml = html;
+    const escapedProv = prov ? this.escapeHtml(prov) : null;
+    this.reportSegments = this.reportSegments.map(seg => {
+      let text = this.escapeHtml(seg.CommentText).replace(/\|\|\|\|/g, '\n');
+      if (escapedProv && text.includes(escapedProv)) {
+        text = text.replace(escapedProv, `<mark class="prov-highlight">${escapedProv}</mark>`);
+      }
+      return { ...seg, html: text };
+    });
   }
 
   escapeHtml(text: string): string {
@@ -204,6 +221,8 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     this.selectedCaseId = null;
     this.selectedCaseNumber = null;
     this.selectedField = null;
+    this.reportSegments = [];
+    this.reportText = '';
   }
 
   // ── Bulk approve ──────────────────────────────────────────────────────────
@@ -218,6 +237,41 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
       this.toastr.error('Failed to bulk approve.');
     } finally {
       this.approving = false;
+    }
+  }
+
+  // ── Refine on low-confidence ──────────────────────────────────────────────
+
+  async refineOnIncorrect() {
+    this.refiningLowConf = true;
+    try {
+      const res = await this.extractionService.getIncorrectCases(this.sessionId);
+      if (!res || res.count === 0) {
+        this.toastr.info('No incorrect cases found — mark predictions as incorrect first.');
+        return;
+      }
+      this.router.navigate(
+        ['/extraction/schema', this.sessionId],
+        { queryParams: { mode: 'incorrect', caseIds: res.case_ids.join(',') } }
+      );
+    } catch (e: any) {
+      this.toastr.error('Failed to load incorrect cases.');
+    } finally {
+      this.refiningLowConf = false;
+    }
+  }
+
+  async runFullExtraction() {
+    this.runningFull = true;
+    try {
+      await this.extractionService.startExtraction(this.sessionId, 'full');
+      this.toastr.success('Full extraction started. Progress will appear below.');
+      this.resetResultState();
+      this.startStatusPoll();
+    } catch (e: any) {
+      this.toastr.error(e?.error?.detail || 'Failed to start full extraction.');
+    } finally {
+      this.runningFull = false;
     }
   }
 

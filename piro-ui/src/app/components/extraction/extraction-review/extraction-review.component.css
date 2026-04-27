@@ -36,7 +36,8 @@
 .cell-high { background-color: #d1fae5; }
 .cell-medium { background-color: #fef3c7; }
 .cell-low { background-color: #fee2e2; }
-.cell-reviewed { background-color: #e0f2fe; }
+.cell-correct { background-color: #bbf7d0; }
+.cell-incorrect { background-color: #fecaca; }
 
 .cell-view {
   display: flex;
@@ -47,18 +48,53 @@
 }
 
 .cell-actions {
+  display: flex;
+  gap: 3px;
   opacity: 0;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 }
 
-.field-cell:hover .cell-actions {
+.field-cell:hover .cell-actions,
+.field-cell.selected .cell-actions {
   opacity: 1;
 }
 
-.edit-icon {
+/* Show active verdict badges even without hover */
+.cell-actions:has(.verdict-btn.active) {
+  opacity: 1;
+}
+
+/* Verdict badge buttons (✓ / ✗) */
+.verdict-btn {
+  border: none;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
   cursor: pointer;
-  color: #0d6efd;
-  font-size: 0.8rem;
+  background: #e5e7eb;
+  color: #9ca3af;
+  transition: background 0.1s, color 0.1s;
+}
+
+.verdict-btn.lg {
+  font-size: 1rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.correct-btn:hover,
+.correct-btn.active {
+  background: #16a34a;
+  color: #fff;
+}
+
+.incorrect-btn:hover,
+.incorrect-btn.active {
+  background: #dc2626;
+  color: #fff;
 }
 
 .cell-edit input {
@@ -91,4 +127,5 @@
 .legend-dot.high { background-color: #d1fae5; border: 1px solid #6ee7b7; }
 .legend-dot.medium { background-color: #fef3c7; border: 1px solid #fcd34d; }
 .legend-dot.low { background-color: #fee2e2; border: 1px solid #fca5a5; }
-.legend-dot.reviewed { background-color: #e0f2fe; border: 1px solid #7dd3fc; }
+.legend-dot.correct { background-color: #bbf7d0; border: 1px solid #16a34a; }
+.legend-dot.incorrect { background-color: #fecaca; border: 1px solid #dc2626; }

@@ -41,14 +41,19 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   highlightedReportHtml = '';
 
   saving = false;
-  suggesting = false;
   loadingSession = true;
+
+  // Validation set dialog
+  showValidationDialog = false;
+  validationSize = 100;
+  startingValidation = false;
 
   // Saved search loader
   savedSearches: any[] = [];
   selectedSearchId: number | null = null;
   showSearchPicker = false;
   loadingFromSearch = false;
+  loadedSearchName: string | null = null;
 
   private schemaChange$ = new Subject<void>();
   private previewSub?: Subscription;
@@ -81,8 +86,21 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
         this.fields = this.schemaJsonToFields(JSON.parse(this.session.SchemaJson));
       }
       this.queuedCases = await this.extractionService.getQueue(this.sessionId) ?? [];
-      if (this.queuedCases.length > 0) {
-        this.selectedCaseId = this.queuedCases[0].CaseId;
+
+      // Check if we were sent here from Review with specific low-confidence cases
+      const modeParam = this.route.snapshot.queryParamMap.get('mode');
+      const caseIdsParam = this.route.snapshot.queryParamMap.get('caseIds');
+      if ((modeParam === 'low-confidence' || modeParam === 'incorrect') && caseIdsParam) {
+        const filteredIds = new Set(caseIdsParam.split(',').map(Number));
+        this.previewMode = modeParam;
+        this.previewSample = this.queuedCases.filter((c: any) => filteredIds.has(c.CaseId));
+        if (this.previewSample.length === 0) this.resamplePreview(); // fallback if no matches
+      } else {
+        this.resamplePreview();
+      }
+
+      if (this.previewSample.length > 0) {
+        this.selectedCaseId = this.previewSample[0].CaseId;
         this.loadCaseText();
       }
     } catch (e) {
@@ -222,40 +240,6 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── AI field suggestion ──────────────────────────────────────────────────
-
-  async suggestFields() {
-    this.suggesting = true;
-    try {
-      const suggestions = await this.extractionService.suggestFields(this.sessionId);
-      if (!suggestions || suggestions.length === 0) {
-        this.toastr.info('No suggestions returned by the AI.');
-        return;
-      }
-      const existing = new Set(this.fields.map(f => f.name));
-      for (const s of suggestions) {
-        if (!existing.has(s.name)) {
-          this.fields.push({
-            name: s.name,
-            type: s.type || 'text',
-            hint: s.hint || '',
-            enumValues: s.enum_values || [],
-            minimum: s.minimum ?? null,
-            maximum: s.maximum ?? null,
-            _enumInput: ''
-          });
-          existing.add(s.name);
-        }
-      }
-      this.toastr.success(`${suggestions.length} field suggestions added.`);
-      this.onSchemaChanged();
-    } catch (e) {
-      this.toastr.error('AI field suggestion failed. Is the LLM server running?');
-    } finally {
-      this.suggesting = false;
-    }
-  }
-
   // ── Live preview ─────────────────────────────────────────────────────────
 
   setupPreviewDebounce() {
@@ -338,7 +322,8 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/\|\|\|\|/g, '\n');
   }
 
   previewFields(): string[] {
@@ -359,22 +344,29 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     return 'bi-x-circle-fill';
   }
 
-  // ── Run extraction ───────────────────────────────────────────────────────
+  // ── Validation set generation ────────────────────────────────────────────
 
-  async runExtraction() {
+  async generateValidationSet() {
     const schema = this.fieldsToSchemaJson();
     if (Object.keys(schema).length === 0) {
       this.toastr.warning('Define at least one field first.');
       return;
     }
-    // Save schema first
+    if (this.validationSize <= 0) {
+      this.toastr.warning('Validation size must be at least 1.');
+      return;
+    }
+    this.startingValidation = true;
     await this.saveSchema();
     try {
-      await this.extractionService.startExtraction(this.sessionId);
-      this.toastr.success('Extraction started! Check the Review tab for progress.');
+      await this.extractionService.startExtraction(this.sessionId, 'validation', this.validationSize);
+      this.showValidationDialog = false;
+      this.toastr.success(`Validation set of ${this.validationSize} cases started. Check the Review tab for progress.`);
       this.router.navigate(['/extraction/review', this.sessionId]);
     } catch (e: any) {
-      this.toastr.error(e?.error?.detail || 'Failed to start extraction.');
+      this.toastr.error(e?.error?.detail || 'Failed to start validation set.');
+    } finally {
+      this.startingValidation = false;
     }
   }
 
@@ -399,8 +391,11 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     this.loadingFromSearch = true;
     try {
       this.queuedCases = await this.extractionService.addFromSavedSearch(this.sessionId, this.selectedSearchId) ?? [];
+      this.resamplePreview();
+      const match = this.savedSearches.find(s => s.value === this.selectedSearchId);
+      this.loadedSearchName = match ? match.text : 'Saved Search';
       if (this.queuedCases.length > 0 && !this.selectedCaseId) {
-        this.selectedCaseId = this.queuedCases[0].CaseId;
+        this.selectedCaseId = this.previewSample[0].CaseId;
         this.loadCaseText();
       }
       this.toastr.success(`${this.queuedCases.length} case(s) in queue after loading saved search.`);
@@ -412,18 +407,31 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Random sample of up to 100 cases used for the Live Preview
+  previewSample: any[] = [];
+  previewMode: 'random' | 'low-confidence' | 'incorrect' = 'random';
+
+  private resamplePreview() {
+    if (this.queuedCases.length <= 100) {
+      this.previewSample = [...this.queuedCases];
+    } else {
+      const shuffled = [...this.queuedCases].sort(() => Math.random() - 0.5);
+      this.previewSample = shuffled.slice(0, 100);
+    }
+  }
+
   get selectedCaseIndex(): number {
-    return this.previewCasesShown.findIndex(c => c.CaseId === this.selectedCaseId);
+    return this.previewSample.findIndex(c => c.CaseId === this.selectedCaseId);
   }
 
   stepCase(direction: -1 | 1) {
     const idx = this.selectedCaseIndex + direction;
-    if (idx < 0 || idx >= this.previewCasesShown.length) return;
-    this.selectedCaseId = this.previewCasesShown[idx].CaseId;
+    if (idx < 0 || idx >= this.previewSample.length) return;
+    this.selectedCaseId = this.previewSample[idx].CaseId;
     this.onCaseChange();
   }
 
   get previewCasesShown(): any[] {
-    return this.queuedCases.slice(0, 5);
+    return this.previewSample;
   }
 }

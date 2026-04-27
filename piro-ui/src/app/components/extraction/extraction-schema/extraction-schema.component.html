@@ -18,24 +18,59 @@
       </div>
     </div>
     <div class="col-auto d-flex gap-2">
-      <button class="btn btn-outline-secondary" (click)="openSearchPicker()" title="Load cases from a saved search">
-        <i class="bi bi-search me-1"></i>
-        Load Saved Search
-      </button>
-      <button class="btn btn-outline-secondary" (click)="suggestFields()" [disabled]="suggesting || queuedCases.length === 0">
-        <span *ngIf="suggesting" class="spinner-border spinner-border-sm me-1"></span>
-        <i *ngIf="!suggesting" class="bi bi-stars me-1"></i>
-        Suggest Fields with AI
-      </button>
+      <!-- Show loaded search info, or the load button if nothing loaded yet -->
+      <ng-container *ngIf="loadedSearchName; else loadSearchBtn">
+        <span class="d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light small">
+          <i class="bi bi-search text-muted"></i>
+          <span class="fw-semibold">{{ loadedSearchName }}</span>
+          <span class="text-muted">&mdash; {{ queuedCases.length }} cases</span>
+          <button class="btn btn-link btn-sm p-0 ms-1 text-muted" (click)="openSearchPicker()" title="Change saved search">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+        </span>
+      </ng-container>
+      <ng-template #loadSearchBtn>
+        <button class="btn btn-outline-secondary" (click)="openSearchPicker()" title="Load cases from a saved search">
+          <i class="bi bi-search me-1"></i>
+          Load Saved Search
+        </button>
+      </ng-template>
       <button class="btn btn-outline-primary" (click)="saveSchema()" [disabled]="saving">
         <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
         <i *ngIf="!saving" class="bi bi-floppy me-1"></i>
         Save Schema
       </button>
-      <button class="btn btn-success" (click)="runExtraction()" [disabled]="fields.length === 0 || queuedCases.length === 0">
-        <i class="bi bi-play-fill me-1"></i>
-        Run Extraction
+      <button class="btn btn-success" (click)="showValidationDialog = !showValidationDialog"
+              [disabled]="fields.length === 0 || queuedCases.length === 0">
+        <i class="bi bi-clipboard2-data me-1"></i>
+        Generate Validation Set
       </button>
+    </div>
+  </div>
+
+  <!-- Validation set size dialog -->
+  <div *ngIf="showValidationDialog" class="card mb-3 border-success">
+    <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center py-2">
+      <strong class="small text-success"><i class="bi bi-clipboard2-data me-1"></i>Generate Validation Set</strong>
+      <button type="button" class="btn-close btn-sm" (click)="showValidationDialog = false"></button>
+    </div>
+    <div class="card-body py-3">
+      <p class="small text-muted mb-3">
+        A random sample of cases will be extracted using your schema. Review the results to assess quality,
+        then use <strong>Run Full Extraction</strong> in the Review tab to process all {{ queuedCases.length }} cases.
+      </p>
+      <div class="d-flex align-items-center gap-3">
+        <label class="form-label mb-0 fw-semibold small text-nowrap">Validation set size:</label>
+        <input type="number" class="form-control form-control-sm" [(ngModel)]="validationSize"
+               min="1" [max]="queuedCases.length" style="width: 100px;">
+        <span class="text-muted small">of {{ queuedCases.length }} total cases</span>
+        <button class="btn btn-success btn-sm ms-auto" (click)="generateValidationSet()" [disabled]="startingValidation">
+          <span *ngIf="startingValidation" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!startingValidation" class="bi bi-play-fill me-1"></i>
+          Start
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" (click)="showValidationDialog = false">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -76,7 +111,7 @@
         <div class="card-body overflow-auto" style="max-height: calc(100vh - 250px);">
           <div *ngIf="fields.length === 0" class="text-center text-muted py-4">
             <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
-            Click <strong>Add Field</strong> to define what to extract, or use <strong>Suggest Fields with AI</strong>.
+            Click <strong>Add Field</strong> to define what to extract.
           </div>
 
           <div *ngFor="let field of fields; let i = index" class="card mb-3 border-0 shadow-sm">
@@ -169,6 +204,24 @@
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>Live Preview</strong>
+          <span *ngIf="previewSample.length > 0 && selectedCaseIndex >= 0"
+                class="badge bg-secondary ms-2 fw-normal">
+            {{ selectedCaseIndex + 1 }}/{{ previewSample.length }}
+          </span>
+          <span *ngIf="previewMode === 'low-confidence'"
+                class="badge bg-warning text-dark ms-1 fw-normal"
+                title="Showing low-confidence cases from the last run">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>Low-confidence cases
+          </span>
+          <span *ngIf="previewMode === 'incorrect'"
+                class="badge bg-danger text-white ms-1 fw-normal"
+                title="Showing cases marked incorrect in the last review">
+            <i class="bi bi-x-circle-fill me-1"></i>Incorrect cases
+          </span>
+          <span *ngIf="previewMode === 'random' && previewSample.length > 0"
+                class="badge bg-light text-muted border ms-1 fw-normal">
+            Random sample
+          </span>
           <div *ngIf="queuedCases.length > 0" class="d-flex align-items-center gap-1">
             <button class="btn btn-sm btn-outline-secondary" (click)="stepCase(-1)" [disabled]="selectedCaseIndex <= 0" title="Previous case">
               <i class="bi bi-chevron-up"></i>

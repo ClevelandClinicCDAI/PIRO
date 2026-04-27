@@ -25,7 +25,9 @@ from db.repository.extraction import (
     get_case_text_for_extraction,
     get_case_text_segments,
     get_extraction_status,
+    get_incorrect_case_ids,
     get_latest_run,
+    get_low_confidence_case_ids,
     get_queue,
     get_result_by_id,
     get_results_for_session,
@@ -33,6 +35,7 @@ from db.repository.extraction import (
     get_session,
     list_user_sessions,
     remove_from_queue,
+    reset_queue_statuses,
     update_queue_item_status,
     update_result_review,
     update_run_status,
@@ -305,8 +308,19 @@ async def remove_queue_item(
 # Extraction run
 # ──────────────────────────────────────────────────────────────────────────────
 
-async def _run_extraction_job(session_id: int, run_id: int, user: str, role: str) -> None:
-    """Background task: extract all cases in the queue for a session."""
+async def _run_extraction_job(
+    session_id: int,
+    run_id: int,
+    user: str,
+    role: str,
+    case_ids: Optional[List[int]] = None,
+) -> None:
+    """Background task: extract cases for a session.
+
+    If ``case_ids`` is given (validation run), only those cases are processed;
+    all others remain at their current queue status.
+    If ``case_ids`` is None (full run), all queue items are (re-)processed.
+    """
     db = SessionLocal()
     try:
         update_run_status(run_id, "running", db)
@@ -319,9 +333,19 @@ async def _run_extraction_job(session_id: int, run_id: int, user: str, role: str
         run = get_run(run_id, db)
         schema = json.loads(run.SchemaJson)
 
+        # Determine which cases to process
+        validation_set = set(case_ids) if case_ids is not None else None
+
+        # For full runs, reset all queue items so previously completed validation
+        # cases are reprocessed to produce a complete result set
+        if validation_set is None:
+            reset_queue_statuses(session_id, db)
+
         for queue_item in queue:
-            if queue_item.Status == "completed":
-                continue
+            if validation_set is not None and queue_item.CaseId not in validation_set:
+                continue  # validation run: skip non-sampled cases
+            if validation_set is None and queue_item.Status == "completed":
+                continue  # full run: skip already done (shouldn't exist after reset)
 
             update_queue_item_status(queue_item.ExtractionQueueId, "running", db)
             try:
@@ -431,11 +455,28 @@ async def start_extraction(
     if not queue:
         raise HTTPException(status_code=400, detail="Queue is empty")
 
+    # Concurrency guard: reject if a run is already active
+    latest = get_latest_run(payload.session_id, db)
+    if latest and latest.Status in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",
+        )
+
     from core.config import settings
-    from core.llm_client import get_llm_client as _get_llm
 
     llm_provider = settings.LLM_PROVIDER or "ollama"
     llm_model = settings.LLM_MODEL or "llama3.2"
+
+    # For validation runs, randomly sample the requested number of cases
+    sampled_case_ids: Optional[List[int]] = None
+    actual_validation_size: Optional[int] = None
+    if payload.run_type == "validation":
+        import random as _random
+        all_ids = [q.CaseId for q in queue]
+        n = min(payload.validation_size, len(all_ids))
+        sampled_case_ids = _random.sample(all_ids, n)
+        actual_validation_size = n
 
     run = create_run(
         session_id=payload.session_id,
@@ -444,6 +485,8 @@ async def start_extraction(
         llm_model=llm_model,
         user=current_user,
         db=db,
+        run_type=payload.run_type,
+        validation_size=actual_validation_size,
     )
 
     background_tasks.add_task(
@@ -452,6 +495,7 @@ async def start_extraction(
         run_id=run.ExtractionRunId,
         user=current_user,
         role=current_role,
+        case_ids=sampled_case_ids,
     )
 
     return run
@@ -512,6 +556,7 @@ async def patch_result(
         result_id=result_id,
         reviewed_value=payload.reviewed_value,
         is_reviewed=payload.is_reviewed,
+        is_incorrect=payload.is_incorrect,
         reviewer=current_user,
         db=db,
     )
@@ -532,6 +577,38 @@ async def approve_all_high_confidence(
     _require_session_ownership(session_id, current_user_id, db)
     count = bulk_approve_high_confidence(session_id, threshold, current_user, db)
     return {"approved_count": count}
+
+
+@router.get(
+    "/results/{session_id}/low-confidence-cases",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+)
+async def get_low_confidence_cases(
+    session_id: int,
+    threshold: float = Query(default=0.8, ge=0.0, le=1.0),
+    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    db: Session = Depends(get_db),
+):
+    """Return distinct case IDs from the latest run that have any field below
+    the confidence threshold or that have not yet been reviewed."""
+    _require_session_ownership(session_id, current_user_id, db)
+    case_ids = get_low_confidence_case_ids(session_id, threshold, db)
+    return {"case_ids": case_ids, "count": len(case_ids)}
+
+
+@router.get(
+    "/results/{session_id}/incorrect-cases",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+)
+async def get_incorrect_cases(
+    session_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    db: Session = Depends(get_db),
+):
+    """Return distinct case IDs from the latest run that have any field marked incorrect."""
+    _require_session_ownership(session_id, current_user_id, db)
+    case_ids = get_incorrect_case_ids(session_id, db)
+    return {"case_ids": case_ids, "count": len(case_ids)}
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -63,8 +63,10 @@ export class ExtractionService {
 
   // ── Extraction run ────────────────────────────────────────────────────────
 
-  startExtraction(sessionId: number): Promise<any> {
-    return this.http.post<any>(this.BASE + 'run', { session_id: sessionId }).toPromise();
+  startExtraction(sessionId: number, runType: 'validation' | 'full' = 'full', validationSize?: number): Promise<any> {
+    const body: any = { session_id: sessionId, run_type: runType };
+    if (runType === 'validation' && validationSize) body.validation_size = validationSize;
+    return this.http.post<any>(this.BASE + 'run', body).toPromise();
   }
 
   getStatus(sessionId: number): Promise<any> {
@@ -77,16 +79,25 @@ export class ExtractionService {
     return this.http.get<any[]>(`${this.BASE}results/${sessionId}`).toPromise() as Promise<any[]>;
   }
 
-  patchResult(resultId: number, reviewedValue?: string, isReviewed?: boolean): Promise<any> {
+  patchResult(resultId: number, reviewedValue?: string, isReviewed?: boolean, isIncorrect?: boolean): Promise<any> {
     const body: any = {};
     if (reviewedValue !== undefined) body.reviewed_value = reviewedValue;
     if (isReviewed !== undefined) body.is_reviewed = isReviewed;
+    if (isIncorrect !== undefined) body.is_incorrect = isIncorrect;
     return this.http.patch<any>(`${this.BASE}results/${resultId}`, body).toPromise();
   }
 
   approveAllHighConfidence(sessionId: number, threshold: number = 0.8): Promise<any> {
     return this.http.post<any>(`${this.BASE}results/${sessionId}/approve-all?threshold=${threshold}`, {})
       .toPromise();
+  }
+
+  getLowConfidenceCases(sessionId: number, threshold = 0.8): Promise<{case_ids: number[], count: number}> {
+    return this.http.get<any>(`${this.BASE}results/${sessionId}/low-confidence-cases?threshold=${threshold}`).toPromise();
+  }
+
+  getIncorrectCases(sessionId: number): Promise<{case_ids: number[], count: number}> {
+    return this.http.get<any>(`${this.BASE}results/${sessionId}/incorrect-cases`).toPromise();
   }
 
   // ── Export ────────────────────────────────────────────────────────────────

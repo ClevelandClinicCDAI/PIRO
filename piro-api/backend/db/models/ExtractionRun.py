@@ -14,6 +14,8 @@ class ExtractionRun(Base):
     LlmProvider = Column(String(100), nullable=False)
     LlmModel = Column(String(255), nullable=False)
     Status = Column(String(50), nullable=False, default="pending")
+    RunType = Column(String(50), nullable=False, default="full")
+    ValidationSize = Column(Integer, nullable=True)
     StartedAt = Column(DateTime(timezone=True), nullable=True)
     CompletedAt = Column(DateTime(timezone=True), nullable=True)
     ErrorMessage = Column(UnicodeText, nullable=True)
