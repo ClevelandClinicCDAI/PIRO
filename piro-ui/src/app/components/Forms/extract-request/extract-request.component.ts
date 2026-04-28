@@ -11,6 +11,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { ExportfieldComponent } from '../../modal/exportfield/exportfield.component';
 import { DataService } from '../../../services/data.service';
 import { SavesearchService } from 'src/app/services/savesearch.service';
+import { AppConfigService } from '../../../services/app-config.service';
 
 @Component({
   selector: 'app-extract-request',
@@ -41,6 +42,7 @@ export class ExtractRequestComponent {
     private confirmDialogService: ConfirmDialogService,
     private authService: AuthService,
     private dataService: DataService,
+    private appConfigService: AppConfigService,
     private toastr: ToastrService, private router: Router) {
   }
 
@@ -203,7 +205,7 @@ export class ExtractRequestComponent {
     }
 
     let that = this;
-    this.confirmDialogService.confirmClassThis('<legal disclaimer here>.',
+    this.confirmDialogService.confirmClassThis(this.appConfigService.irbDisclaimerText,
       'custom-alert-lg',
       async function () {
         that.submitForm();

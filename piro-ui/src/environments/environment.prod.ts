@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: '/api/',
+  apiBaseUrl: '',
   recordsPerPage: 10,
   debounceTime: 1000,
   filterDataUrl: 'solr/filterdata',

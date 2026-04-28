@@ -34,9 +34,13 @@ This application - `piro-ui` - acts as the user interface for the PIRO applicati
 
 ## Server Application Installation
 
-Because the `piro-ui` application consists of simple HTML/JS files, we simply serve it using the already installed NGINX web server.
+### Environment-Specific Configuration
+
+Create a configuration file - `config.json` - to provide values to the application that are inappropriate for inclusion in version control.  This file should be placed within the 'assets' directory on the server where the build files are deployed (next to the `config.example.json` file).  See the `config.example.json` file for an example of the file format and values.
 
 ### Nginx Configuration
+
+Because the `piro-ui` application consists of simple HTML/JS files, we simply serve it using the already installed NGINX web server.
 
 * Alter the `/etc/nginx/sites-available/piro-ui` file to match the following (adjusting as needed):
 

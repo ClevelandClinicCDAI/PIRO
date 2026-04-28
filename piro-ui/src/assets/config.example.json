@@ -1,0 +1,4 @@
+{
+    "apiBaseUrl": "https://your-api-server:8082/",
+    "irbDisclaimerText": "Your IRB disclaimer text here."
+}
