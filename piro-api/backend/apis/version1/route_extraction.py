@@ -621,7 +621,7 @@ async def get_incorrect_cases(
 )
 async def export_results(
     session_id: int,
-    format: str = Query(default="csv", regex="^(csv|json)$"),
+    format: str = Query(default="csv", regex="^(csv|json|excel)$"),
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
     db: Session = Depends(get_db),
 ):
@@ -637,21 +637,27 @@ async def export_results(
         except Exception:
             pass
 
-    # Build case → field → value table
-    case_fields: Dict[int, Dict[str, Any]] = {}
+    # Build case_number → field → value table
+    case_fields: Dict[str, Dict[str, Any]] = {}
+    case_order: List[str] = []   # preserve first-seen order
     all_fields: set = set()
     for r in results:
-        if r.CaseId not in case_fields:
-            case_fields[r.CaseId] = {}
-        value = r.ReviewedValue if r.IsReviewed else r.ExtractedValue
+        case_key = r.CaseNumber or str(r.CaseId)
+        if case_key not in case_fields:
+            case_fields[case_key] = {}
+            case_order.append(case_key)
+        value = r.ExtractedValue
         try:
             value = json.loads(value) if value is not None else None
         except Exception:
             pass
-        case_fields[r.CaseId][r.FieldName] = value
+        # Flatten lists/dicts to a readable string
+        if isinstance(value, (list, dict)):
+            value = json.dumps(value)
+        case_fields[case_key][r.FieldName] = value
         all_fields.add(r.FieldName)
 
-    # Preserve schema field order, appending any extra fields
+    # Preserve schema field order, appending any extra fields alphabetically
     if field_order:
         extra = [f for f in sorted(all_fields) if f not in field_order]
         fields = field_order + extra
@@ -660,19 +666,61 @@ async def export_results(
 
     if format == "json":
         rows = [
-            {"case_id": case_id, **field_vals}
-            for case_id, field_vals in sorted(case_fields.items())
+            {"case_number": cn, **case_fields[cn]}
+            for cn in case_order
         ]
         return JSONResponse(content=rows)
 
+    if format == "excel":
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.utils import get_column_letter
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = (sess.Name or "Results")[:31]
+
+        # Header row
+        headers = ["Case Number"] + fields
+        ws.append(headers)
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(fill_type="solid", fgColor="1F4E79")
+        for col_idx, _ in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+
+        # Data rows
+        for case_number in case_order:
+            field_vals = case_fields[case_number]
+            row = [case_number] + [field_vals.get(f) for f in fields]
+            ws.append(row)
+
+        # Auto-fit column widths (cap at 60)
+        for col_idx, col_cells in enumerate(ws.columns, start=1):
+            width = max((len(str(c.value or "")) for c in col_cells), default=10)
+            ws.column_dimensions[get_column_letter(col_idx)].width = min(width + 2, 60)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="extraction_{session_id}.xlsx"'
+            },
+        )
+
     # CSV
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["case_id"] + fields, extrasaction="ignore")
+    writer = csv.DictWriter(output, fieldnames=["case_number"] + fields, extrasaction="ignore")
     writer.writeheader()
-    for case_id, field_vals in sorted(case_fields.items()):
-        row = {"case_id": case_id}
+    for case_number in case_order:
+        row = {"case_number": case_number}
         for field in fields:
-            row[field] = field_vals.get(field, "")
+            row[field] = case_fields[case_number].get(field, "")
         writer.writerow(row)
 
     output.seek(0)

@@ -299,6 +299,17 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     });
   }
 
+  exportExcel() {
+    this.extractionService.exportResults(this.sessionId, 'excel').subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `extraction_${this.sessionId}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
   // ── Status polling ────────────────────────────────────────────────────────
 
   startStatusPoll() {

@@ -102,7 +102,10 @@ export class ExtractionService {
 
   // ── Export ────────────────────────────────────────────────────────────────
 
-  exportResults(sessionId: number, format: 'csv' | 'json' = 'csv'): Observable<Blob> {
+  exportResults(sessionId: number, format: 'csv' | 'json' | 'excel' = 'csv'): Observable<Blob> {
+    const mime = format === 'excel'
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      : format === 'json' ? 'application/json' : 'text/csv';
     return this.http.get(`${this.BASE}export/${sessionId}?format=${format}`, {
       responseType: 'blob'
     });
