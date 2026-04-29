@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    apiBaseUrl: 'http://localhost:8001/',
+    apiBaseUrl: '',
     recordsPerPage: 10,
     debounceTime: 1000,
     filterDataUrl: 'solrtest/filterdata',
@@ -26,7 +26,8 @@ export const environment = {
     synopticCommentsUrl: 'solrtest/casecomment/synopticreport',
     annotationConfigUrl: 'solrtest/case/annotationconfig',
     errorExceptionMessage: 'Error during data fetch',
-    accessExceptionMessage: 'Permission denied for the request'
+    accessExceptionMessage: 'Permission denied for the request',
+    slideRequestUrl: 'sliderequest'
 };
 
 /*

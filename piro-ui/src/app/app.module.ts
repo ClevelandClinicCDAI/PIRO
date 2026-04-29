@@ -1,4 +1,4 @@
-import { NgModule, isDevMode } from '@angular/core';
+import { NgModule, isDevMode, APP_INITIALIZER } from '@angular/core';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -36,6 +36,7 @@ import { CommentDisplayDirective } from './directives/comment-display.directive'
 import { StoreModule } from '@ngrx/store';
 import { facetReducer, resultReducer, dataFilterReducer, facetFilterReducer, keywordReducer, sortReducer } from './store/result.reducer';
 import { environment } from 'src/environments/environment.prod';
+import { AppConfigService } from './services/app-config.service';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { AdvancedsearchmodalComponent } from './components/modal/advancedsearchmodal/advancedsearchmodal.component';
 import { SavesearchmodalComponent } from './components/modal/savesearchmodal/savesearchmodal.component';
@@ -82,7 +83,7 @@ import { UpdateuserComponent } from './components/Admin/user/updateuser/updateus
 import { ContenttextComponent } from './components/common/contenttext/contenttext.component';
 import { AutosuggestComponent } from './components/common/autosuggest/autosuggest.component';
 import { ToastComponent } from './components/toast/toast.component';
-import { ToasterComponent } from './components/toaster/toaster.component'; 
+import { ToasterComponent } from './components/toaster/toaster.component';
 
 import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { NgxSkeletonLoaderModule } from 'ngx-skeleton-loader';
@@ -114,6 +115,11 @@ import { AireviewcasedetailComponent } from './components/modal/aireviewcasedeta
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+
+export function initializeApp(appConfigService: AppConfigService) {
+  return () => appConfigService.loadConfig();
+}
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -206,10 +212,10 @@ import { SlideRequestQueueComponent } from './components/slide-request/slide-req
     SlideRequestQueueComponent
   ],
   imports: [
-    CommonModule, 
+    CommonModule,
     BrowserAnimationsModule, // required animations module
     ToastrModule.forRoot({
-      closeButton:true
+      closeButton: true
     }), // ToastrModule added,
     NgxPaginationModule,
     FormsModule,
@@ -219,23 +225,32 @@ import { SlideRequestQueueComponent } from './components/slide-request/slide-req
     AppRoutingModule,
     QueryBuilderModule,
     ReactiveFormsModule,
-    StoreModule.forRoot({ facets: facetReducer,
+    StoreModule.forRoot({
+      facets: facetReducer,
       content: resultReducer,
-      dataFilter:dataFilterReducer,
-      facetFilter:facetFilterReducer,
-      keyword:keywordReducer,
-      sortData:sortReducer }),
+      dataFilter: dataFilterReducer,
+      facetFilter: facetFilterReducer,
+      keyword: keywordReducer,
+      sortData: sortReducer
+    }),
     !environment.production ? StoreDevtoolsModule.instrument() : [],
     NgxSliderModule,
     NgxSkeletonLoaderModule
   ],
-  providers: [{
-    provide: HTTP_INTERCEPTORS,
-    useClass: HeaderInterceptor,
-    multi: true
-  },
-  ConfirmDialogService,PreviousRouteService],
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeApp,
+      deps: [AppConfigService],
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HeaderInterceptor,
+      multi: true
+    },
+    ConfirmDialogService, PreviousRouteService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
-  
+

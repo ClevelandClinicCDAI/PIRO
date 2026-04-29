@@ -27,6 +27,8 @@ node_modules/
 dist/
 build/
 
+config.json
+
 *.log
 casecomment_dependency_graph.md
 casecomment_dependency_graph.txt
