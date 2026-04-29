@@ -19,6 +19,7 @@ This application - `piro-ui` - acts as the user interface for the PIRO applicati
 
 * Clone the codebase into a directory on your computer.
 * Execute `npm install` to install the necessary packages.
+* Create a configuration file - `config.json` - in the `piro-ui/src/assets` directory (next to the `config.example.json` file).  See the `config.example.json` file for an example of the file format and values.
 
 ## Server Deployment
 
