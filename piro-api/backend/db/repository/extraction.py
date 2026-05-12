@@ -10,16 +10,17 @@ from typing import List, Optional
 from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 
-from db.models.CommentType import CommentType as CommentTypeModel
 from db.models.ExtractionQueue import ExtractionQueue
 from db.models.ExtractionResult import ExtractionResult
 from db.models.ExtractionRun import ExtractionRun
 from db.models.ExtractionSession import ExtractionSession
 from db.views.VCaseCommentText import VCaseCommentText
+from logger import logger
 
-# Comment types included in extraction, in the order they appear in the report.
-# Both ADDEND and ADDENDUM are accepted to handle production databases with either naming.
-_EXTRACTION_COMMENT_CODES = ["FINAL", "COMMENT", "ADDEND", "ADDENDUM", "MICROSCOPIC"]
+# Comment types included in extraction, matched against V_CaseCommentText.CommentType
+# (the CommentType.ShortName already present in the view — no extra join needed).
+# Case-insensitive matching handles any capitalisation variants in the DB.
+_EXTRACTION_SHORT_NAMES = {"final", "comment", "addendum", "microscopic"}
 
 # Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report text.
 # Uses flexible whitespace matching to handle formatting variations.
@@ -29,16 +30,16 @@ _LDT_DISCLAIMER_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
-def _segment_order(code: str) -> int:
-    """Map a CommentType.Code to a display-order index."""
-    c = (code or "").upper()
-    if c == "FINAL":
+def _segment_order(short_name: str) -> int:
+    """Map a CommentType ShortName to a display-order index."""
+    c = (short_name or "").lower()
+    if c == "final":
         return 0
-    if c == "COMMENT":
+    if c == "comment":
         return 1
-    if "ADDEND" in c:   # matches ADDEND and ADDENDUM
+    if "addend" in c:   # matches Addendum, Addend, etc.
         return 2
-    if c == "MICROSCOPIC":
+    if c == "microscopic":
         return 3
     return 99
 
@@ -465,21 +466,37 @@ def bulk_approve_high_confidence(
 def get_case_text_segments(case_id: int, db: Session) -> List[VCaseCommentText]:
     """Fetch comment segments for extraction-relevant types in display order.
 
-    Only includes: Final, Comment, Addendum, Microscopic (by CommentType.Code).
-    Segments are returned in that fixed order regardless of DB ordering.
+    Filters on V_CaseCommentText.CommentType (the ShortName already in the view)
+    to avoid a redundant re-join to the CommentType table.
+    Prefers: Final, Comment, Addendum, Microscopic — case-insensitive.
+    Falls back to all available comment types if none of those are present.
     """
     rows = (
-        db.query(VCaseCommentText, CommentTypeModel.Code)
-        .join(CommentTypeModel, VCaseCommentText.CommentTypeId == CommentTypeModel.CommentTypeId)
+        db.query(VCaseCommentText)
         .filter(VCaseCommentText.CaseId == case_id)
         .filter(or_(
-            CommentTypeModel.Code.in_(_EXTRACTION_COMMENT_CODES),
-            func.lower(CommentTypeModel.ShortName).like('%addend%'),
+            func.lower(VCaseCommentText.CommentType).in_(_EXTRACTION_SHORT_NAMES),
+            func.lower(VCaseCommentText.CommentType).like('%addend%'),
         ))
         .all()
     )
-    rows.sort(key=lambda r: _segment_order(r[1]))
-    return [r[0] for r in rows]
+
+    if not rows:
+        # Fallback: use all comment types for this case and log what was found
+        all_rows = (
+            db.query(VCaseCommentText)
+            .filter(VCaseCommentText.CaseId == case_id)
+            .all()
+        )
+        available = [r.CommentType for r in all_rows]
+        logger.warning(
+            f"Case {case_id}: no segments matched preferred extraction types "
+            f"(available: {available}). Using all available comment text."
+        )
+        rows = all_rows
+
+    rows.sort(key=lambda r: _segment_order(r.CommentType))
+    return rows
 
 
 def _strip_ldt_disclaimer(text: str) -> str:

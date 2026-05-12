@@ -283,7 +283,10 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
       .previewExtraction(this.sessionId, this.selectedCaseId, schema)
       .pipe(
         catchError(err => {
-          this.previewError = 'Preview failed. Check that the LLM server is running.';
+          const detail = err?.error?.detail;
+          this.previewError = detail
+            ? `Preview failed: ${detail}`
+            : 'Preview failed. Check the AI service configuration.';
           this.previewLoading = false;
           return of(null);
         })

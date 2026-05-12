@@ -94,7 +94,13 @@ export class HeaderInterceptor implements HttpInterceptor {
                     this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
                   }
                 } else {
-                  this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
+                  // Suppress generic toast for endpoints that already handle errors in the component
+                  const isHandledLocally =
+                    urlRequest.indexOf('/extraction/preview') > 0 ||
+                    urlRequest.indexOf('/extraction/case/') > 0;
+                  if (!isHandledLocally) {
+                    this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
+                  }
                 }
               }
               const current1 = new Date();

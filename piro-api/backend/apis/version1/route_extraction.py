@@ -44,6 +44,7 @@ from db.repository.extraction import (
     update_session_status,
     upsert_result,
 )
+from db.models.Case import Case
 from db.repository.cohort import get_cohort
 from db.repository.search import get_search
 from urllib.parse import parse_qs, urlparse
@@ -788,6 +789,11 @@ async def preview_extraction(
 ):
     _require_session_ownership(payload.session_id, current_user_id, db)
 
+    _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
+    logger.info(
+        f"[preview] CaseID={payload.case_id}  CaseNumber={_case.CaseNumber if _case else 'NOT FOUND'}"
+    )
+
     if not payload.extraction_schema:
         raise HTTPException(status_code=400, detail="Schema cannot be empty")
 
@@ -799,7 +805,14 @@ async def preview_extraction(
         raise HTTPException(status_code=404, detail="No report text found for this case")
 
     llm = get_llm_client()
-    extraction = await llm.extract(labelled_text, payload.extraction_schema)
+    try:
+        extraction = await llm.extract(labelled_text, payload.extraction_schema)
+    except Exception as exc:
+        logger.error(f"LLM extraction failed for case {payload.case_id}: {exc!r}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI service error: {exc}",
+        )
 
     fields = {
         field_name: ExtractionPreviewFieldVM(
