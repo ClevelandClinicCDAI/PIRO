@@ -19,6 +19,7 @@ from apis.version1 import (
     route_solr,
     route_specimenSource,
     route_specimenType,
+    route_synopticbrowser,
     route_tag,
     route_tagcase,
     route_token,
@@ -113,4 +114,9 @@ api_router.include_router(
     route_slide_request.router,
     prefix="/sliderequest",
     tags=["Slide Requests"],
+)
+api_router.include_router(
+    route_synopticbrowser.router,
+    prefix="/synopticbrowser",
+    tags=["Synoptic Browser"],
 )

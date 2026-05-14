@@ -27,5 +27,6 @@ export const environment = {
   getAttestationUrl: "token/attest",
   saveAttestationUrl: "token/saveattest",
   errorExceptionMessage: 'Error during data fetch',
-  accessExceptionMessage: 'Permission denied for the request'
+  accessExceptionMessage: 'Permission denied for the request',
+  synopticBrowserUrl: 'synopticbrowser'
 };

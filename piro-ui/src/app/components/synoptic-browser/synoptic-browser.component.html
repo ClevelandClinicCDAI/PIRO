@@ -1,0 +1,115 @@
+<div class="container-fluid mt-3">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="javascript:void(0);" (click)="backToProtocols()" [class.active]="view === 'protocols'">
+          Synoptic Browser
+        </a>
+      </li>
+      <li *ngIf="view === 'facets'" class="breadcrumb-item active" aria-current="page">
+        {{ selectedProtocol }}
+      </li>
+    </ol>
+  </nav>
+
+  <!-- ── Level 1: Protocol List ── -->
+  <div *ngIf="view === 'protocols'">
+    <div class="accordion" id="protocolAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="protocolHeading">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse"
+            data-bs-target="#protocolCollapse" aria-expanded="true" aria-controls="protocolCollapse">
+            Cancer Protocol Templates
+          </button>
+        </h2>
+        <div id="protocolCollapse" class="accordion-collapse collapse show" aria-labelledby="protocolHeading">
+          <div class="accordion-body shadow p-3 bg-white rounded">
+
+            <div *ngIf="!protocolsLoaded" class="text-muted">
+              <ngx-skeleton-loader count="6" appearance="line"></ngx-skeleton-loader>
+            </div>
+
+            <ul class="facet-group" *ngIf="protocolsLoaded">
+              <li class="facet-group-item protocol-item"
+                  *ngFor="let p of protocols; trackBy: trackByProtocol"
+                  (click)="selectProtocol(p.protocol)">
+                <span class="facetKey protocol-link">{{ p.protocol }}</span>
+                <span class="badge">{{ p.case_count }}</span>
+              </li>
+              <li *ngIf="protocols.length === 0" class="text-muted ps-2">
+                No protocols found.
+              </li>
+            </ul>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Level 2: TNM Facets ── -->
+  <div *ngIf="view === 'facets'">
+    <div class="row">
+
+      <!-- Facet panel -->
+      <div class="col-md-4">
+        <div *ngIf="!facetsLoaded">
+          <ngx-skeleton-loader count="8" appearance="line"></ngx-skeleton-loader>
+        </div>
+
+        <div class="accordion" id="tnmAccordion" *ngIf="facetsLoaded">
+
+          <div *ngIf="tnmGroups.length === 0" class="text-muted ps-2">
+            No pT / pN / pM category data found for this protocol.
+          </div>
+
+          <div class="accordion-item" *ngFor="let group of tnmGroups; index as gi; trackBy: trackByGroup">
+            <h2 class="accordion-header" [id]="'tnmHeading-' + gi">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                [attr.data-bs-target]="'#tnmCollapse-' + gi" aria-expanded="true"
+                [attr.aria-controls]="'tnmCollapse-' + gi">
+                {{ group.label }}
+              </button>
+            </h2>
+            <div [id]="'tnmCollapse-' + gi" class="accordion-collapse collapse show"
+              [attr.aria-labelledby]="'tnmHeading-' + gi">
+              <div class="accordion-body shadow p-3 bg-white rounded">
+                <ul class="facet-group">
+                  <li class="facet-group-item"
+                      *ngFor="let item of group.items; index as ii; trackBy: trackByItem"
+                      [id]="'tnm-' + gi + '-' + ii">
+                    <span class="facetKey">{{ item.value }}</span>
+                    <span class="badge">{{ item.case_count }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Info panel -->
+      <div class="col-md-8">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title text-muted">
+              <i class="bi bi-info-circle"></i> Protocol Details
+            </h5>
+            <p class="card-text">
+              Showing pT, pN, and pM category distributions for:
+              <strong>{{ selectedProtocol }}</strong>
+            </p>
+            <p class="text-muted small">
+              Click a category value in the facet panel to explore filtered results in a future release.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

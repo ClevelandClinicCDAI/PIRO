@@ -114,6 +114,7 @@ import { AireviewcasedetailComponent } from './components/modal/aireviewcasedeta
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { SynopticBrowserComponent } from './components/synoptic-browser/synoptic-browser.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -203,7 +204,8 @@ import { SlideRequestQueueComponent } from './components/slide-request/slide-req
     AireviewcasedetailComponent,
     UserattestComponent,
     SlideRequestFormComponent,
-    SlideRequestQueueComponent
+    SlideRequestQueueComponent,
+    SynopticBrowserComponent
   ],
   imports: [
     CommonModule, 

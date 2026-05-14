@@ -49,6 +49,7 @@ import { CohortComponent } from './components/cohort/cohort.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { SynopticBrowserComponent } from './components/synoptic-browser/synoptic-browser.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -116,6 +117,12 @@ const routes: Routes = [
     path: 'slide-request-queue', component: SlideRequestQueueComponent, canActivate: [AuthGuard],
     data: {
       role: ['ADMIN', 'DEMOADMIN', 'SLIDEROOM']
+    }
+  },
+  {
+    path: 'synoptic-browser', component: SynopticBrowserComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
     }
   },
   {

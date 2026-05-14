@@ -45,7 +45,7 @@ def seed_system_roles():
             db=db,
         )
     except Exception as exc:  # pragma: no cover - best-effort guard
-        logger.error("Unable to seed system roles: %s", exc)
+        logger.error("Unable to seed system roles: {}", exc)
     finally:
         db.close()
 

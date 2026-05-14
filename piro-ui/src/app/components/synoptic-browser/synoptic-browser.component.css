@@ -1,0 +1,74 @@
+ul, li {
+  list-style-type: none;
+}
+
+li {
+  padding-left: 0px;
+}
+
+.facet-group {
+  padding-left: 0 !important;
+}
+
+.facet-group-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 2px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.facet-group-item:last-child {
+  border-bottom: none;
+}
+
+.facetKey {
+  padding: 0px 4px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.protocol-item {
+  cursor: pointer;
+}
+
+.protocol-item:hover .protocol-link {
+  color: #0078bf;
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 10px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-align: center;
+  background-color: #a61f56;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.accordion-button {
+  background-color: #0078bf;
+  color: #fff;
+  box-shadow: none;
+  font-weight: 500;
+}
+
+.accordion-button:after {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>") !important;
+}
+
+.breadcrumb-item a {
+  color: #0078bf;
+  text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+  text-decoration: underline;
+}

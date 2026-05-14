@@ -26,7 +26,8 @@ export const environment = {
     synopticCommentsUrl: 'solrtest/casecomment/synopticreport',
     annotationConfigUrl: 'solrtest/case/annotationconfig',
     errorExceptionMessage: 'Error during data fetch',
-    accessExceptionMessage: 'Permission denied for the request'
+    accessExceptionMessage: 'Permission denied for the request',
+    synopticBrowserUrl: 'synopticbrowser'
 };
 
 /*
