@@ -283,10 +283,16 @@ async def add_saved_search_to_queue(
 async def get_queue_items(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
     _require_session_ownership(session_id, current_user_id, db)
-    return get_queue(session_id, db)
+    items = get_queue(session_id, db)
+    if current_role.upper() == "DEMOADMIN":
+        for item in items:
+            if item.Case:
+                item.Case.CaseNumber = "-"
+    return items
 
 
 @router.delete(
@@ -529,10 +535,16 @@ async def get_status(
 async def get_results(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
     _require_session_ownership(session_id, current_user_id, db)
-    return get_results_for_session(session_id, db)
+    results = get_results_for_session(session_id, db)
+    if current_role.upper() == "DEMOADMIN":
+        for r in results:
+            if r.Case:
+                r.Case.CaseNumber = "-"
+    return results
 
 
 @router.patch(
@@ -825,6 +837,7 @@ async def preview_extraction(
 
     return ExtractionPreviewVM(
         case_id=payload.case_id,
+        case_number="-" if current_role.upper() == "DEMOADMIN" else (_case.CaseNumber if _case else None),
         extracted_fields=fields,
         report_text=labelled_text,
     )

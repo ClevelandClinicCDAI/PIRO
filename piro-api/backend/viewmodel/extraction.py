@@ -175,6 +175,7 @@ class ExtractionPreviewFieldVM(BaseModel):
 
 class ExtractionPreviewVM(BaseModel):
     case_id: int
+    case_number: Optional[str] = None
     extracted_fields: Dict[str, ExtractionPreviewFieldVM]
     report_text: str
 

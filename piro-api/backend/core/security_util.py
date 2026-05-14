@@ -141,7 +141,7 @@ class SecurityUtil:
     @staticmethod
     def mask_case(text: str):
         text = SecurityUtil.match_mask_text(
-            text, "\\w{1,5}[\\d]{1,2}-[\\d]{1,8}", "X01-XXXXXX"
+            text, "\\w{1,5}[\\d]{1,2}-[\\d]{1,8}", "-"
         )
         return text
 

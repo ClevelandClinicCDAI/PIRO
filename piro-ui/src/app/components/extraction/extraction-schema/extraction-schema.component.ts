@@ -39,6 +39,8 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   previewError: string | null = null;
   reportText = '';
   highlightedReportHtml = '';
+  // Keyed by CaseId — populated from preview response so DemoAdmin sees masked labels
+  caseNumberOverrides: Record<number, string> = {};
 
   saving = false;
   loadingSession = true;
@@ -295,6 +297,9 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
         this.previewLoading = false;
         if (!result) return;
         this.previewResult = result;
+        if (result.case_number != null && result.case_id != null) {
+          this.caseNumberOverrides[result.case_id] = result.case_number;
+        }
         this.updateHighlights(result);
       });
   }

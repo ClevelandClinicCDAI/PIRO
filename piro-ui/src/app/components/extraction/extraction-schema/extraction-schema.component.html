@@ -227,7 +227,7 @@
               <i class="bi bi-chevron-up"></i>
             </button>
             <select class="form-select form-select-sm" style="width: 250px;" [(ngModel)]="selectedCaseId" (ngModelChange)="onCaseChange()">
-              <option *ngFor="let c of previewCasesShown" [value]="c.CaseId">{{ c.CaseNumber ?? c.CaseId }}</option>
+              <option *ngFor="let c of previewCasesShown" [value]="c.CaseId">{{ caseNumberOverrides[c.CaseId] ?? c.CaseNumber ?? c.CaseId }}</option>
             </select>
             <button class="btn btn-sm btn-outline-secondary" (click)="stepCase(1)" [disabled]="selectedCaseIndex >= previewCasesShown.length - 1" title="Next case">
               <i class="bi bi-chevron-down"></i>
