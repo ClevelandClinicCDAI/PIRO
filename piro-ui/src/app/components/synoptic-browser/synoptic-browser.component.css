@@ -28,13 +28,17 @@ li {
   text-overflow: ellipsis;
 }
 
-.protocol-item {
+.protocol-label {
   cursor: pointer;
 }
 
-.protocol-item:hover .protocol-link {
-  color: #0078bf;
-  text-decoration: underline;
+.badge-muted {
+  background-color: #aaa;
+}
+
+.updating {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .badge {
@@ -71,4 +75,21 @@ li {
 
 .breadcrumb-item a:hover {
   text-decoration: underline;
+}
+
+.case-count-display {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #0078bf;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+.case-count-display.updating {
+  opacity: 0.4;
+}
+
+.letter-spacing {
+  letter-spacing: 0.08em;
+  font-weight: 600;
 }

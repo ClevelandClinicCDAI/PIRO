@@ -10,7 +10,7 @@ export class SynopticBrowserService {
   constructor(private http: HttpClient) {}
 
   private getProtocolsFromDB() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const apiURL = environment.apiBaseUrl + environment.synopticBrowserUrl + '/protocols';
       this.http.get(apiURL).subscribe({
         next: (res: any) => resolve({ status: true, data: res }),
@@ -20,26 +20,44 @@ export class SynopticBrowserService {
   }
 
   async getProtocols() {
-    const result: any = await this.getProtocolsFromDB();
-    return result;
+    return await this.getProtocolsFromDB() as any;
   }
 
-  private getTnmFacetsFromDB(protocol: string) {
-    return new Promise((resolve, reject) => {
-      const apiURL =
-        environment.apiBaseUrl +
-        environment.synopticBrowserUrl +
-        '/tnmfacets?protocol=' +
-        encodeURIComponent(protocol);
-      this.http.get(apiURL).subscribe({
+  private getTnmFacetsFromDB(protocol: string, filters: { key: string; value: string }[]) {
+    return new Promise((resolve) => {
+      const apiURL = environment.apiBaseUrl + environment.synopticBrowserUrl + '/tnmfacets';
+      this.http.post(apiURL, { protocol, filters }).subscribe({
         next: (res: any) => resolve({ status: true, data: res }),
-        error: () => resolve({ status: false, data: [] }),
+        error: () => resolve({ status: false, data: { items: [], total_cases: 0 } }),
       });
     });
   }
 
-  async getTnmFacets(protocol: string) {
-    const result: any = await this.getTnmFacetsFromDB(protocol);
-    return result;
+  async getTnmFacets(protocol: string, filters: { key: string; value: string }[] = []) {
+    return await this.getTnmFacetsFromDB(protocol, filters) as any;
+  }
+
+  private saveCohortToDB(
+    protocol: string,
+    filters: { key: string; value: string }[],
+    name: string,
+    description: string
+  ) {
+    return new Promise((resolve) => {
+      const apiURL = environment.apiBaseUrl + environment.synopticBrowserUrl + '/savecohort';
+      this.http.post(apiURL, { protocol, filters, name, description }).subscribe({
+        next: (res: any) => resolve({ status: true, data: res }),
+        error: (err: any) => resolve({ status: false, message: err?.error?.detail || 'Error saving cohort' }),
+      });
+    });
+  }
+
+  async saveCohort(
+    protocol: string,
+    filters: { key: string; value: string }[],
+    name: string,
+    description: string
+  ) {
+    return await this.saveCohortToDB(protocol, filters, name, description) as any;
   }
 }
