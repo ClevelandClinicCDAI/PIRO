@@ -23,9 +23,9 @@ export class SynopticBrowserService {
     return await this.getProtocolsFromDB() as any;
   }
 
-  private getTnmFacetsFromDB(protocol: string, filters: { key: string; value: string }[]) {
+  private getFacetsFromDB(protocol: string, filters: { key: string; value: string }[]) {
     return new Promise((resolve) => {
-      const apiURL = environment.apiBaseUrl + environment.synopticBrowserUrl + '/tnmfacets';
+      const apiURL = environment.apiBaseUrl + environment.synopticBrowserUrl + '/facets';
       this.http.post(apiURL, { protocol, filters }).subscribe({
         next: (res: any) => resolve({ status: true, data: res }),
         error: () => resolve({ status: false, data: { items: [], total_cases: 0 } }),
@@ -33,8 +33,8 @@ export class SynopticBrowserService {
     });
   }
 
-  async getTnmFacets(protocol: string, filters: { key: string; value: string }[] = []) {
-    return await this.getTnmFacetsFromDB(protocol, filters) as any;
+  async getFacets(protocol: string, filters: { key: string; value: string }[] = []) {
+    return await this.getFacetsFromDB(protocol, filters) as any;
   }
 
   private saveCohortToDB(

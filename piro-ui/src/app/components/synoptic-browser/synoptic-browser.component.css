@@ -93,3 +93,17 @@ li {
   letter-spacing: 0.08em;
   font-weight: 600;
 }
+
+.protocol-grid {
+  column-count: 2;
+  column-gap: 2rem;
+}
+
+.protocol-grid .facet-group-item {
+  break-inside: avoid;
+}
+
+.sticky-panel {
+  position: sticky;
+  top: 70px;
+}

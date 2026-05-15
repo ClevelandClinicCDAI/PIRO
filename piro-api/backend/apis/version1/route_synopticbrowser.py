@@ -4,7 +4,7 @@ from core.constants import Constants
 from core.security_user import get_current_user_id, get_current_user_nuid
 from db.repository.synopticBrowser import (
     get_synoptic_protocols,
-    get_synoptic_tnm_facets,
+    get_synoptic_facets,
     create_synoptic_cohort,
 )
 from db.session import get_db
@@ -20,7 +20,7 @@ class SynopticFilterItem(BaseModel):
     value: str
 
 
-class SynopticTnmRequest(BaseModel):
+class SynopticFacetsRequest(BaseModel):
     protocol: str
     filters: List[SynopticFilterItem] = []
 
@@ -37,13 +37,13 @@ async def read_protocols(db: Session = Depends(get_db)):
     return get_synoptic_protocols(db=db)
 
 
-@router.post("/tnmfacets", dependencies=[Depends(JWTBearer())])
-async def read_tnm_facets(
-    body: SynopticTnmRequest,
+@router.post("/facets", dependencies=[Depends(JWTBearer())])
+async def read_facets(
+    body: SynopticFacetsRequest,
     db: Session = Depends(get_db),
 ):
     filters = [{"key": f.key, "value": f.value} for f in body.filters]
-    return get_synoptic_tnm_facets(protocol=body.protocol, filters=filters, db=db)
+    return get_synoptic_facets(protocol=body.protocol, filters=filters, db=db)
 
 
 @router.post(

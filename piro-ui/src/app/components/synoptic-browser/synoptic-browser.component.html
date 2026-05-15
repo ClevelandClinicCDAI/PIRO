@@ -29,7 +29,7 @@
               <ngx-skeleton-loader count="6" appearance="line"></ngx-skeleton-loader>
             </div>
 
-            <ul class="facet-group" *ngIf="protocolsLoaded">
+            <ul class="facet-group protocol-grid" *ngIf="protocolsLoaded">
               <li class="facet-group-item"
                   *ngFor="let p of protocols; index as i; trackBy: trackByProtocol">
                 <input class="form-check-input" type="radio" name="protocol"
@@ -79,13 +79,13 @@
 
           <div class="accordion-item" *ngFor="let group of tnmGroups; index as gi; trackBy: trackByGroup">
             <h2 class="accordion-header" [id]="'tnmHeading-' + gi">
-              <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                [attr.data-bs-target]="'#tnmCollapse-' + gi" aria-expanded="true"
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                [attr.data-bs-target]="'#tnmCollapse-' + gi" aria-expanded="false"
                 [attr.aria-controls]="'tnmCollapse-' + gi">
                 {{ group.label }}
               </button>
             </h2>
-            <div [id]="'tnmCollapse-' + gi" class="accordion-collapse collapse show"
+            <div [id]="'tnmCollapse-' + gi" class="accordion-collapse collapse"
               [attr.aria-labelledby]="'tnmHeading-' + gi">
               <div class="accordion-body shadow p-3 bg-white rounded">
                 <ul class="facet-group">
@@ -110,6 +110,7 @@
 
       <!-- Right: Case count + save cohort -->
       <div class="col-md-8">
+        <div class="sticky-panel">
 
         <!-- Matching case count card -->
         <div class="card shadow-sm mb-3">
@@ -159,6 +160,18 @@
                 <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
                 {{ saving ? 'Saving…' : 'Create Cohort' }}
               </button>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /.sticky-panel -->
+
+        <!-- Year histogram -->
+        <div class="card shadow-sm mt-3" *ngIf="facetsLoaded">
+          <div class="card-body">
+            <h6 class="card-title mb-3">Cases by Year</h6>
+            <div style="height: 220px;">
+              <canvas #yearChart></canvas>
             </div>
           </div>
         </div>

@@ -19,7 +19,12 @@ elif settings.DATABASE == "MSSQL":
         SQLALCHEMY_DATABASE_URL = settings.MSSQL_DB_URL_WIN
     else:
         SQLALCHEMY_DATABASE_URL = settings.MSSQL_DB_URL_SQL
-    engine_inst = create_engine(SQLALCHEMY_DATABASE_URL, echo=False)
+    engine_inst = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+    )
 elif settings.DATABASE == "POSTGRES":
     SQLALCHEMY_DATABASE_URL = settings.POSTGRES_DB_URL
     engine_inst = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)

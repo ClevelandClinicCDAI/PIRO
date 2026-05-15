@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Chart, BarController, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js';
 import { ToastrService } from 'ngx-toastr';
 import { SynopticBrowserService } from '../../services/synoptic-browser.service';
+
+Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip);
 
 interface Protocol {
   protocol: string;
@@ -25,7 +28,10 @@ interface TnmGroup {
   templateUrl: './synoptic-browser.component.html',
   styleUrls: ['./synoptic-browser.component.css']
 })
-export class SynopticBrowserComponent {
+export class SynopticBrowserComponent implements OnDestroy {
+
+  @ViewChild('yearChart') yearChartRef!: ElementRef<HTMLCanvasElement>;
+  private yearChart: Chart | null = null;
 
   view: 'protocols' | 'facets' = 'protocols';
   selectedProtocol: string = '';
@@ -54,6 +60,10 @@ export class SynopticBrowserComponent {
     await this.loadProtocols();
   }
 
+  ngOnDestroy() {
+    this.yearChart?.destroy();
+  }
+
   async loadProtocols() {
     this.protocolsLoaded = false;
     const result = await this.synopticBrowserService.getProtocols();
@@ -74,12 +84,14 @@ export class SynopticBrowserComponent {
     this.matchingCaseCount = 0;
     this.showSaveForm = false;
 
-    const result = await this.synopticBrowserService.getTnmFacets(protocol.protocol);
+    const result = await this.synopticBrowserService.getFacets(protocol.protocol);
     if (result.status) {
-      this.tnmGroups = this.buildTnmGroups(result.data.items, []);
+      this.tnmGroups = this.buildFacetGroups(result.data.items, []);
       this.matchingCaseCount = result.data.total_cases;
     }
     this.facetsLoaded = true;
+    // Defer chart render one tick so *ngIf renders the canvas first
+    setTimeout(() => this.renderYearChart(result.status ? (result.data.year_dist || []) : []), 0);
   }
 
   async onFacetFilterChange(changedItem: TnmFacetItem) {
@@ -87,15 +99,19 @@ export class SynopticBrowserComponent {
     const activeFilters = this.getActiveFilters();
     this.facetsUpdating = true;
 
-    const result = await this.synopticBrowserService.getTnmFacets(
-      this.selectedProtocol,
-      activeFilters
-    );
-    if (result.status) {
-      this.mergeFacetCounts(result.data.items);
-      this.matchingCaseCount = result.data.total_cases;
+    try {
+      const result = await this.synopticBrowserService.getFacets(
+        this.selectedProtocol,
+        activeFilters
+      );
+      if (result.status) {
+        this.mergeFacetCounts(result.data.items);
+        this.matchingCaseCount = result.data.total_cases;
+        this.renderYearChart(result.data.year_dist || []);
+      }
+    } finally {
+      this.facetsUpdating = false;
     }
-    this.facetsUpdating = false;
   }
 
   backToProtocols() {
@@ -121,10 +137,11 @@ export class SynopticBrowserComponent {
   clearAllFilters() {
     this.tnmGroups.forEach(g => g.items.forEach(i => i.checked = false));
     this.facetsUpdating = true;
-    this.synopticBrowserService.getTnmFacets(this.selectedProtocol).then(result => {
+    this.synopticBrowserService.getFacets(this.selectedProtocol).then(result => {
       if (result.status) {
         this.mergeFacetCounts(result.data.items);
         this.matchingCaseCount = result.data.total_cases;
+        this.renderYearChart(result.data.year_dist || []);
       }
       this.facetsUpdating = false;
     });
@@ -165,7 +182,7 @@ export class SynopticBrowserComponent {
     return this.tnmGroups.some(g => g.items.some(i => i.checked));
   }
 
-  private buildTnmGroups(
+  private buildFacetGroups(
     items: { key: string; value: string; case_count: number }[],
     previousChecked: { key: string; value: string }[]
   ): TnmGroup[] {
@@ -180,20 +197,28 @@ export class SynopticBrowserComponent {
       existing.push(facetItem);
       groupMap.set(item.key, existing);
     }
-    const order = ['pT category', 'pN category', 'pM category'];
+
+    // TNM categories always appear first in this order, then all other keys alphabetically
+    const tnmOrder = ['pT category', 'pN category', 'pM category'];
     const groups: TnmGroup[] = [];
-    for (const label of order) {
+
+    for (const prefix of tnmOrder) {
       for (const [key, groupItems] of groupMap.entries()) {
-        if (key.toLowerCase().includes(label.toLowerCase()) && !groups.find(g => g.label === key)) {
+        if (key.toLowerCase().includes(prefix.toLowerCase()) && !groups.find(g => g.label === key)) {
           groups.push({ label: key, items: groupItems });
         }
       }
     }
-    for (const [key, groupItems] of groupMap.entries()) {
-      if (!groups.find(g => g.label === key)) {
-        groups.push({ label: key, items: groupItems });
-      }
+
+    const tnmKeys = new Set(groups.map(g => g.label));
+    const remainingKeys = [...groupMap.keys()]
+      .filter(k => !tnmKeys.has(k))
+      .sort((a, b) => a.localeCompare(b));
+
+    for (const key of remainingKeys) {
+      groups.push({ label: key, items: groupMap.get(key)! });
     }
+
     return groups;
   }
 
@@ -203,17 +228,42 @@ export class SynopticBrowserComponent {
       countMap.set(`${item.key}||${item.value}`, item.case_count);
     }
     for (const group of this.tnmGroups) {
-      const groupHasChecked = group.items.some(i => i.checked);
       for (const item of group.items) {
-        if (groupHasChecked && !item.checked) {
-          // Within a group, checked options are mutually exclusive — zero out the rest
-          item.case_count = 0;
-        } else {
-          const newCount = countMap.get(`${item.key}||${item.value}`);
-          item.case_count = newCount !== undefined ? newCount : 0;
-        }
+        const newCount = countMap.get(`${item.key}||${item.value}`);
+        item.case_count = newCount !== undefined ? newCount : 0;
       }
     }
+  }
+
+  private renderYearChart(yearDist: { year: number; case_count: number }[]) {
+    const canvas = this.yearChartRef?.nativeElement;
+    if (!canvas) return;
+
+    this.yearChart?.destroy();
+    this.yearChart = null;
+
+    if (!yearDist.length) return;
+
+    this.yearChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: yearDist.map(d => String(d.year)),
+        datasets: [{
+          data: yearDist.map(d => d.case_count),
+          backgroundColor: '#0078bf',
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
   }
 
   trackByProtocol(_: number, p: Protocol) { return p.protocol; }
