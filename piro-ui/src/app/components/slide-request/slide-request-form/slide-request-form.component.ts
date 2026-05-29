@@ -30,7 +30,7 @@ export class SlideRequestFormComponent implements OnInit {
 
   async ngOnInit() {
     this.requestForm = this.formBuilder.group({
-      accessionNumber: ['', [Validators.required, Validators.maxLength(100)]],
+      accessionNumber: ['', [Validators.required, Validators.maxLength(500)]],
       requesterNotes: ['', [Validators.maxLength(2000)]],
       ePath: [false],
       urgencyStatus: ['Routine', [Validators.required]]
@@ -52,6 +52,11 @@ export class SlideRequestFormComponent implements OnInit {
     }
 
     const payloads = this.buildPayloads();
+    if (payloads.length > 25) {
+      this.submitting = false;
+      this.errorMessage = 'You may submit a maximum of 25 cases at a time.';
+      return;
+    }
     const results: { payload: SlideRequestFormPayload; result: any }[] = await Promise.all(
       payloads.map(async (payload) => {
         const result = await this.slideRequestService.createRequest(payload);

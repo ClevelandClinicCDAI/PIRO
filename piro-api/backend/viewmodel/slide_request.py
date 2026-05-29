@@ -29,7 +29,7 @@ def derive_slide_request_case_type(
 
 
 class SlideRequestCreateVM(BaseModel):
-    accessionNumber: str = Field(..., min_length=1, max_length=100)
+    accessionNumber: str = Field(..., min_length=1, max_length=500)
     urgencyStatus: Constants.SlideRequestUrgency
     ePath: bool = Field(default=False)
     requesterNotes: Optional[str] = Field(default=None, max_length=2000)
