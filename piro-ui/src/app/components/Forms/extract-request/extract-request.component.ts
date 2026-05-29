@@ -33,6 +33,7 @@ export class ExtractRequestComponent {
   isselectedFields: boolean = false;
   isirb: boolean = false;
   pediatricFilterError: string = "";
+  collectionDateFilterError: string = "";
   constructor(private modalService: NgbModal,
     private formBuilder: FormBuilder,
     private extractRequestService: ExtractRequestService,
@@ -73,6 +74,7 @@ export class ExtractRequestComponent {
 
   onReasonChange() {
     this.pediatricFilterError = "";
+    this.collectionDateFilterError = "";
     var reasonId = this.dataRequestForm.get('reasonId').value;
     const reason = this.reasons.data.filter((r: any) => { return r.value.toLocaleString() === reasonId });
     if (reason.length > 0 && reason[0].code === "IRB") {
@@ -95,6 +97,10 @@ export class ExtractRequestComponent {
 
   async onSearchChange() {
     this.pediatricFilterError = "";
+    this.collectionDateFilterError = "";
+    if (this.isirb) {
+      await this.validateCollectionDateSelection();
+    }
     if (this.isirb && this.dataRequestForm.get('isPediatric').value === '0') {
       await this.validatePediatricSelection();
     }
@@ -149,6 +155,45 @@ export class ExtractRequestComponent {
     }
   }
 
+  async validateCollectionDateSelection() {
+    const hasFilter = await this.hasCollectionDateFilter();
+    if (!hasFilter) {
+      this.collectionDateFilterError = "For IRB approved research, there must be a collection date filter that matches your IRB-approved date range";
+      return false;
+    }
+    return true;
+  }
+
+  async hasCollectionDateFilter() {
+    const searchId = this.dataRequestForm.get('searchId').value;
+    if (!searchId) {
+      return false;
+    }
+    const result: any = await this.saveSearchService.getSearch(searchId);
+    if (result.status != true || !result.data?.query) {
+      return false;
+    }
+    return this.queryHasCollectionDateFilter(result.data.query);
+  }
+
+  queryHasCollectionDateFilter(query: string) {
+    try {
+      const queryString = query.includes('?') ? query.split('?')[1] : query;
+      const searchParams = new URLSearchParams(queryString);
+      const searchFilter = searchParams.get('searchFilter');
+      if (!searchFilter) {
+        return query.includes('collectiondate');
+      }
+      const filters = JSON.parse(searchFilter);
+      if (!Array.isArray(filters)) {
+        return false;
+      }
+      return filters.some((item: any) => item?.field === 'collectiondate');
+    } catch (error) {
+      return query.includes('collectiondate');
+    }
+  }
+
   async onSubmit() {
     this.submitted = true;
     this.contentLoaded = false;
@@ -179,6 +224,15 @@ export class ExtractRequestComponent {
         this.pediatricFilterError = "You must have an age filter in your search to exclude pediatric patients";
         this.dataRequestForm.get('isPediatric').setValue('');
         this.dataRequestForm.get('isPediatric').updateValueAndValidity();
+        this.contentLoaded = true;
+        return;
+      }
+    }
+
+    if (this.isirb) {
+      const hasCollectionDate = await this.hasCollectionDateFilter();
+      if (!hasCollectionDate) {
+        this.collectionDateFilterError = "For IRB approved research, there must be a collection date filter that matches your IRB-approved date range";
         this.contentLoaded = true;
         return;
       }
