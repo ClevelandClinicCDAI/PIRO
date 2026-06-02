@@ -264,7 +264,7 @@ class RTFToPlainTextEpicCommentConverter:
                 converted_records.append(record)
             except Exception as e:
                 logger.error(
-                    f"Error converting RFT to text: {e}. CaseCommentCoEpicId: {record['CaseCommentCoEpicId']}"  # noqa:E501
+                    f"Error converting RTF to text: {e}. CaseCommentCoEpicId: {record['CaseCommentCoEpicId']}"  # noqa:E501
                 )
                 logger.error(traceback.format_exc())
 

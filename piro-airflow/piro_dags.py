@@ -1,5 +1,6 @@
 """Master DAG configuration file for the 'piro-airflow' project."""
 
+import json
 import pendulum
 from airflow.sdk import dag, Variable
 from tasks.rtf_to_plain_text_task import rtf_to_plain_text_task
@@ -32,9 +33,59 @@ from tasks.ssis_data_load_task import (
 from tasks.utils.logging_setup import get_logger
 
 logger = get_logger()
-DEVELOPER_EMAILS = [
-    "cumboj@ccf.org",
-]
+
+DEVELOPER_EMAILS_VAR_NAME = "DEVELOPER_EMAILS"
+
+
+def _parse_email_list(value: object) -> list[str]:
+    if value is None:
+        return []
+
+    # Preferred path: Airflow Variable.get(..., deserialize_json=True)
+    # returns a native list.
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+
+    # If a JSON list was stored as a string, accept it only if it decodes
+    # to a list.
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        parsed = json.loads(text)
+        if not isinstance(parsed, list):
+            return []
+        return [str(item).strip() for item in parsed if str(item).strip()]
+
+    return []
+
+
+def get_developer_emails() -> list[str]:
+    try:
+        value = Variable.get(
+            DEVELOPER_EMAILS_VAR_NAME,
+            default_var=[],
+            deserialize_json=True,
+        )
+        emails = _parse_email_list(value)
+    except Exception:
+        logger.exception(
+            "Failed to load Airflow Variable '%s' as a JSON list.",
+            DEVELOPER_EMAILS_VAR_NAME,
+        )
+        emails = []
+
+    if not emails:
+        logger.warning(
+            "No developer emails configured via Airflow Variable '%s'; "
+            "email notifications will be disabled.",
+            DEVELOPER_EMAILS_VAR_NAME,
+        )
+    return emails
+
+
+DEVELOPER_EMAILS = get_developer_emails()
+EMAIL_ON_FAILURE = bool(DEVELOPER_EMAILS)
 
 
 @dag(
@@ -48,7 +99,7 @@ DEVELOPER_EMAILS = [
     tags=["Annotation"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def piro_annotations():
@@ -70,7 +121,7 @@ def piro_annotations():
     tags=["Solr", "Cohort"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_cohort_load():
@@ -90,7 +141,7 @@ def solr_cohort_load():
     tags=["Solr", "Cohort"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_cohort_queue_reload():
@@ -111,7 +162,7 @@ def solr_cohort_queue_reload():
     tags=["Solr", "Cohort", "DELETE"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_cohort_delete():
@@ -129,7 +180,7 @@ def solr_cohort_delete():
     tags=["Solr", "Case"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_case_load():
@@ -150,7 +201,7 @@ def solr_case_load():
     tags=["Solr", "Case"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_case_queue_reload():
@@ -173,7 +224,7 @@ def solr_case_queue_reload():
     tags=["Solr", "CaseSuggest"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_case_number_suggest_load():
@@ -193,7 +244,7 @@ def solr_case_number_suggest_load():
     tags=["Solr", "CaseSuggest"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_case_number_suggest_queue_reload():
@@ -216,7 +267,7 @@ def solr_case_number_suggest_queue_reload():
     tags=["Solr", "CaseStaff"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_staff_suggest_load():
@@ -238,7 +289,7 @@ def solr_staff_suggest_load():
     tags=["Solr", "CaseStaff"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def solr_staff_suggest_queue_reload():
@@ -256,7 +307,7 @@ def solr_staff_suggest_queue_reload():
     tags=["Concentriq"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def concentriq_load():
@@ -273,7 +324,7 @@ def concentriq_load():
     tags=["Concentriq"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def concentriq_reset():
@@ -298,7 +349,7 @@ ssis_delta_schedule: str = Variable.get(
     tags=["SSIS", "Delta Load"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def ssis_delta_load():
@@ -317,7 +368,7 @@ def ssis_delta_load():
     tags=["SSIS", "Full Load"],
     default_args={
         "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
+        "email_on_failure": EMAIL_ON_FAILURE,
     },
 )
 def ssis_full_load():

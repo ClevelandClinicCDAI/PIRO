@@ -13,9 +13,11 @@ def solr_cohort_delete_task():
     This task ensures that, if a cohort is deleted in the PIRO database, it
     will also be deleted in Solr."""
     loader = SolrCohortDataDelete()
-    should_delete_records: bool = loader.should_we_delete_records()
-    if should_delete_records:
-        loader.delete_data()
+    try:
+        should_delete_records: bool = loader.should_we_delete_records()
+        if should_delete_records:
+            loader.delete_data()
+        else:
+            logger.info("Skipping deletion of cohort records in Solr.")
+    finally:
         loader.close_db_connection()
-    else:
-        logger.info("Skipping deletion of cohort records in Solr.")

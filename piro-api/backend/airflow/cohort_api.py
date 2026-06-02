@@ -45,7 +45,10 @@ def trigger_cohort_job(cohortId: int) -> bool:
         verify=str(certPath),
     )
 
-    if load_response.status_code != 200:
+    if load_response.status_code not in (
+        200,
+        201,
+    ):  # May return 201 on success
         logger.error("Failed to trigger an Airflow DAG via the API:")
         logger.error(f"load_response: {load_response}")
         logger.error(

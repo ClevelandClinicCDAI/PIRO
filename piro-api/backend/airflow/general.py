@@ -28,9 +28,11 @@ def get_certificates_directory() -> Path | None:
 
 
 def get_certificate_path_airflow() -> Path:
+    certificates_directory: Path | None = get_certificates_directory()
     certname = Settings.AIRFLOW_CERTIFICATE
-    certificates_path: str = f"{get_certificates_directory()}/{certname}"
-    return Path(certificates_path)
+    if certificates_directory is None or not certname:
+        raise FileNotFoundError("Certificates directory not found")
+    return certificates_directory / certname
 
 
 def get_airflow_api_token(base_url: str, cert_path: str) -> str | None:

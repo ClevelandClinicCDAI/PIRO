@@ -19,8 +19,14 @@ py .\localhost_debugging.py
 ## Airflow Variables
 
 The following is an export of the Airflow Variables used in this application in JSON format.
+
+Notes:
+
+- `DEVELOPER_EMAILS` must be a JSON-formatted list of email strings (e.g. `["dev1@test.org", "dev2@test.org"]`).
+- DAG failure notifications are enabled only when `DEVELOPER_EMAILS` contains at least one address.
+
 {
-	"CONCENTRIQ_CASE_DB_RELOAD_DATA": 0,
+    "CONCENTRIQ_CASE_DB_RELOAD_DATA": 0,
     "CONCENTRIQ_CASE_DETAIL_PAGE_SIZE": {
         "description": "Case Details API call batch size",
         "value": 1000
@@ -37,8 +43,20 @@ The following is an export of the Airflow Variables used in this application in 
         "description": "BASIC Auth header",
         "value": ""
     },
+    "DEVELOPER_EMAILS": {
+        "description": "Email recipients for DAG failure notifications (JSON list of strings)",
+        "value": []
+    },
     "MALIGNANT_ANNOTATION_MAX_RECORDS": 50000,
     "MALIGNANT_ANNOTATION_MODEL": "",
+    "OLLAMA_API_URL": {
+        "description": "OpenAI-compatible chat completions endpoint URL used by the malignant annotator",
+        "value": "<https://[ollama_url]/api/chat/completions>"
+    },
+    "OLLAMA_API_VERIFY": {
+        "description": "PEM file (in the certificates directory) used to verify the Ollama API HTTPS connection",
+        "value": ""
+    },
     "OLLAMA_API_BEARER_TOKEN": "",
     "PIRO_DB_INSTANCE": "",
     "PIRO_DB_NAME": "",

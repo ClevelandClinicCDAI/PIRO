@@ -41,11 +41,23 @@ Interpret this pathology report:
     def __init__(self):
         self._piro_db_engine: Engine = get_piro_db_engine()
         self._api_token: str = Variable.get("OLLAMA_API_BEARER_TOKEN")
-        self._certificates_directory: Path = self._get_certificates_directory()
+        self._api_url: str = Variable.get("OLLAMA_API_URL")
+        self._api_verify: str = self._get_api_verify()
         self._errors: list = []
+
+    def _get_api_verify(self) -> str:
+        """Return the path to the certificate used to verify calls to the
+        LLM API."""
+        # TODO: allow for usage of a boolean instead of a cert path, for cases
+        # where certificate verification is not needed
+        self._certificates_directory: Path = self._get_certificates_directory()
+        self._api_verify: str = Variable.get("OLLAMA_API_VERIFY").strip()
+        return str(self._certificates_directory / self._api_verify)
 
     def _get_certificates_directory(self) -> Path:
         application_root_directory: Path = get_application_root_directory()
+        # TODO: make the certificates directory configurable via Airflow
+        # Variable
         return application_root_directory / "certificates"
 
     def annotate(
@@ -236,8 +248,6 @@ Interpret this pathology report:
         )
 
     def _query_openai_endpoint(self, model: str, prompt: str) -> str:
-        url = "https://cdai-llm.ccf.org/api/chat/completions"
-
         headers = {
             "Authorization": f"Bearer {self._api_token}",
             "Content-Type": "application/json",
@@ -254,13 +264,11 @@ Interpret this pathology report:
         }
 
         response = requests.post(
-            url,
+            self._api_url,
             json=payload,
             headers=headers,
             timeout=3 * 60,
-            verify=str(
-                self._certificates_directory / "ollama-ccf-org-chain.pem"
-            ),
+            verify=self._api_verify,
         )
         response.raise_for_status()
 

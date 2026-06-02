@@ -120,6 +120,8 @@ class ConcentriqCaseLoader:
             }
             load_url = f"{concentriq_url}"
             logger.info(f"load_url: {load_url}")
+            # TODO: consider passing a 'param' argument instead of building the
+            # URL with query parameters
             response = requests.get(
                 load_url,
                 headers=headers,
@@ -137,8 +139,10 @@ class ConcentriqCaseLoader:
             else:
                 response_json = response.json()
                 logger.info(f"response_json: {response_json}")
-                response_items_json = response_json["items"]
-                logger.info(f"response_items_json: {response_items_json}")
+                response_items_json = response_json.get("items", [])
+                logger.info(
+                    f"Concentriq items returned: {len(response_items_json)}"
+                )
                 if len(response_items_json) == 0:
                     logger.info("No more data to process")
                     process_data = False

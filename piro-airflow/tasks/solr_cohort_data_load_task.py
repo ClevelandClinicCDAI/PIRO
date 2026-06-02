@@ -23,13 +23,17 @@ def solr_cohort_load_task():
         cohortId=cohort_id
     )
 
-    if there_are_records_to_load:
-        load_result: bool = loader.upload_records_to_solr(cohort_id=cohort_id)
-        if load_result:
-            loader.reset_data_for_next_load(cohortId=cohort_id)
+    try:
+        if there_are_records_to_load:
+            load_result: bool = loader.upload_records_to_solr(
+                cohort_id=cohort_id
+            )
+            if load_result:
+                loader.reset_data_for_next_load(cohortId=cohort_id)
+        else:
+            logger.info("No Cohort data to load; skipping.")
+    finally:
         loader.close_db_connection()
-    else:
-        logger.info("No Cohort data to load; skipping.")
 
 
 def get_cohort_id(context) -> int:
