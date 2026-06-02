@@ -6,7 +6,7 @@ This file provides example documentation of the Airflow installation process for
 * SSL Certificates: /etc/ssl/certs/
 * Codebase: /opt/piro-airflow/piro-airflow
 
-# Useful Commands
+## Useful Commands
 
 * Airflow Services
   * Checking service status:
@@ -28,7 +28,7 @@ This file provides example documentation of the Airflow installation process for
   * Stopping services:
     * `sudo systemctl stop nginx`
 
-# Server Install Documentation for the PIRO Airflow Servers
+## Server Install Documentation for the PIRO Airflow Servers
 
 1. Install the MS ODBC for Linux
     * See installation instructions here: <https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15#ubuntu17>
@@ -64,7 +64,7 @@ This file provides example documentation of the Airflow installation process for
     * Create the following files
     * /etc/systemd/system/piro-airflow-scheduler.service:
 
-        ```
+        ```bash
         #piro-airflow-scheduler.service
 
         [Unit]
@@ -87,7 +87,7 @@ This file provides example documentation of the Airflow installation process for
 
     * /etc/systemd/system/piro-airflow-webserver.service:
 
-        ```
+        ```bash
         #piro-airflow-webserver.service
 
         [Unit]
@@ -111,7 +111,7 @@ This file provides example documentation of the Airflow installation process for
 
     * Start and stop the 'schedule' service to create the 'airflow' folder in the 'piro-builder' account's home folder.
 
-        ```
+        ```bash
         sudo systemctl start piro-airflow-scheduler
         sudo systemctl stop piro-airflow-scheduler
         ```
@@ -140,6 +140,17 @@ This file provides example documentation of the Airflow installation process for
     * fernet_key = <Airflow "fernet" password>
     * smtp_mail_from = piro-builder@[hostname]
     * auth_backends = airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+1. Create the `smtp_default` connection (required in Airflow 3 for failure emails):
+    * With the project venv activated:
+        * `airflow connections delete smtp_default || true`
+        * `airflow connections add smtp_default --conn-json '{"conn_type":"smtp","host":"localhost","port":25,"extra":{"from_email":"piro-builder@build-piro.ccf.org","disable_ssl":true,"disable_tls":false}}'`
+        * `airflow connections get smtp_default`
+    * Configuration notes:
+        * This setup uses localhost SMTP relay (port 25) with STARTTLS enabled (`disable_tls=false`).
+        * The `from_email` in the `smtp_default` connection is a fallback; the primary source is the `[email]` section of `airflow.cfg`.
+        * For plaintext relay (no TLS), use `disable_tls=true` and `disable_ssl=true`.
+        * If you see `[SSL: WRONG_VERSION_NUMBER]`, ensure `disable_ssl=true` (implicit SSL should not be used on port 25).
+        * For SMTPS (implicit SSL on port 465), use `disable_ssl=false` and `disable_tls=true`.
 1. Pip install psycopg2:
     * With the project venv activated:
         * `pip install psycopg2-binary`
@@ -153,7 +164,7 @@ This file provides example documentation of the Airflow installation process for
 1. NGINX config
     * Create a file, '/etc/nginx/sites-available/piro-build', containing the following (adjusting SSL cert filenames if necessary):
 
-        ```
+        ```nginx
         server {
                 listen 443 ssl;
 

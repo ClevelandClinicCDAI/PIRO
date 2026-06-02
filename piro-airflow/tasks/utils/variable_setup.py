@@ -1,24 +1,18 @@
 from dotenv import load_dotenv
-from airflow.models import Variable
-from tasks.utils.logging_setup import get_logger
+from airflow.sdk import Variable
 
-logger = get_logger()
+load_dotenv()
 
 
 def get_var(varname: str) -> str:
-    load_dotenv()
-    varVal = Variable.get(varname)
-    if "PASSWORD" not in varname.upper():
-        logger.info(f"{varname} configuration - {varVal}")
-    if varVal is None:
-        raise Exception(f"Configuraton not found: {varname}")
-    return varVal
+    variable_value = Variable.get(varname)
+    if variable_value is None:
+        raise Exception(f"Airflow variable not found: {varname}")
+    return variable_value
 
 
 def set_var(varname: str, varval: str):
-    load_dotenv()
-    varVal = Variable.get(varname)
-    if varVal is None:
-        raise Exception(f"Configuraton not found: {varname}")
+    variable_value = Variable.get(varname)
+    if variable_value is None:
+        raise Exception(f"Variable not found: {varname}")
     Variable.set(key=varname, value=varval)
-

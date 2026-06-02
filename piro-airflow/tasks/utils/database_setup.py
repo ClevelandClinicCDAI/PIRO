@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session
 from tasks.utils.variable_setup import get_var
@@ -23,8 +23,10 @@ def get_piro_db_engine() -> Engine:
 
     # test the connection
     with engine.connect() as con:
-        con.execute("SELECT 1")
-    logger.info(f"Can connect to the {db_name} database ({server}\\{instance})")
+        con.execute(text("SELECT 1"))
+    logger.info(
+        f"Can connect to the {db_name} database ({server}\\{instance})"
+    )
 
     return engine
 
@@ -40,7 +42,7 @@ def get_piro_db_connection_params() -> tuple[str, str, str, str, str]:
     return server, instance, db_name, username, password
 
 
-def get_piro_db_session(engine: Engine = None) -> Session:
+def get_piro_db_session(engine: Engine | None = None) -> Session:
     """Create a SQLAlchemy 'scoped session' object for use in queries."""
 
     if not engine:

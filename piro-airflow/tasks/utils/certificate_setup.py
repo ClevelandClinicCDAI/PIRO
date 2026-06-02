@@ -1,6 +1,6 @@
 from pathlib import Path
 from dotenv import load_dotenv
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 
 def get_application_root_directory() -> Path:
@@ -14,7 +14,10 @@ def get_application_root_directory() -> Path:
         airflow_dag_path = directory / "piro_dags.py"
         if airflow_dag_path.exists():
             return directory
-    return None
+    raise FileNotFoundError(
+        "Could not find the application's root directory. "
+        "Expected to find 'piro_dags.py' in one of the parent directories."
+    )
 
 
 def get_certificates_directory() -> Path:
@@ -22,16 +25,15 @@ def get_certificates_directory() -> Path:
     return application_root_directory / "certificates"
 
 
-def get_certificate_path_solr() -> Path:
+def get_certificate_path_solr() -> str:
     load_dotenv()
     certName = Variable.get("SOLR_CERTIFICAT_NAME")
-    _certificates_path: str = f"{get_certificates_directory()}/{certName}"
-    return _certificates_path
+    certificates_path: str = f"{get_certificates_directory()}/{certName}"
+    return certificates_path
 
 
-def get_certificate_path_concentriq() -> Path:
+def get_certificate_path_concentriq() -> str:
     load_dotenv()
     certName = Variable.get("CONCENTRIQ_CERTIFICAT_NAME")
-    _certificates_path: str = f"{get_certificates_directory()}/{certName}"
-    return _certificates_path
-
+    certificates_path: str = f"{get_certificates_directory()}/{certName}"
+    return certificates_path

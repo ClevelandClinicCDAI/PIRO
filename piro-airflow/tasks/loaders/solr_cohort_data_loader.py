@@ -132,8 +132,7 @@ class SolrCohortDataLoader:
 
         return response
 
-    def _get_trigger_to_process(self, cohortId: int) -> bool:
-        """Query the V_SOLR_Cohort_Delete_Load view for records to be deleted in SOLR."""  # noqa: E501
+    def are_there_records_to_load(self, cohortId: int) -> bool:
         select_query = text(
             """SELECT count(0) From [dbo].[V_AIRFLOW_Cohort_Case_Load]"""
         )
@@ -142,10 +141,10 @@ class SolrCohortDataLoader:
             select_query = text(
                 f"""SELECT count(0) From [dbo].[V_AIRFLOW_Cohort_Case_Load] Where CohortId={cohortId}"""  # noqa: E501
             )
-        recordCount = self._piro_db_connection.execute(select_query).scalar()
-        return True if recordCount > 0 else False
+        record_count = self._piro_db_connection.execute(select_query).scalar()
+        return True if (record_count and record_count > 0) else False
 
-    def _reset_cohort_data(self, cohortId: int):
+    def reset_data_for_next_load(self, cohortId: int):
         sql_update = text(
             f"EXEC [dbo].[P_Airflow_Cohort_Processed_Update] @cohort_id={cohortId}"  # noqa: E501
         )
@@ -154,13 +153,16 @@ class SolrCohortDataLoader:
         self._piro_db_session.commit()
         return True
 
-    def _reload_sql_case_data(self):
+    def reset_is_solr_updated_flags(self) -> None:
+        """
+        Sets IsSolrUpdated flags to 0 for all Cohort & CohortCase records.
+        """
+
         sql = text("""EXEC dbo.[P_Airflow_Cohort_Reload_Data]""")
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
-        return True
 
-    def _close_db_connection(self) -> None:
+    def close_db_connection(self) -> None:
         """Close any connections to the database."""
 
         self._piro_db_session.close()
@@ -169,8 +171,7 @@ class SolrCohortDataLoader:
     def _get_cohort_data(
         self, cohort_id: int, start_key: int, data_record_count: int
     ) -> list:
-        select_query = text(
-            f"""
+        select_query = text(f"""
             declare @queue nvarchar(max)
             select @queue = (
                 Select TOP {int(float(data_record_count))} *
@@ -180,11 +181,9 @@ class SolrCohortDataLoader:
                 FOR JSON PATH
             )
             select @queue as JSON
-            """
-        )
+            """)
         if cohort_id != 0:
-            select_query = text(
-                f"""
+            select_query = text(f"""
                 declare @queue nvarchar(max)
                 select @queue = (
                     Select TOP {int(float(data_record_count))} *
@@ -194,8 +193,7 @@ class SolrCohortDataLoader:
                     FOR JSON PATH
                 )
                 select @queue as JSON
-                """
-            )
+                """)
         data = self._piro_db_connection.execute(select_query).scalar()
         if data is None:
             return None
@@ -207,22 +205,18 @@ class SolrCohortDataLoader:
             return None
 
     def _get_cohort_data_key_min(self, cohort_id: int) -> int:
-        select_query = text(
-            """
+        select_query = text(f"""
             SELECT Min([id]) Min_id, Max([id]) Max_id
             FROM dbo.V_AIRFLOW_Cohort_Case_Load
             FOR JSON PATH
-            """
-        )
+            """)
         if cohort_id != 0:
-            select_query = text(
-                f"""
+            select_query = text(f"""
                 SELECT (Min([id]) - 1) Min_id, Max([id]) Max_id
                 FROM dbo.V_AIRFLOW_Cohort_Case_Load
                 WHERE [cohortid] = {cohort_id}
                 FOR JSON PATH
-                """
-            )
+                """)
         data = self._piro_db_connection.execute(select_query).scalar()
         try:
             dataJson = json.loads(data)
@@ -231,7 +225,7 @@ class SolrCohortDataLoader:
         except json.JSONDecodeError:
             return None
 
-    def _upload_data_solr(self, cohort_id: int) -> bool:
+    def upload_records_to_solr(self, cohort_id: int) -> bool:
         """Function to call the solr data loader."""
         key = self._get_cohort_data_key_min(cohort_id)
         if key is None:
@@ -263,7 +257,7 @@ class SolrCohortDataLoader:
 
             if response.status_code != 200:
                 logger.error(
-                    f"Error processing a batch: {response.status_code} {response.text}"  # noqa:E501
+                    f"Error processing a batch: {response.status_code} {response.text}"
                 )
                 data_record_count: int = self.solr_update_batch / 10
                 retry_index = retry_index + 1
