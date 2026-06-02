@@ -1,16 +1,15 @@
 import traceback
 from typing import Generator
 from sqlalchemy.engine.base import Engine, Connection
+from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
 from sqlalchemy import delete
 from sqlalchemy import text
-from sqlalchemy.engine.row import LegacyRow
-from airflow.models import Variable
+from airflow.sdk import Variable
 from striprtf.striprtf import rtf_to_text
 from tasks.utils.logging_setup import get_logger
 from tasks.utils.database_setup import get_piro_db_engine, get_piro_db_session
 from tasks.models.main import CaseTextMasterPlain
-
 
 logger = get_logger()
 
@@ -35,7 +34,7 @@ class RTFToPlainTextEpicCommentConverter:
     def convert(self, max_cases_to_process: int | None = None) -> dict:
         """Primary method.  Converts new - and updates existing - records."""
 
-        max_cases_to_process: int = self._get_max_cases_to_process(
+        max_cases_to_process = self._get_max_cases_to_process(
             max_cases_to_process
         )
 
@@ -65,18 +64,18 @@ class RTFToPlainTextEpicCommentConverter:
             return max_cases_to_process
         else:
             return int(
-                Variable.get("RTF_TO_PLAIN_TEXT_MAX_CASES", default_var=100000)
+                Variable.get("RTF_TO_PLAIN_TEXT_MAX_CASES", default=100000)
             )
 
     def _delete_erroneous_case_comments(
         self, max_cases_to_process: int
     ) -> int:
-        """Delete all comments for any case where the comment count -
-        by comment type - doesn't match the comments in the source table.
+        """Delete all comments for any case where the comment count - by
+        comment type - doesn't match the comments in the source table.
 
         We do this to capture any new comments added to a case after they have
-        been converted, and to deal with duplicate issues from an early
-        version of this task.
+        been converted, and to deal with duplicate issues from an early version
+        of this task.
         """
 
         comment_ids_to_delete: list[int] = self._get_erroneous_comment_ids(
@@ -84,7 +83,7 @@ class RTFToPlainTextEpicCommentConverter:
         )
 
         logger.info(
-            f"Deleting {len(comment_ids_to_delete)} erroneous comment records (comment/commentType count mismatches)."  # noqa: E501
+            f"Deleting {len(comment_ids_to_delete)} erroneous comment records (comment/commentType count mismatches)."  # noqa:E501
         )
 
         self._delete_plain_text_comments(plain_text_ids=comment_ids_to_delete)
@@ -101,8 +100,7 @@ class RTFToPlainTextEpicCommentConverter:
         if not isinstance(max_cases_to_process, int):
             raise ValueError("Invalid value for 'max_cases_to_convert'.")
 
-        erroneous_comments_query = text(
-            f"""
+        erroneous_comments_query = text(f"""
             WITH converted_comment_counts AS (
                 SELECT CaseId, CommentTypeId, COUNT(*) AS CommentTypeCount
                   FROM CaseTextMasterPlain
@@ -131,12 +129,11 @@ class RTFToPlainTextEpicCommentConverter:
               FROM CaseTextMasterPlain plain_text
               JOIN case_ids_with_invalid_comments
                 ON plain_text.CaseID = case_ids_with_invalid_comments.CaseID
-            """  # noqa: E501
-        )
+            """)  # noqa:E501
 
         return (
             self._piro_db_connection.execute(erroneous_comments_query)
-            .scalars()
+            .scalars()  # type: ignore
             .all()
         )
 
@@ -168,7 +165,7 @@ class RTFToPlainTextEpicCommentConverter:
     ) -> int:
         """Convert comments for any new cases."""
 
-        records_to_convert: list[LegacyRow] = self._get_new_records_to_convert(
+        records_to_convert: list = self._get_new_records_to_convert(
             max_cases_to_process
         )
 
@@ -184,7 +181,7 @@ class RTFToPlainTextEpicCommentConverter:
 
     def _get_new_records_to_convert(
         self, max_cases_to_process: int
-    ) -> list[LegacyRow]:
+    ) -> list[Row]:
         """Query the CaseCommentEpic table for new records to be converted.
 
         Specifically, we look for any cases that haven't yet been converted,
@@ -194,8 +191,7 @@ class RTFToPlainTextEpicCommentConverter:
         if not isinstance(max_cases_to_process, int):
             raise ValueError("Invalid value for 'max_cases_to_convert'.")
 
-        new_comments_query = text(
-            f"""
+        new_comments_query = text(f"""
             WITH converted_epic_case_ids AS (
               SELECT CaseId
                 FROM CaseTextMasterPlain
@@ -226,10 +222,11 @@ class RTFToPlainTextEpicCommentConverter:
               JOIN unconverted_epic_case_ids
                 ON epic_comments.CaseId = unconverted_epic_case_ids.CaseId
              ORDER BY cases.AccessionDate DESC
-            """
-        )
+            """)
 
-        return self._piro_db_connection.execute(new_comments_query).fetchall()
+        return self._piro_db_connection.execute(
+            new_comments_query
+        ).fetchall()  # type: ignore
 
     def _format_as_dicts(self, records_to_convert: list[tuple]) -> list[dict]:
         """Format the records to be converted as dictionaries."""
@@ -254,15 +251,24 @@ class RTFToPlainTextEpicCommentConverter:
 
         return formatted_records
 
-    def _convert_records(self, formatted_records: list[dict]) -> None:
+    def _convert_records(self, records: list[dict]) -> None:
         """Convert the text of the comments from RTF into plain text."""
 
-        for record in formatted_records:
+        converted_records: list[dict] = []
+
+        for record in records:
             try:
-                record["plain_Text"] = rtf_to_text(record["plain_Text"])
+                record["plain_Text"] = rtf_to_text(
+                    record["plain_Text"], encoding="latin-1"
+                )
+                converted_records.append(record)
             except Exception as e:
-                logger.error(f"Error converting RFT to text: {e}")
+                logger.error(
+                    f"Error converting RFT to text: {e}. CaseCommentCoEpicId: {record['CaseCommentCoEpicId']}"  # noqa:E501
+                )
                 logger.error(traceback.format_exc())
+
+        records[:] = converted_records
 
     def _insert_into_plain_text_table(self, records: list[dict]) -> None:
         """Insert the records into the plain text table.

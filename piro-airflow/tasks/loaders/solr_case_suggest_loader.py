@@ -103,7 +103,7 @@ class SolrCaseSuggestLoader:
         logger.info("_load_data-End")
         return True
 
-    def _get_trigger_to_process(self) -> bool:
+    def are_there_records_to_load(self) -> bool:
         """Query the V_AIRFLOW_Solr_Case_Suggest view for records to be loaded in SOLR."""  # noqa: E501
         select_query = text(
             """SELECT count(0) From [dbo].[V_AIRFLOW_Solr_Case_Suggest]"""
@@ -142,7 +142,7 @@ class SolrCaseSuggestLoader:
 
         if data_count_response.status_code != 200:
             raise Exception(
-                f"Error in API data count call: {data_count_response.status_code}"  # noqa:E501
+                f"Error in API data count call: {data_count_response.status_code}"
             )  # noqa: E501
         else:
             data_count = data_count_response.json()
@@ -176,26 +176,24 @@ class SolrCaseSuggestLoader:
 
         return response
 
-    def _reset_case_suggest_data(self):
+    def reset_data_for_next_load(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Suggest_Solr_Delete]""")
 
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
         return True
 
-    def _close_db_connection(self) -> None:
+    def close_db_connection(self) -> None:
         """Close any connections to the database."""
         self._piro_db_session.close()
         self._piro_db_connection.close()
 
-    def _reload_sql_case_suggest_data(self):
+    def reset_solr_staging_tables(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Suggest_Solr_Delete]""")
-
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
 
         sql = text("""EXEC dbo.[P_AIRFLOW_LoadCaseSuggestionSolr_Delta]""")
-
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
         return True
@@ -204,8 +202,7 @@ class SolrCaseSuggestLoader:
         self, start_key: int, data_record_count: int
     ) -> list:
         # data_record_count: int = 10
-        select_query = text(
-            f"""
+        select_query = text(f"""
             declare @queue nvarchar(max)
             select @queue = (
                 Select TOP {int(float(data_record_count))} id, casenumber
@@ -214,8 +211,7 @@ class SolrCaseSuggestLoader:
             Order by [id]
             FOR JSON PATH)
             select @queue as JSON
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         if data is None:
             return None
@@ -227,13 +223,11 @@ class SolrCaseSuggestLoader:
             return None
 
     def _get_case_suggest_data_key_min(self) -> int:
-        select_query = text(
-            """
+        select_query = text(f"""
             SELECT Min([id]) Min_id, Max([id]) Max_id
             FROM dbo.V_AIRFLOW_Solr_Case_Suggest
             FOR JSON PATH
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         try:
             dataJson = json.loads(data)
@@ -242,7 +236,7 @@ class SolrCaseSuggestLoader:
         except json.JSONDecodeError:
             return None
 
-    def _upload_data_solr(self) -> bool:
+    def upload_records_to_solr(self) -> bool:
         """Function to call the solr data loader."""
         key = self._get_case_suggest_data_key_min()
         if key is None:
@@ -270,10 +264,15 @@ class SolrCaseSuggestLoader:
                 verify=self._certificates_path,  # noqa: E501
                 data=json.dumps(data),
             )
+            # print(f"response: {response.status_code}")
 
+            # if response.status_code != 200:
+            #     raise Exception(f"Error in API status call: {response.status_code}")
+
+            # key = data[-1]["id"]
             if response.status_code != 200:
                 logger.error(
-                    f"Error processing a batch: {response.status_code} {response.text}"  # noqa:E501
+                    f"Error processing a batch: {response.status_code} {response.text}"
                 )
                 data_record_count: int = self.solr_update_batch / 10
                 retry_index = retry_index + 1

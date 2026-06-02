@@ -1,51 +1,39 @@
 """Master DAG configuration file for the 'piro-airflow' project."""
 
 import pendulum
-from airflow.decorators import dag
-from airflow.models import Variable
+from airflow.sdk import dag, Variable
 from tasks.rtf_to_plain_text_task import rtf_to_plain_text_task
 from tasks.malignant_annotation_task import malignant_annotation_task
+from tasks.solr_cohort_data_delete_task import solr_cohort_delete_task
 from tasks.solr_cohort_data_load_task import (
-    solr_cohort_data_load_task,
-    solr_cohort_data_load_check_trigger_task,
-    solr_cohort_data_load_update_trigger_task,
-    solr_cohort_db_reload_task,
+    solr_cohort_load_task,
+    solr_cohort_queue_reload_task,
 )
 from tasks.solr_case_data_load_task import (
-    solr_case_data_load_task,
-    solr_case_db_reload_task,
-    solr_case_reset_task,
-    solr_case_check_trigger_task,
-    solr_case_update_trigger_task,
-)
-from tasks.solr_cohort_data_delete_task import (
-    solr_cohort_data_delete_task,
-    solr_cohort_data_delete_check_trigger_task,
-    solr_cohort_data_delete_update_trigger_task,
+    solr_case_load_task,
+    solr_case_queue_reload_task,
 )
 from tasks.solr_case_suggest_load_task import (
-    solr_case_suggest_db_reload_task,
-    solr_case_suggest_load_task,
-    solr_case_suggest_check_trigger_task,
-    solr_case_suggest_reset_task,
-    solr_case_suggest_update_trigger_task,
+    solr_case_number_suggest_queue_reload_task,
+    solr_case_number_suggest_load_task,
 )
 from tasks.solr_case_staff_load_task import (
-    solr_case_staff_load_task,
-    solr_case_staff_check_trigger_task,
-    solr_case_staff_reset_task,
-    solr_case_staff_update_trigger_task,
-    solr_case_staff_db_reload_task,
+    solr_staff_suggest_load_task,
+    solr_staff_suggest_queue_reload_task,
+)
+from tasks.concentriq_case_load_task import (
+    concentriq_load_task,
+    concentriq_reset_task,
 )
 from tasks.ssis_data_load_task import (
     ssis_delta_load_job_task,
-    ssis_full_load_job_task,
+    ssis_full_load_task,
 )
 from tasks.utils.logging_setup import get_logger
 
 logger = get_logger()
 DEVELOPER_EMAILS = [
-    "[developer email(s)]",
+    "cumboj@ccf.org",
 ]
 
 
@@ -53,11 +41,11 @@ DEVELOPER_EMAILS = [
     description=(
         "DAG for creating annotations from case text in the PIRO database."
     ),
-    schedule_interval="0 0 * * *",  # Midnight Eastern Daily
+    schedule="0 0 * * *",  # Midnight Eastern Daily
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SQL", "Annotation"],
+    tags=["Annotation"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
@@ -69,222 +57,228 @@ def piro_annotations():
     malignant_annotation = malignant_annotation_task()
 
     # dependency definitions
-    rtf_to_plain_text >> malignant_annotation
+    rtf_to_plain_text >> malignant_annotation  # type: ignore
 
 
 ###############################################################################
 @dag(
-    description="DAG for creating cohort case mapping in the SOLR",
-    schedule_interval="15 6 * * *",  # 6:15AM Eastern Daily
+    description="DAG for loading cohort and cohort-case data into Solr.",
+    schedule="15 6 * * *",  # 6:15AM Eastern Daily
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=5,
     catchup=False,
-    tags=["PIRO", "SOLR", "Cohort", "ADD"],
+    tags=["Solr", "Cohort"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_cohort_data():
-    solr_cohort_data_load_check_trigger = (
-        solr_cohort_data_load_check_trigger_task()
-    )
-    solr_cohort_data_load = solr_cohort_data_load_task()
-    solr_cohort_data_load_update_trigger = (
-        solr_cohort_data_load_update_trigger_task()
-    )
-
-    (
-        solr_cohort_data_load_check_trigger
-        >> solr_cohort_data_load
-        >> solr_cohort_data_load_update_trigger
-    )
+def solr_cohort_load():
+    solr_cohort_load_task()
 
 
 ###############################################################################
 @dag(
-    description=("DAG for reloading cohort data in the PIRO database."),
+    description=("""DAG for queuing up a reload of cohort data in Solr.
+
+        This DAG does not update Solr, it updates the PIRO database so that
+        the next run of the load task will reload all records.
+        """),
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SQL", "Cohort"],
+    tags=["Solr", "Cohort"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_cohort_db_reload_data():
-    # tasks to execute
-    solr_cohort_db_reload_task_ = solr_cohort_db_reload_task()
-    # dependency definitions
-    solr_cohort_db_reload_task_
+def solr_cohort_queue_reload():
+
+    solr_cohort_queue_reload_task()
 
 
 ###############################################################################
 @dag(
-    description=("DAG for reloading case data in the PIRO database."),
+    description=("""DAG for deleting cohort data in Solr.
+
+        This DAG ensures that, if a cohort is deleted in the PIRO database, it
+        will also be deleted in Solr."""),
+    schedule="30 6 * * *",  # 6:30AM Eastern Daily
+    start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
+    max_active_runs=5,
+    catchup=False,
+    tags=["Solr", "Cohort", "DELETE"],
+    default_args={
+        "email": DEVELOPER_EMAILS,
+        "email_on_failure": True,
+    },
+)
+def solr_cohort_delete():
+
+    solr_cohort_delete_task()
+
+
+###############################################################################
+@dag(
+    description="DAG for loading case data into Solr.",
+    schedule="0 6 * * *",  # 6AM Eastern Daily
+    start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
+    max_active_runs=5,
+    catchup=False,
+    tags=["Solr", "Case"],
+    default_args={
+        "email": DEVELOPER_EMAILS,
+        "email_on_failure": True,
+    },
+)
+def solr_case_load():
+
+    solr_case_load_task()
+
+
+###############################################################################
+@dag(
+    description=("""DAG for queuing up a reload of case data in Solr.
+
+        This DAG does not update Solr, it updates the PIRO database so that
+        the next run of the load task will reload all records.
+        """),
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SQL", "CASE"],
+    tags=["Solr", "Case"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_case_db_reload_data():
-    # tasks to execute
-    solr_case_clear_task = solr_case_db_reload_task()
-    # dependency definitions
-    solr_case_clear_task
+def solr_case_queue_reload():
+
+    solr_case_queue_reload_task()
 
 
 ###############################################################################
 @dag(
-    description="DAG for deleting cohort case mapping in the SOLR",
-    schedule_interval="30 6 * * *",  # 6:30AM Eastern Daily
+    description=("""DAG for loading case 'suggest' data into Solr.
+
+        The case 'suggest' data is used in the PIRO user interface. When the user
+        selects 'Case Number' from the drop-down menu in the main search box
+        and begins typing, case numbers from this Solr index will be used to
+        present the user with auto-complete options."""),  # noqa: E501
+    schedule="30 6 * * *",  # 6:30AM Eastern Daily
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=5,
     catchup=False,
-    tags=["PIRO", "SOLR", "Cohort", "DELETE"],
+    tags=["Solr", "CaseSuggest"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_cohort_delete():
-    solr_cohort_data_delete_check_trigger = (
-        solr_cohort_data_delete_check_trigger_task()
-    )
-    solr_cohort_data_delete = solr_cohort_data_delete_task()
-    solr_cohort_data_delete_update_trigger = (
-        solr_cohort_data_delete_update_trigger_task()
-    )
+def solr_case_number_suggest_load():
 
-    (
-        solr_cohort_data_delete_check_trigger
-        >> solr_cohort_data_delete
-        >> solr_cohort_data_delete_update_trigger
-    )
+    solr_case_number_suggest_load_task()
 
 
 ###############################################################################
 @dag(
-    description="DAG for running the full data import of the case data in the SOLR",  # noqa: E501
-    schedule_interval="0 6 * * *",  # 6AM Eastern Daily
-    start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
-    max_active_runs=5,
-    catchup=False,
-    tags=["PIRO", "SOLR", "Case"],
-    default_args={
-        "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
-    },
-)
-def piro_case_data():
-    solr_case_check_trigger = solr_case_check_trigger_task()
-    solr_case_data_load = solr_case_data_load_task()
-    solr_case_update = solr_case_reset_task()
-    solr_case_update_trigger = solr_case_update_trigger_task()
+    description=("""DAG for queuing up a reload of case 'suggest' data in Solr.
 
-    (
-        solr_case_check_trigger
-        >> solr_case_data_load
-        >> solr_case_update
-        >> solr_case_update_trigger
-    )
-
-
-###############################################################################
-@dag(
-    description="DAG for running the full data import of the case suggestions in the SOLR",  # noqa: E501
-    schedule_interval="30 6 * * *",  # 6:30AM Eastern Daily
-    start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
-    max_active_runs=5,
-    catchup=False,
-    tags=["PIRO", "SOLR", "CaseSuggest"],
-    default_args={
-        "email": DEVELOPER_EMAILS,
-        "email_on_failure": True,
-    },
-)
-def piro_case_suggest():
-    solr_case_suggest_check_trigger = solr_case_suggest_check_trigger_task()
-    solr_case_suggest_load = solr_case_suggest_load_task()
-    solr_case_suggest_reset = solr_case_suggest_reset_task()
-    solr_case_suggest_update_trigger = solr_case_suggest_update_trigger_task()
-
-    (
-        solr_case_suggest_check_trigger
-        >> solr_case_suggest_load
-        >> solr_case_suggest_reset
-        >> solr_case_suggest_update_trigger
-    )
-
-
-###############################################################################
-@dag(
-    description=("DAG for reloading case suggest data in the PIRO database."),
+        This DAG does not update Solr, it updates the PIRO database so that
+        the next run of the load task will reload all records."""),
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SQL", "CaseSuggest"],
+    tags=["Solr", "CaseSuggest"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_case_suggest_db_reload_data():
-    # tasks to execute
-    solr_case_suggest_clear_task = solr_case_suggest_db_reload_task()
-    # dependency definitions
-    solr_case_suggest_clear_task
+def solr_case_number_suggest_queue_reload():
+
+    solr_case_number_suggest_queue_reload_task()
 
 
 ###############################################################################
 @dag(
-    description="DAG for running the full data import of the case suggestions in SOLR",  # noqa: E501
-    schedule_interval="30 6 * * *",  # 6:30AM Eastern Daily
+    description=(""""DAG for loading staff 'suggest' data into Solr.
+
+        The staff 'suggest' data is used in the PIRO user interface. When the
+        user selects 'Pathologist' from the drop-down menu in the main search
+        box and begins typing, staff names from this Solr index will be used to
+        present the user with auto-complete options."""),
+    schedule="30 6 * * *",  # 6:30AM Eastern Daily
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=5,
     catchup=False,
-    tags=["PIRO", "SOLR", "CaseStaff"],
+    tags=["Solr", "CaseStaff"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_case_staff():
-    solr_case_staff_check_trigger = solr_case_staff_check_trigger_task()
-    solr_case_staff_load = solr_case_staff_load_task()
-    solr_case_staff_reset = solr_case_staff_reset_task()
-    solr_case_staff_update_trigger = solr_case_staff_update_trigger_task()
+def solr_staff_suggest_load():
 
-    (
-        solr_case_staff_check_trigger
-        >> solr_case_staff_load
-        >> solr_case_staff_reset
-        >> solr_case_staff_update_trigger
-    )
+    solr_staff_suggest_load_task()
 
 
 ###############################################################################
 @dag(
-    description=("DAG for reloading case staff data in the PIRO database."),
+    description=(
+        """DAG for queuing up a reload of staff 'suggest' data in Solr.
+
+        This DAG does not update Solr, it updates the PIRO database so that
+        the next run of the load task will reload all records."""
+    ),
     start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SQL", "CaseStaff"],
+    tags=["Solr", "CaseStaff"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def piro_case_staff_db_reload_data():
-    # tasks to execute
-    solr_case_staff_db_reload_task_ = solr_case_staff_db_reload_task()
-    # dependency definitions
-    solr_case_staff_db_reload_task_
+def solr_staff_suggest_queue_reload():
+
+    solr_staff_suggest_queue_reload_task()
+
+
+###############################################################################
+@dag(
+    description="DAG for loading Concentriq data into PIRO.",
+    schedule="30 12 * * *",  # 12:30AM Eastern Daily
+    start_date=pendulum.datetime(2025, 1, 1, tz="US/Eastern"),
+    max_active_runs=5,
+    catchup=False,
+    tags=["Concentriq"],
+    default_args={
+        "email": DEVELOPER_EMAILS,
+        "email_on_failure": True,
+    },
+)
+def concentriq_load():
+
+    concentriq_load_task()
+
+
+###############################################################################
+@dag(
+    description="DAG for deleting concentriq data in the PIRO database.",
+    start_date=pendulum.datetime(2024, 1, 1, tz="US/Eastern"),
+    max_active_runs=1,
+    catchup=False,
+    tags=["Concentriq"],
+    default_args={
+        "email": DEVELOPER_EMAILS,
+        "email_on_failure": True,
+    },
+)
+def concentriq_reset():
+
+    concentriq_reset_task()
 
 
 ###############################################################################
@@ -297,22 +291,19 @@ ssis_delta_schedule: str = Variable.get(
     description=(
         "DAG for triggering the delta data load job in the PIRO SSIS database."
     ),
-    schedule_interval=ssis_delta_schedule,  # See Airflow Vars
+    schedule=ssis_delta_schedule,  # See Airflow Vars
     start_date=pendulum.datetime(2025, 1, 1, tz="US/Eastern"),
     max_active_runs=5,
     catchup=False,
-    tags=["PIRO", "SSIS", "Delta Load"],
+    tags=["SSIS", "Delta Load"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def ssis_delta_load_job():
+def ssis_delta_load():
 
-    # tasks to execute
-    ssis_delta_load_job_task_ = ssis_delta_load_job_task()
-    # dependency definitions
-    ssis_delta_load_job_task_
+    ssis_delta_load_job_task()
 
 
 ###############################################################################
@@ -323,40 +314,29 @@ def ssis_delta_load_job():
     start_date=pendulum.datetime(2025, 1, 1, tz="US/Eastern"),
     max_active_runs=1,
     catchup=False,
-    tags=["PIRO", "SSIS", "Full Load"],
+    tags=["SSIS", "Full Load"],
     default_args={
         "email": DEVELOPER_EMAILS,
         "email_on_failure": True,
     },
 )
-def ssis_full_load_job():
-    # tasks to execute
-    ssis_full_load_job_task_ = ssis_full_load_job_task()
-    # dependency definitions
-    ssis_full_load_job_task_
+def ssis_full_load():
+
+    ssis_full_load_task()
 
 
-# Function calls
+# DAG Instantiation
 piro_annotations()
-
-piro_cohort_data()
-
-piro_case_suggest()
-
-piro_case_staff()
-
-piro_cohort_delete()
-
-piro_case_data()
-
-piro_case_db_reload_data()
-
-piro_case_suggest_db_reload_data()
-
-piro_case_staff_db_reload_data()
-
-piro_cohort_db_reload_data()
-
-ssis_delta_load_job()
-
-ssis_full_load_job()
+solr_cohort_load()
+solr_cohort_queue_reload()
+solr_cohort_delete()
+solr_case_load()
+solr_case_queue_reload()
+solr_case_number_suggest_load()
+solr_case_number_suggest_queue_reload()
+solr_staff_suggest_load()
+solr_staff_suggest_queue_reload()
+concentriq_load()
+concentriq_reset()
+ssis_delta_load()
+ssis_full_load()

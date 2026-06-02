@@ -49,8 +49,21 @@ class SolrCaseStaffLoader:
             "Authorization": f"Basic {self._authentication_header}",
             "Content-Type": "application/json",
         }
+        # load_data = {
+        #     "command": "full-import",
+        #     "verbose": "false",
+        #     "clean": "false",
+        #     "commit": "true",
+        #     "name": "dataimport",
+        # }
 
         logger.info(self.solr_loader_url)
+        # load_response = requests.post(
+        #     self.solr_loader_url,
+        #     data=json.dumps(load_data),
+        #     headers=headers,
+        #     verify=self._certificates_path,
+        # )
 
         load_response = requests.get(
             self.solr_loader_url,
@@ -78,8 +91,10 @@ class SolrCaseStaffLoader:
         logger.info("_load_data-End")
         return True
 
-    def _get_trigger_to_process(self) -> bool:
-        """Query the V_AIRFLOW_Case_Staff_Load view for records to be loaded in SOLR."""  # noqa: E501
+    def are_there_records_to_load(self) -> bool:
+        """Query the V_AIRFLOW_Case_Staff_Load view to determine if there are
+        records that need to be loaded in SOLR."""
+
         select_query = text(
             """SELECT count(0) From [dbo].[V_AIRFLOW_Case_Staff_Load]"""  # noqa: E501
         )  # noqa: E501
@@ -107,24 +122,20 @@ class SolrCaseStaffLoader:
 
         return response
 
-    def _reset_case_staff_data(self):
+    def reset_data_for_next_load(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Staff_Solr_Delete]""")
 
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
         return True
 
-    def _close_db_connection(self) -> None:
+    def close_db_connection(self) -> None:
         """Close any connections to the database."""
         self._piro_db_session.close()
         self._piro_db_connection.close()
 
-    def _reload_sql_case_data(self):
+    def delete_staff_suggest_staging_data(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Staff_Solr_Delete]""")
-        self._piro_db_session.execute(sql)
-        self._piro_db_session.commit()
-
-        sql = text("""EXEC dbo.[P_ETL_LoadCaseStaffSolr_Delta]""")
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
 
@@ -134,8 +145,7 @@ class SolrCaseStaffLoader:
         self, start_key: int, data_record_count: int
     ) -> list:
         # data_record_count: int = 10
-        select_query = text(
-            f"""
+        select_query = text(f"""
             declare @queue nvarchar(max)
             select @queue = (
                 Select TOP {int(float(data_record_count))} [key], id, staffname
@@ -144,8 +154,7 @@ class SolrCaseStaffLoader:
             Order by [key]
             FOR JSON PATH)
             select @queue as JSON
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         if data is None:
             return None
@@ -157,13 +166,11 @@ class SolrCaseStaffLoader:
             return None
 
     def _get_case_staff_data_key_min(self) -> int:
-        select_query = text(
-            """
+        select_query = text(f"""
             SELECT Min([key]) Min_id, Max([key]) Max_id
             FROM dbo.V_AIRFLOW_Solr_CaseStaff_Suggest
             FOR JSON PATH
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         try:
             dataJson = json.loads(data)
@@ -172,11 +179,11 @@ class SolrCaseStaffLoader:
         except json.JSONDecodeError:
             return None
 
-    def _upload_data_solr(self) -> bool:
+    def upload_records_to_solr(self) -> bool:
         """Function to call the solr data loader."""
         key = self._get_case_staff_data_key_min()
         if key is None:
-            return None
+            return False
 
         data_record_count: int = self.solr_update_batch
         process_data: bool = True
@@ -210,7 +217,7 @@ class SolrCaseStaffLoader:
             # key = data[-1]["key"]
             if response.status_code != 200:
                 logger.error(
-                    f"Error processing a batch: {response.status_code} {response.text}"  # noqa: E501
+                    f"Error processing a batch: {response.status_code} {response.text}"
                 )
                 data_record_count: int = self.solr_update_batch / 10
                 retry_index = retry_index + 1

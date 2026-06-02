@@ -3,12 +3,12 @@ import json
 import requests
 import traceback
 import concurrent.futures
-from typing import Generator
+from typing import Any, Generator, Sequence
 from datetime import datetime
 from pathlib import Path
-from sqlalchemy import text
+from sqlalchemy import text, Row
 from sqlalchemy.engine.base import Engine
-from airflow.models import Variable
+from airflow.sdk import Variable
 from tasks.utils.database_setup import get_piro_db_engine
 from tasks.utils.logging_setup import get_logger
 from tasks.utils.certificate_setup import get_application_root_directory
@@ -59,14 +59,14 @@ Interpret this pathology report:
         We do a single query to retrieve the source records (for performance),
         and then process the records in batches of 100."""
 
-        max_records_to_process: int = self._get_max_records_to_process(
+        _max_records_to_process: int = self._get_max_records_to_process(
             max_records_to_process
         )
 
-        model: str = self._get_model(model)
+        _model: str = self._get_model(model)
 
         source_records: list[dict] = self._get_source_records(
-            max_records_to_process
+            _max_records_to_process
         )
 
         source_data_batches = self._get_batches(source_records)
@@ -79,17 +79,17 @@ Interpret this pathology report:
 
                 logger.info("Generating annotations.")
                 source_data_batch = self._get_annotation_values(
-                    model, source_data_batch
+                    _model, source_data_batch
                 )
 
                 # eliminate rows with no AnnotationValues
                 source_data_batch = self._eliminate_null_records(
-                    model, source_data_batch
+                    _model, source_data_batch
                 )
 
                 logger.info("Formatting the resulting annotations.")
                 results: list[dict] = self._format_results(
-                    model, source_data_batch
+                    _model, source_data_batch
                 )
 
                 logger.info("Writing data to the PIRO database.")
@@ -121,9 +121,7 @@ Interpret this pathology report:
             return max_records_to_process
         else:
             return int(
-                Variable.get(
-                    "MALIGNANT_ANNOTATION_MAX_RECORDS", default_var=50000
-                )
+                Variable.get("MALIGNANT_ANNOTATION_MAX_RECORDS", default=50000)
             )
 
     def _get_model(self, model: str | None) -> str:
@@ -135,7 +133,7 @@ Interpret this pathology report:
         else:
             return Variable.get(
                 "MALIGNANT_ANNOTATION_MODEL",
-                default_var="llama3.1:8b-instruct-fp16",
+                default="llama3.1:8b-instruct-fp16",
             )
 
     def _get_source_records(
@@ -143,8 +141,8 @@ Interpret this pathology report:
     ) -> list[dict]:
         """Query for PIRO records that haven't yet been annotated.
 
-        For performance reasons we perform a single large query to get the
-        records.
+        For performance reasons we perform a single large query to get
+        the records.
         """
 
         if not isinstance(max_records_to_process, int):
@@ -152,8 +150,7 @@ Interpret this pathology report:
 
         with self._piro_db_engine.connect() as connection:
 
-            unannotated_records_query = text(
-                f"""
+            unannotated_records_query = text(f"""
                 WITH main_query AS (
                     SELECT TOP {max_records_to_process}
                            C.CaseId,
@@ -172,17 +169,16 @@ Interpret this pathology report:
                   FROM main_query
                  WHERE row_number = 1
                 ;
-                """  # noqa: E501
-            )
+                """)  # noqa:E501
 
-            source_records: list[tuple] = connection.execute(
+            source_records: Sequence[Row[Any]] = connection.execute(
                 unannotated_records_query
             ).all()
 
             return self._format_source_records(source_records)
 
     def _format_source_records(
-        self, source_records: list[tuple]
+        self, source_records: Sequence[Row[Any]]
     ) -> list[dict]:
         """Format raw source records into dictionaries."""
 
@@ -233,69 +229,80 @@ Interpret this pathology report:
         """Executes a sequence of function calls to call the Ollama API
         and process the results."""
 
-        raw_response: requests.Response = self._query_ollama_endpoint(
-            model, prompt
-        )
+        raw_response: str = self._query_openai_endpoint(model, prompt)
         processed_response = self._process_response(raw_response)
         return self._parse_json(
             model, text=processed_response, case_id=case_id
         )
 
-    def _query_ollama_endpoint(
-        self, model: str, prompt: str
-    ) -> requests.Response:
-        """Function to configure the Ollama call, and call it when supplied a
-        # noqa: E501prompt."""
-
-        # data = {"model": "llama2", "prompt": prompt}
-        # data =  {"model": "mistral:7b-instruct-v0.2-fp16", "prompt": prompt}
-        # data =  {"model": "mixtral:8x7b-instruct-v0.1-fp16", "prompt": prompt}  # noqa: E501
-        # data =  {"model": "llama3:70b-instruct-fp16", "prompt": prompt}
-        # data =  {"model": "llama3:8b-instruct-fp16", "prompt": prompt}
-        # data = {"model": "phi3:3.8b-mini-instruct-4k-fp16", "prompt": prompt}
-
-        url = "[model_host_url]"
+    def _query_openai_endpoint(self, model: str, prompt: str) -> str:
+        url = "https://cdai-llm.ccf.org/api/chat/completions"
 
         headers = {
             "Authorization": f"Bearer {self._api_token}",
             "Content-Type": "application/json",
         }
 
-        prompt: str = f"{self.PREFIX}{prompt}"
+        prompt = f"{self.PREFIX}{prompt}"
 
-        data = {
+        payload = {
             "model": model,
-            "stream": True,
-            "prompt": prompt,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+            "temperature": 0,
+            "top_p": 0.1,
         }
+
         response = requests.post(
             url,
-            data=json.dumps(data),
+            json=payload,
             headers=headers,
-            stream=True,
-            verify=self._certificates_directory / "[model_host_cert]",
+            timeout=3 * 60,
+            verify=str(
+                self._certificates_directory / "ollama-ccf-org-chain.pem"
+            ),
         )
+        response.raise_for_status()
 
-        if response.status_code != 200:
-            raise Exception(f"Error in API call: {response.status_code}")
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
-        return response
+    def _process_response(self, raw_response: str) -> str:
+        """Normalize model output into a JSON-like string.
 
-    def _process_response(self, raw_response: requests.Response) -> str:
-        """Processes the response from the API, decoding the JSON"""
+        Handles plain JSON, markdown-fenced JSON, and escaped newline formats.
+        """
 
-        response_list = []
-        for line in raw_response.iter_lines():
-            if line:
-                try:
-                    response_json = json.loads(line.decode("utf-8"))
-                    response_final = response_json.get("response", "")
-                    response_list.append(response_final)
-                    if response_json.get("done", False):
-                        break
-                except json.JSONDecodeError:
-                    continue
-        return "".join(response_list)
+        if not raw_response:
+            return ""
+
+        response_text: str = raw_response.strip()
+
+        # Extract from markdown code fences when present (```json ... ```)
+        fenced_json_match = re.search(
+            r"```(?:json)?\s*([\s\S]*?)\s*```",
+            response_text,
+            re.IGNORECASE,
+        )
+        if fenced_json_match:
+            response_text = fenced_json_match.group(1).strip()
+
+        # Convert escaped newlines/tabs (e.g., "{\\n  ... \\n}")
+        # into real text.
+        if "\\n" in response_text or "\\t" in response_text:
+            try:
+                response_text = response_text.encode("utf-8").decode(
+                    "unicode_escape"
+                )
+            except UnicodeDecodeError:
+                pass
+
+        # Return only the JSON object portion if extra text is present.
+        json_str_match = re.search(r"\{[\s\S]*\}", response_text)
+        if json_str_match:
+            return json_str_match.group(0).strip()
+
+        return response_text
 
     def _parse_json(self, model: str, text: str, case_id: int) -> str | None:
         """This function finds the 'is_malignant' data element in the
@@ -381,12 +388,10 @@ Interpret this pathology report:
     def _upload_to_piro(self, results: list[dict]) -> None:
         """Write the resulting annotations to the PIRO database."""
 
-        insert_query = text(
-            """
+        insert_query = text("""
             INSERT INTO AnnotationData (CaseId, ModelName, AnnotationValue, AnnotationKey, CreateDate, CreateBy)
             VALUES (:CaseId, :ModelName, :AnnotationValue, :AnnotationKey, :CreateDate, :CreateBy)
-            """  # noqa: E501
-        )
+            """)  # noqa:E501
 
         with self._piro_db_engine.connect() as connection:
             connection.execute(insert_query, results)
@@ -398,12 +403,10 @@ Interpret this pathology report:
 
         if self._errors:
 
-            insert_query = text(
-                """
+            insert_query = text("""
                 INSERT INTO AnnotationDataError (CaseId, ModelName, AnnotationKey, ErrorMessage, CreateDate, CreateBy)
                 VALUES (:CaseId, :ModelName, :AnnotationKey, :ErrorMessage, :CreateDate, :CreateBy)
-                """  # noqa: E501
-            )
+                """)  # noqa:E501
 
             with self._piro_db_engine.connect() as connection:
                 connection.execute(insert_query, self._errors)

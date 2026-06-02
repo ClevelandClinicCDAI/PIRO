@@ -7,8 +7,7 @@ Original version created on Tue Apr 16 10:50:21 2024
 @author: roberts10
 """
 
-from airflow.decorators import task
-from airflow.utils.trigger_rule import TriggerRule
+from airflow.sdk import task, TriggerRule
 from tasks.annotators.malignant_annotator import MalignantAnnotator
 
 
