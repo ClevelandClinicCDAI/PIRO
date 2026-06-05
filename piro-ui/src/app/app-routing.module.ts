@@ -49,6 +49,7 @@ import { CohortComponent } from './components/cohort/cohort.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
@@ -90,6 +91,12 @@ const routes: Routes = [
 
   {
     path: 'etl-logs', component: EtllogsComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN']
+    }
+  },
+  {
+    path: 'email-users', component: EmailUsersComponent, canActivate: [AuthGuard],
     data: {
       role: ['ADMIN', 'DEMOADMIN']
     }

@@ -13,6 +13,7 @@ CREATE TABLE [SlideRequest](
 	[SlideRoomNotes] [varchar](2000) NULL,
 	[Status] [varchar](50) NOT NULL CONSTRAINT [DF_SlideRequest_Status] DEFAULT ('PENDING'),
 	[UrgencyStatus] [varchar](20) NOT NULL,
+	[Reason] [varchar](50) NULL,
 	[RequesterId] [int] NOT NULL,
 	[CompletedById] [int] NULL,
 	[InProcessById] [int] NULL,

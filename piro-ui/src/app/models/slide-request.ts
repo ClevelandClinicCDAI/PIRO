@@ -1,4 +1,5 @@
-export type SlideRequestUrgency = 'SameDay' | 'Routine';
+export type SlideRequestUrgency = 'Priority' | 'Routine';
+export type SlideRequestReason = 'Sign Out' | 'Additional Testing' | 'Cap Inspection' | 'Conference' | 'QA' | 'Send Outs' | 'Tumor Board' | 'Validation';
 export type SlideRequestCaseType = 'Surgical' | 'Cytology';
 
 export interface SlideRequest {
@@ -6,6 +7,7 @@ export interface SlideRequest {
   accessionNumber: string;
   caseType: SlideRequestCaseType;
   ePath?: boolean | null;
+  reason?: string | null;
   requesterNotes?: string | null;
   slideRoomNotes?: string | null;
   status: string;
@@ -22,6 +24,7 @@ export interface SlideRequest {
 export interface SlideRequestFormPayload {
   accessionNumber: string;
   urgencyStatus: SlideRequestUrgency;
+  reason: SlideRequestReason;
   ePath?: boolean;
   requesterNotes?: string;
 }

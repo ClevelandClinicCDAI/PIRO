@@ -28,7 +28,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
   holdingErrorMessage = '';
   completedErrorMessage = '';
   urgencyLabels: Record<SlideRequestUrgency, string> = {
-    SameDay: 'Same Day',
+    Priority: 'Priority',
     Routine: 'Routine'
   };
   caseTypeLabels: Record<SlideRequestCaseType, string> = {
@@ -235,7 +235,7 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
   }
 
   getUrgencyBadgeClasses(urgency: SlideRequestUrgency | undefined) {
-    if (urgency === 'SameDay') {
+    if (urgency === 'Priority') {
       return 'badge rounded-pill bg-danger urgency-badge';
     }
     if (urgency === 'Routine') {

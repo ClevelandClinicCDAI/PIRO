@@ -26,8 +26,18 @@ class Constants:
         CANCELED = "CANCELED"
 
     class SlideRequestUrgency(str, Enum):
-        SAMEDAY = "SameDay"
+        PRIORITY = "Priority"
         ROUTINE = "Routine"
+
+    class SlideRequestReason(str, Enum):
+        SIGN_OUT = "Sign Out"
+        ADDITIONAL_TESTING = "Additional Testing"
+        CAP_INSPECTION = "Cap Inspection"
+        CONFERENCE = "Conference"
+        QA = "QA"
+        SEND_OUTS = "Send Outs"
+        TUMOR_BOARD = "Tumor Board"
+        VALIDATION = "Validation"
 
     class SlideRequestCaseType(str, Enum):
         SURGICAL = "Surgical"

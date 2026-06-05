@@ -31,6 +31,7 @@ def derive_slide_request_case_type(
 class SlideRequestCreateVM(BaseModel):
     accessionNumber: str = Field(..., min_length=1, max_length=500)
     urgencyStatus: Constants.SlideRequestUrgency
+    reason: Constants.SlideRequestReason
     ePath: bool = Field(default=False)
     requesterNotes: Optional[str] = Field(default=None, max_length=2000)
 
@@ -77,6 +78,7 @@ class SlideRequestVM(BaseModel):
     caseType: Constants.SlideRequestCaseType
     ePath: bool
     requesterNotes: Optional[str]
+    reason: Optional[str]
     status: str
     urgencyStatus: Constants.SlideRequestUrgency
     requestedAt: datetime
@@ -119,6 +121,7 @@ def to_slide_request_vm(request: "SlideRequest") -> SlideRequestVM:
         caseType=request.CaseType,
         ePath=bool(request.EPath),
         requesterNotes=request.Notes,
+        reason=request.Reason,
         status=request.Status,
         urgencyStatus=request.UrgencyStatus,
         requestedAt=request.CreateDate,

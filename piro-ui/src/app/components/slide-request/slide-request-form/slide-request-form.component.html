@@ -14,7 +14,7 @@
                     class="form-control"
                     rows="3"
                     id="accessionNumber"
-                    placeholder="Enter accession(s) e.g. S24-0001 or C24-0007 (comma-separated for multiple)"
+                    placeholder="Enter accession(s) e.g. S24-0001 or C24-0007 (comma or newline separated for multiple)"
                     formControlName="accessionNumber"
                     [ngClass]="{ 'is-invalid': submitting && f['accessionNumber'].errors }"
                   ></textarea>
@@ -22,7 +22,7 @@
                     <div *ngIf="f['accessionNumber'].errors?.['required']">Accession number is required</div>
                     <div *ngIf="f['accessionNumber'].errors?.['maxlength']">Accession number exceeds max length</div>
                   </div>
-                  <small class="text-muted">Format: AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits). Use commas to submit multiple requests (max 25).</small>
+                  <small class="text-muted">Format: AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits). Use commas or newlines to submit multiple requests (max 25).</small>
                 </div>
               </div>
 
@@ -53,6 +53,24 @@
                   </select>
                   <div *ngIf="submitting && f['urgencyStatus'].errors" class="invalid-feedback">
                     <div *ngIf="f['urgencyStatus'].errors?.['required']">Urgency is required</div>
+                  </div>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label for="reason">Reason <span class="text-danger">*</span></label>
+                  <select
+                    id="reason"
+                    class="form-control"
+                    formControlName="reason"
+                    [ngClass]="{ 'is-invalid': submitting && f['reason'].errors }"
+                  >
+                    <option value="">Select a reason</option>
+                    <option *ngFor="let option of reasonOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="submitting && f['reason'].errors" class="invalid-feedback">
+                    <div *ngIf="f['reason'].errors?.['required']">Reason is required</div>
                   </div>
                 </div>
 
@@ -108,6 +126,7 @@
                   <tr>
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
+                    <th scope="col">Reason</th>
                     <th scope="col">Requester Notes</th>
                     <th scope="col">Slide Room Notes</th>
                     <th scope="col">Requested</th>
@@ -122,6 +141,7 @@
                       <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
+                    <td>{{ request.reason || '-' }}</td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ request.requestedAt | date: 'short' }}</td>
@@ -148,6 +168,7 @@
                   <tr>
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
+                    <th scope="col">Reason</th>
                     <th scope="col">Requester Notes</th>
                     <th scope="col">Slide Room Notes</th>
                     <th scope="col">Status</th>
@@ -162,6 +183,7 @@
                       <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
+                    <td>{{ request.reason || '-' }}</td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ getStatusLabel(request.status) }}</td>

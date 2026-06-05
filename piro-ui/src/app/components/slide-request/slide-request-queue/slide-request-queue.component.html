@@ -45,6 +45,7 @@
                       </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Reason:</strong> {{ request.reason || '-' }}</p>
                       <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
@@ -96,6 +97,7 @@
                       </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Reason:</strong> {{ request.reason || '-' }}</p>
                       <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
@@ -151,6 +153,7 @@
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
                       <p class="mb-1"><strong>Taken By:</strong> {{ request.takenBy || '-' }}</p>
+                      <p class="mb-1"><strong>Reason:</strong> {{ request.reason || '-' }}</p>
                       <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
@@ -203,6 +206,7 @@
                       </h6>
                       <p class="mb-1"><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></p>
                       <p class="mb-1"><strong>Requester:</strong> {{ request.requestedBy || '-' }}</p>
+                      <p class="mb-1"><strong>Reason:</strong> {{ request.reason || '-' }}</p>
                       <p class="mb-1"><strong>Requester Notes:</strong> {{ request.requesterNotes || '-' }}</p>
                     </div>
                     <div class="btn-group btn-group-sm">
@@ -254,6 +258,7 @@
                     <tr>
                       <th scope="col">Accession</th>
                       <th scope="col">Urgency</th>
+                      <th scope="col">Reason</th>
                       <th scope="col">Status</th>
                       <th scope="col">Requester</th>
                       <th scope="col">Taken By</th>
@@ -270,6 +275,7 @@
                         <span *ngIf="request.ePath" class="badge rounded-pill bg-info text-dark ms-2">ePath</span>
                       </td>
                       <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
+                      <td>{{ request.reason || '-' }}</td>
                       <td>{{ getStatusLabel(request.status) }}</td>
                       <td>{{ request.requestedBy || '-' }}</td>
                       <td>{{ request.takenBy || '-' }}</td>
