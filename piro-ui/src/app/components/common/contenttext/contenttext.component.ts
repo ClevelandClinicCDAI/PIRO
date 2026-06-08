@@ -1,6 +1,7 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { EMFJS, RTFJS, WMFJS } from 'rtf.js';
 @Component({
+  standalone: false,
   selector: '[app-contenttext]',
   templateUrl: './contenttext.component.html',
   styleUrls: ['./contenttext.component.css'],

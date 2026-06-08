@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-create-role',
   templateUrl: './create-role.component.html',
   styleUrls: ['./create-role.component.css']

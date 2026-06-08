@@ -9,6 +9,7 @@ import { SearchService } from '../../../services/search.service';
 import { CohortService } from '../../../services/cohort.service';
 
 @Component({
+  standalone: false,
 	selector: 'app-addcohort',
 	templateUrl: './addcohort.component.html',
 	styleUrls: ['./addcohort.component.css']

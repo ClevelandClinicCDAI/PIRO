@@ -9,6 +9,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { AireviewcasedetailComponent } from '../modal/aireviewcasedetail/aireviewcasedetail.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 @Component({
+  standalone: false,
   selector: 'app-aireviews',
   templateUrl: './aireviews.component.html',
   styleUrls: ['./aireviews.component.css']

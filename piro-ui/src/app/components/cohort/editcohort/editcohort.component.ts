@@ -9,6 +9,7 @@ import { LocalStorageService } from '../../../services/localStorage.service';
 import { SearchService } from '../../../services/search.service';
 import { CohortService } from 'src/app/services/cohort.service';
 @Component({
+  standalone: false,
 	selector: 'app-editcohort',
 	templateUrl: './editcohort.component.html',
 	styleUrls: ['./editcohort.component.css']

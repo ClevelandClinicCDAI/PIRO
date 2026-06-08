@@ -16,6 +16,7 @@ import { Options } from "@angular-slider/ngx-slider";
 import { Common } from '../../../helpers/common';
 import { MrnModalComponent } from '../../modal/mrn-modal/mrn-modal.component';
 @Component({
+  standalone: false,
 	selector: 'app-filter',
 	templateUrl: './filter.component.html',
 	styleUrls: ['./filter.component.css'],

@@ -63,6 +63,7 @@ export const VALIDATOR: any = {
 };
 
 @Component({
+  standalone: false,
   selector: 'query-builder',
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss'],

@@ -15,6 +15,7 @@ import { SynopticCopathComponent } from '../../common/synoptic-copath/synoptic-c
 import { SynopticEpicComponent } from '../../common/synoptic-epic/synoptic-epic.component';
 import { ToastrService } from 'ngx-toastr';
 @Component({
+  standalone: false,
   selector: 'app-result',
   templateUrl: './result.component.html',
   styleUrls: ['./result.component.css']

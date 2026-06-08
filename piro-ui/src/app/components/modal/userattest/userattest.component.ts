@@ -5,6 +5,7 @@ import { FilterService } from '../../../services/filter.service';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { LocalStorageService } from '../../../services/localStorage.service';
 @Component({
+  standalone: false,
 	selector: 'app-userattest',
 	templateUrl: './userattest.component.html',
 	styleUrls: ['./userattest.component.css']

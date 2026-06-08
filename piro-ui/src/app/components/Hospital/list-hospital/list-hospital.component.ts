@@ -7,6 +7,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-list-hospital',
   templateUrl: './list-hospital.component.html',
   styleUrls: ['./list-hospital.component.css']

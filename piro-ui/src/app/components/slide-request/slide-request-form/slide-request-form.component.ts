@@ -5,6 +5,7 @@ import { SlideRequestService } from 'src/app/services/slide-request.service';
 import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
+  standalone: false,
   selector: 'app-slide-request-form',
   templateUrl: './slide-request-form.component.html',
   styleUrls: ['./slide-request-form.component.css']

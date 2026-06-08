@@ -2,6 +2,7 @@ import { Directive, ElementRef, Input } from '@angular/core';
 import { SearchService } from '../services/search.service';
 
 @Directive({
+  standalone: false,
   selector: '[appTagDisplay]',
   providers: [SearchService]
 })

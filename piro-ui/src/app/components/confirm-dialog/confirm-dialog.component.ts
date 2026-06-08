@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';  
 
 @Component({
+  standalone: false,
   selector: 'app-confirm-dialog',
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.css']

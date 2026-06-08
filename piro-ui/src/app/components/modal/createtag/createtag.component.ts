@@ -9,6 +9,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { TagComponent } from '../tag/tag.component';
 
 @Component({
+  standalone: false,
   selector: 'app-createtag',
   templateUrl: './createtag.component.html',
   styleUrls: ['./createtag.component.css']

@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-update-search-request-status',
   templateUrl: './update-search-request-status.component.html',
   styleUrls: ['./update-search-request-status.component.css']

@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-update-race',
   templateUrl: './update-race.component.html',
   styleUrls: ['./update-race.component.css']

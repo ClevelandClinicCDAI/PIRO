@@ -7,6 +7,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-list-specimen-source',
   templateUrl: './list-specimen-source.component.html',
   styleUrls: ['./list-specimen-source.component.css']

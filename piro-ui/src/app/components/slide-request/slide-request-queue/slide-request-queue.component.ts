@@ -4,6 +4,7 @@ import { SlideRequestService } from 'src/app/services/slide-request.service';
 import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
+  standalone: false,
   selector: 'app-slide-request-queue',
   templateUrl: './slide-request-queue.component.html',
   styleUrls: ['./slide-request-queue.component.css']

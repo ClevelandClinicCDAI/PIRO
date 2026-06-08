@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { AivoteService } from '../../../services/aivote.service';
 
 @Component({
+  standalone: false,
 	selector: 'app-ai-vote',
 	templateUrl: './ai-vote.component.html',
 	styleUrls: ['./ai-vote.component.css']

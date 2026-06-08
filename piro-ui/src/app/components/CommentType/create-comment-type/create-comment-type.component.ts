@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-create-comment-type',
   templateUrl: './create-comment-type.component.html',
   styleUrls: ['./create-comment-type.component.css']

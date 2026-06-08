@@ -4,6 +4,7 @@ import { ReportService } from '../../../../app/services/report.service';
 import { ToastrService } from 'ngx-toastr';
 //https://www.freecodecamp.org/news/how-to-integrate-chart-js-in-angular-using-data-from-a-rest-api/
 @Component({
+  standalone: false,
   selector: 'app-audit-report',
   templateUrl: './audit-report.component.html',
   styleUrls: ['./audit-report.component.css']

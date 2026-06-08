@@ -9,6 +9,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
+  standalone: false,
   selector: 'app-tag',
   templateUrl: './tag.component.html',
   styleUrls: ['./tag.component.css']

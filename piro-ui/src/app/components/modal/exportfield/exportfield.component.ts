@@ -6,6 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ExtractRequestService } from '../../../services/extract-request.service';
 
 @Component({
+  standalone: false,
   selector: 'app-exportfield',
   templateUrl: './exportfield.component.html',
   styleUrls: ['./exportfield.component.css']

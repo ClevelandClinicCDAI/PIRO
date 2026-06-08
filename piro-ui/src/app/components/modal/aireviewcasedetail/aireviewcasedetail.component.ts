@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
+  standalone: false,
   selector: 'app-aireviewcasedetail',
   templateUrl: './aireviewcasedetail.component.html',
   styleUrls: ['./aireviewcasedetail.component.css']

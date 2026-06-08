@@ -5,6 +5,7 @@ import { UserService } from '../../../../services/user.service';
 import { ConfirmDialogService } from '../../../../services/confirm-dialog.service';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 @Component({
+  standalone: false,
   selector: 'app-user',
   templateUrl: './user.component.html',
   styleUrls: ['./user.component.css']

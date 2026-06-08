@@ -1,6 +1,7 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: '[app-commenttext]',
   templateUrl: './comment-text.component.html',
   styleUrls: ['./comment-text.component.css'],

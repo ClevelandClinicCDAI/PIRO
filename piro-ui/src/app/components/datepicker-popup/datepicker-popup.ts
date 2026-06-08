@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 
 @Component({
+  standalone: false,
 	selector: 'app-datepicker-popup',
 	standalone: true,
 	imports: [NgbDatepickerModule, NgbAlertModule, FormsModule, JsonPipe],

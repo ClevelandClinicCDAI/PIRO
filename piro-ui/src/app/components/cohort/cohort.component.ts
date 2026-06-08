@@ -12,6 +12,7 @@ import { CohortService } from '../../services/cohort.service';
 import { HttpResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 @Component({
+  standalone: false,
   selector: 'app-cohort',
   templateUrl: './cohort.component.html',
   styleUrls: ['./cohort.component.css']

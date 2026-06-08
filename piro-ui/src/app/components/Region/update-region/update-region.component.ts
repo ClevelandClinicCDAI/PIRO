@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-update-region',
   templateUrl: './update-region.component.html',
   styleUrls: ['./update-region.component.css']

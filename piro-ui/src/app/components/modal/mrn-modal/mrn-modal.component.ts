@@ -6,6 +6,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
+  standalone: false,
   selector: 'app-mrn-modal',
   templateUrl: './mrn-modal.component.html',
   styleUrls: ['./mrn-modal.component.css']

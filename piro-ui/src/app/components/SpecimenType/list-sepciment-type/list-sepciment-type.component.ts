@@ -7,6 +7,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-list-sepciment-type',
   templateUrl: './list-sepciment-type.component.html',
   styleUrls: ['./list-sepciment-type.component.css']

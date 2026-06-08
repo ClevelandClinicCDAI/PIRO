@@ -8,6 +8,7 @@ import { LocalStorageService } from '../../../services/localStorage.service';
 import { ToastrService } from 'ngx-toastr';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 @Component({
+  standalone: false,
   selector: 'app-advancedsearchmodal',
   templateUrl: './advancedsearchmodal.component.html',
   styleUrls: ['./advancedsearchmodal.component.css']

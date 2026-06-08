@@ -10,6 +10,7 @@ import { UserattestComponent } from '../modal/userattest/userattest.component';
 import { ToastrService } from 'ngx-toastr';
 declare var $: any;
 @Component({
+  standalone: false,
 	selector: 'app-login',
 	templateUrl: './login.component.html',
 	styleUrls: ['./login.component.css']

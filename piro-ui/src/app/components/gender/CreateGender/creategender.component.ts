@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-creategender',
   templateUrl: './creategender.component.html',
   styleUrls: ['./creategender.component.css']

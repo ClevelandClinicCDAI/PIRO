@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-create-region',
   templateUrl: './create-region.component.html',
   styleUrls: ['./create-region.component.css']

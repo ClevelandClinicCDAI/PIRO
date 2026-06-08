@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-update-comment-type',
   templateUrl: './update-comment-type.component.html',
   styleUrls: ['./update-comment-type.component.css']

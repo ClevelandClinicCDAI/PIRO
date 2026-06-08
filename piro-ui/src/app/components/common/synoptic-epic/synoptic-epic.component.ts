@@ -4,6 +4,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
+  standalone: false,
   selector: 'app-synoptic-epic',
   templateUrl: './synoptic-epic.component.html',
   styleUrls: ['./synoptic-epic.component.css']
