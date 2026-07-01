@@ -3,6 +3,7 @@ from apis.version1 import (
     route_casecomment,
     route_commentType,
     route_cohort,
+    route_email_users,
     route_ethnicity,
     route_etl_log,
     route_gender,
@@ -108,6 +109,11 @@ api_router.include_router(
 )
 api_router.include_router(
     route_concentriq.router, prefix="/concentriq", tags=["Concentriq"]
+)
+api_router.include_router(
+    route_email_users.router,
+    prefix="/email-users",
+    tags=["Email Users"],
 )
 api_router.include_router(
     route_slide_request.router,

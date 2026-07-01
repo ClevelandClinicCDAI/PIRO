@@ -115,6 +115,7 @@ import { AireviewcasedetailComponent } from './components/modal/aireviewcasedeta
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
 
 export function initializeApp(appConfigService: AppConfigService) {
   return () => appConfigService.loadConfig();
@@ -209,7 +210,8 @@ export function initializeApp(appConfigService: AppConfigService) {
     AireviewcasedetailComponent,
     UserattestComponent,
     SlideRequestFormComponent,
-    SlideRequestQueueComponent
+    SlideRequestQueueComponent,
+    EmailUsersComponent
   ],
   imports: [
     CommonModule,

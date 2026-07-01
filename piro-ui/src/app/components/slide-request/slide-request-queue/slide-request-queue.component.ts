@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { SlideRequest, SlideRequestUrgency } from 'src/app/models/slide-request';
+import { SlideRequest, SlideRequestCaseType, SlideRequestUrgency } from 'src/app/models/slide-request';
 import { SlideRequestService } from 'src/app/services/slide-request.service';
 import { ToastService } from 'src/app/services/toast.service';
 
@@ -10,6 +10,7 @@ import { ToastService } from 'src/app/services/toast.service';
 })
 export class SlideRequestQueueComponent implements OnInit, OnDestroy {
   private readonly completedRequestLimit = 100;
+  activeCaseType: SlideRequestCaseType = 'Surgical';
   pendingRequests: SlideRequest[] = [];
   ePathRequests: SlideRequest[] = [];
   inProcessRequests: SlideRequest[] = [];
@@ -27,8 +28,12 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
   holdingErrorMessage = '';
   completedErrorMessage = '';
   urgencyLabels: Record<SlideRequestUrgency, string> = {
-    SameDay: 'Same Day',
+    Priority: 'Priority',
     Routine: 'Routine'
+  };
+  caseTypeLabels: Record<SlideRequestCaseType, string> = {
+    Surgical: 'Surgical (S)',
+    Cytology: 'Cytology (C)'
   };
   private refreshTimer: any;
   private readonly refreshIntervalMs = 300000;
@@ -58,10 +63,10 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     this.completedErrorMessage = '';
 
     const [pendingResult, inProcessResult, holdingResult, completedResult]: any = await Promise.all([
-      this.slideRequestService.getPendingRequests(),
-      this.slideRequestService.getInProcessRequests(),
-      this.slideRequestService.getHoldingRequests(),
-      this.slideRequestService.getCompletedRequests()
+      this.slideRequestService.getPendingRequests(this.activeCaseType),
+      this.slideRequestService.getInProcessRequests(this.activeCaseType),
+      this.slideRequestService.getHoldingRequests(this.activeCaseType),
+      this.slideRequestService.getCompletedRequests(this.activeCaseType)
     ]);
 
     this.isLoadingPending = false;
@@ -94,6 +99,14 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     } else {
       this.completedErrorMessage = 'Unable to load completed slide requests.';
     }
+  }
+
+  async setCaseType(caseType: SlideRequestCaseType) {
+    if (this.activeCaseType === caseType) {
+      return;
+    }
+    this.activeCaseType = caseType;
+    await this.loadRequests();
   }
 
   async markCompleted(request: SlideRequest) {
@@ -214,8 +227,15 @@ export class SlideRequestQueueComponent implements OnInit, OnDestroy {
     return 'Unknown';
   }
 
+  getCaseTypeLabel(caseType: SlideRequestCaseType | undefined) {
+    if (caseType && this.caseTypeLabels[caseType]) {
+      return this.caseTypeLabels[caseType];
+    }
+    return 'Unknown';
+  }
+
   getUrgencyBadgeClasses(urgency: SlideRequestUrgency | undefined) {
-    if (urgency === 'SameDay') {
+    if (urgency === 'Priority') {
       return 'badge rounded-pill bg-danger urgency-badge';
     }
     if (urgency === 'Routine') {

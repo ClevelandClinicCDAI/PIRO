@@ -1,11 +1,51 @@
 from datetime import datetime
 
+from core.config import Settings
 from core.constants import Constants
+from core.email import Email
 from db.models.SlideRequest import SlideRequest
 from exception.data_exception import DataException
+from logger import logger
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload
-from viewmodel.slide_request import SlideRequestCreateVM, SlideRoomNotesUpdateVM
+from viewmodel.slide_request import (
+    SlideRequestCreateVM,
+    SlideRoomNotesUpdateVM,
+    derive_slide_request_case_type,
+)
+
+
+def _send_slide_request_completed_email(request: SlideRequest):
+    if not Settings.EMAIL_SMTP_SERVER or not Settings.EMAIL_FROM:
+        logger.warning(
+            "Slide request completion email skipped for request %s because email settings are not configured.",
+            request.SlideRequestId,
+        )
+        return
+
+    requester = request.Requester
+    requester_nuid = getattr(requester, "NUID", None)
+    if not requester_nuid:
+        logger.warning(
+            "Slide request completion email skipped for request %s because the requester NUID is missing.",
+            request.SlideRequestId,
+        )
+        return
+
+    recipient = f"{requester_nuid}@ccf.org"
+    subject = f"PIRO: Slide request completed - {request.AccessionNumber}"
+    html_body = f"""
+    <html>
+      <body>
+        <p>Your slide request has been completed.</p>
+        <p><strong>Accession Number:</strong> {request.AccessionNumber}</p>
+        <p>You can review the request in PIRO for any slide room notes.</p>
+      </body>
+    </html>
+    """
+
+    email_obj = Email(subject=subject, html_body=html_body)
+    email_obj.send(to=recipient, cc=None, bcc=None)
 
 
 def create_slide_request(
@@ -13,9 +53,11 @@ def create_slide_request(
 ):
     request = SlideRequest(
         AccessionNumber=input.accessionNumber.strip(),
+        CaseType=derive_slide_request_case_type(input.accessionNumber).value,
         Notes=input.requesterNotes.strip() if input.requesterNotes else None,
         EPath=bool(input.ePath),
         UrgencyStatus=input.urgencyStatus,
+        Reason=input.reason,
         RequesterId=user_id,
         Status=Constants.SlideRequestStatus.PENDING.value,
         CreateBy=user,
@@ -30,6 +72,7 @@ def list_slide_requests(
     db: Session,
     statuses: list[str] | None = None,
     requester_id: int | None = None,
+    case_type: Constants.SlideRequestCaseType | None = None,
     order_by_completed_desc: bool = False,
     limit: int | None = None,
 ):
@@ -43,6 +86,8 @@ def list_slide_requests(
         query = query.filter(SlideRequest.Status.in_(statuses))
     if requester_id:
         query = query.filter(SlideRequest.RequesterId == requester_id)
+    if case_type:
+        query = query.filter(SlideRequest.CaseType == case_type.value)
     if order_by_completed_desc:
         query = query.order_by(
             desc(SlideRequest.CompletedDate),
@@ -84,6 +129,15 @@ def complete_slide_request(
     request.UpdateBy = user
     db.commit()
     db.refresh(request)
+    try:
+        _send_slide_request_completed_email(request)
+    except Exception as exc:
+        logger.error(
+            "Slide request completion email failed for request %s <%s : %s>",
+            request.SlideRequestId,
+            str(exc),
+            exc.args,
+        )
     return request
 
 
