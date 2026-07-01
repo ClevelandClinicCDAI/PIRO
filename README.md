@@ -54,6 +54,31 @@ You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the 
 - Docker Desktop **or** the Docker Engine CLI plus the Compose plugin (`docker compose`).
 - ~8 GB of free RAM (SQL Server + Solr are memory hungry).
 
+### UI configuration file
+
+Before building the `ui` image you must create `piro-ui/src/assets/config.json`. The Angular app fetches this file at runtime to discover the API base URL and other environment-specific values, and the UI Dockerfile bakes it into the compiled bundle via `COPY piro-ui/ .` — if the file is missing, the built image will 404 on `assets/config.json` and the UI will fail to load.
+
+A template lives at `piro-ui/src/assets/config.example.json`. Copy it and edit the values:
+
+macOS / Linux:
+
+```bash
+cp piro-ui/src/assets/config.example.json piro-ui/src/assets/config.json
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item piro-ui\src\assets\config.example.json piro-ui\src\assets\config.json
+```
+
+Then open `piro-ui/src/assets/config.json` and set:
+
+- `apiBaseUrl` – URL the browser uses to reach the FastAPI backend. For the local Compose stack use `http://localhost:8080/` (nginx in the `ui` container proxies `/api` to the `api` service). For a direct-to-API setup use `http://localhost:8001/`.
+- `irbDisclaimerText` – the disclaimer string shown in the UI. Substitute your institution's wording.
+
+> **Note:** `piro-ui/src/assets/config.json` is gitignored (`piro-ui/.gitignore`) so environment-specific values never end up in version control. Recreate the file on every clean checkout, and rebuild the `ui` image (`docker compose build ui`) after any change to it.
+
 ### One-time bootstrap with sample data
 
 macOS / Linux:
@@ -92,6 +117,54 @@ Behind the scenes:
 - `PIRO_SAMPLE_USER_*` – seeds a specific account into SQL + Solr for local testing (`NUID`, `FIRST_NAME`, `LAST_NAME`, `ROLE`).
 - `AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN` – plug real directory settings in when you want LDAP-backed auth inside the API container.
 - `ACCESS_TOKEN_TEST_USER` – comma-separated usernames allowed to bypass LDAP when running locally (unset by default; set explicitly, e.g., `ACCESS_TOKEN_TEST_USER=demo.user`, only when you need the bypass).
+- `AIRFLOW_DAG_COHORT_LOADER_URL` – full URL of the Airflow DAG-run endpoint the API posts to when a user creates a cohort (e.g. `https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns`). Required for cohort creation.
+- `AIRFLOW_USERNAME`, `AIRFLOW_PASSWORD` – credentials the API uses to obtain a JWT bearer token from the Airflow auth endpoint before triggering the DAG. Required for cohort creation.
+- `AIRFLOW_CERTIFICATE` – filename (not path) of the PEM file used to verify TLS against the Airflow host, e.g. `dev-build-piro.ccf.org.pem`. The file must exist inside the API image at `/app/certificates/<filename>` (source: `piro-api/backend/certificates/`). Required for cohort creation.
+
+### Enabling cohort creation (Airflow integration)
+
+The API's `POST /cohort/create` endpoint triggers an Airflow DAG that loads the new cohort into Solr. Two things must be in place:
+
+1. **Certificate file on disk.** Place the PEM used to verify TLS to your Airflow host in `piro-api/backend/certificates/` (see [Providing certificate files](#providing-certificate-files) below for how to obtain and copy the file). Files there are gitignored (`backend/certificates/*.pem`) but are still baked into the API image at build time via `COPY backend /app` — Docker builds do not honor `.gitignore`. Rebuild the API image (`docker compose build api`) after adding or replacing a cert.
+2. **Environment variables.** Set the four `AIRFLOW_*` variables listed above. If any of them are unset or empty, the API returns HTTP 500 with `FileNotFoundError: Certificates directory not found` — the message is misleading; the same error covers a missing cert *and* a missing `AIRFLOW_CERTIFICATE` value.
+
+#### Providing certificate files
+
+The `piro-api/backend/certificates/` directory is where the API expects to find any PEM files it needs to verify TLS connections to external services (currently just the Airflow host used by cohort creation). The directory itself is checked in but its `*.pem` contents are gitignored, so you must supply the file yourself before building the API image.
+
+Steps:
+
+1. **Obtain the PEM.** Ask an administrator for the certificate that matches the Airflow host you plan to talk to (for example, `dev-build-piro.ccf.org.pem` for the dev instance). If you already have the host's cert in another format, convert it to PEM (`openssl x509 -in cert.crt -out cert.pem -outform PEM`).
+2. **Copy it into the repo.** Drop the file into `piro-api/backend/certificates/`. The filename you use here is what you'll set `AIRFLOW_CERTIFICATE` to — no path, just the filename.
+3. **Rebuild the API image** so the new file is baked into `/app/certificates/` inside the container:
+
+    ```bash
+    docker compose build api
+    ```
+
+> **Note:** Never commit `*.pem` files to git. The `.gitignore` entry at `piro-api/.gitignore` (`backend/certificates/*.pem`) already blocks them, but double-check `git status` before committing after touching this directory.
+
+Example (macOS / Linux):
+
+```bash
+AIRFLOW_CERTIFICATE=dev-build-piro.ccf.org.pem \
+AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns" \
+AIRFLOW_USERNAME=<user> \
+AIRFLOW_PASSWORD=<password> \
+docker compose up --no-deps api ui
+```
+
+Example (Windows PowerShell):
+
+```powershell
+$env:AIRFLOW_CERTIFICATE="dev-build-piro.ccf.org.pem"
+$env:AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns"
+$env:AIRFLOW_USERNAME="<user>"
+$env:AIRFLOW_PASSWORD="<password>"
+docker compose up --no-deps api ui
+```
+
+Only env changed? No rebuild needed — `docker compose up` picks up new values on container recreate.
 
 Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` in your shell or `.env` file before running `docker compose up`, then sign in via the UI as `demo.user` with any password. Leave this variable unset in shared or production-like environments to avoid enabling the bypass.
 

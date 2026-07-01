@@ -23,7 +23,13 @@ services:
     ports:
       - "8983:8983"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8983/solr/admin/cores?action=STATUS"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8983/solr/admin/cores?action=STATUS",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -89,6 +95,10 @@ services:
       EXCEL_Cohort_MRN_Template_FILE: PIRO_Cohort_MRN_Template.xlsx
       EXCEL_Cohort_Case_Template_FILE: PIRO_Cohort_Case_Template.xlsx
       EXCEL_Cohort_EID_Template_FILE: PIRO_Cohort_EID_Template.xlsx
+      AIRFLOW_USERNAME: ${AIRFLOW_USERNAME:-}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-}
+      AIRFLOW_DAG_COHORT_LOADER_URL: ${AIRFLOW_DAG_COHORT_LOADER_URL:-}
+      AIRFLOW_CERTIFICATE: ${AIRFLOW_CERTIFICATE:-}
     depends_on:
       sample-data:
         condition: service_completed_successfully
