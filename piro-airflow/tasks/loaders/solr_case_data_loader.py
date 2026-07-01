@@ -10,7 +10,7 @@ from tasks.utils.certificate_setup import get_certificate_path_solr
 from tasks.utils.solr_setup import (
     get_solr_case_data_import_url,
     get_solr_case_data_update_url,
-    get_solr_case_data_update_batch,
+    get_solr_case_update_batch_size,
 )
 from tasks.utils.solr_setup import get_solr_case_status_url
 from tasks.utils.solr_setup import get_solr_header_auth
@@ -38,7 +38,7 @@ class SolrCaseDataLoader:
         self.solr_status_url = get_solr_case_status_url()
         self.solr_data_count_url = get_solr_case_data_count_url()
         self._certificates_path: str = get_certificate_path_solr()
-        self.solr_update_batch = get_solr_case_data_update_batch()
+        self.batch_size = get_solr_case_update_batch_size()
 
         logger.info("SolrCaseDataLoader constructor-Start")
 
@@ -108,7 +108,7 @@ class SolrCaseDataLoader:
         logger.info("_load_data-End")
         return True
 
-    def _get_trigger_to_process(self) -> bool:
+    def are_there_records_to_load(self) -> bool:
         """Query the V_AIRFLOW_Case_Data_Load view for records to be loaded in SOLR."""  # noqa: E501
         select_query = text(
             """SELECT count(0) From [dbo].[V_AIRFLOW_Case_Data_Load]"""
@@ -147,7 +147,7 @@ class SolrCaseDataLoader:
 
         if data_count_response.status_code != 200:
             raise Exception(
-                f"Error in API data count call: {data_count_response.status_code}"  # noqa: E501
+                f"Error in API data count call: {data_count_response.status_code}"
             )  # noqa: E501
         else:
             data_count = data_count_response.json()
@@ -183,18 +183,18 @@ class SolrCaseDataLoader:
 
         return response
 
-    def _reset_case_data(self):
+    def reset_data_for_next_load(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Solr_Delete]""")
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
         return True
 
-    def _close_db_connection(self) -> None:
+    def close_db_connection(self) -> None:
         """Close any connections to the database."""
         self._piro_db_session.close()
         self._piro_db_connection.close()
 
-    def _reload_sql_case_data(self):
+    def delete_solr_staging_data(self):
         sql = text("""EXEC dbo.[P_AIRFLOW_Case_Solr_Delete]""")
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
@@ -203,15 +203,10 @@ class SolrCaseDataLoader:
         self._piro_db_session.execute(sql)
         self._piro_db_session.commit()
 
-        sql = text("""EXEC dbo.[P_ETL_LoadCaseSolr_Delta]""")
-        self._piro_db_session.execute(sql)
-        self._piro_db_session.commit()
-
         return True
 
     def _get_case_data(self, start_key: int, data_record_count: int) -> list:
-        select_query = text(
-            f"""
+        select_query = text(f"""
             declare @queue nvarchar(max)
             select @queue = (
                 Select TOP {int(float(data_record_count))} *
@@ -220,8 +215,7 @@ class SolrCaseDataLoader:
             Order by [caseid]
             FOR JSON PATH)
             select @queue as JSON
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         if data is None:
             return None
@@ -233,13 +227,11 @@ class SolrCaseDataLoader:
             return None
 
     def _get_case_data_key_min(self) -> int:
-        select_query = text(
-            """
+        select_query = text(f"""
             SELECT Min([id]) Min_id, Max([id]) Max_id
             FROM dbo.V_AIRFLOW_Solr_Case
             FOR JSON PATH
-            """
-        )
+            """)
         data = self._piro_db_connection.execute(select_query).scalar()
         try:
             dataJson = json.loads(data)
@@ -248,13 +240,14 @@ class SolrCaseDataLoader:
         except json.JSONDecodeError:
             return None
 
-    def _upload_data_solr(self) -> bool:
-        """Function to call the solr data loader."""
+    def upload_records_to_solr(self) -> bool:
+        """Uploads Case records to Solr."""
+
         key = self._get_case_data_key_min()
         if key is None:
-            return None
+            return False
 
-        data_record_count: int = self.solr_update_batch
+        data_record_count: int = self.batch_size
         process_data: bool = True
         retry_index: int = 0
         while process_data:
@@ -273,16 +266,17 @@ class SolrCaseDataLoader:
             response = requests.post(
                 load_url,
                 headers=headers,
-                verify=self._certificates_path,  # noqa: E501
+                verify=self._certificates_path,
                 data=json.dumps(data),
             )
             logger.info(f"response: {response.status_code}")
 
             if response.status_code != 200:
                 logger.error(
-                    f"Error processing a batch: {response.status_code} {response.text}"  # noqa: E501
+                    f"Error processing a batch: {response.status_code} {response.text}"  # noqa:E501
                 )
-                data_record_count: int = self.solr_update_batch / 10
+                # on error, decrease the batch size by 10 and retry
+                data_record_count: int = round(self.batch_size / 10)
                 retry_index = retry_index + 1
                 if retry_index > 3:
                     raise Exception(
@@ -290,6 +284,6 @@ class SolrCaseDataLoader:
                     )
             else:
                 key = data[-1]["id"]
-                data_record_count: int = self.solr_update_batch
+                data_record_count: int = self.batch_size
                 retry_index = 0
         return True

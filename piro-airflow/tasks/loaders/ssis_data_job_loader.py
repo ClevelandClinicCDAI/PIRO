@@ -21,7 +21,7 @@ class SsisDataJobLoader:
         )
         logger.info("SsisDataJobLoader constructor-End")
 
-    def _run_delta_load_job(self):
+    def run_delta_load(self):
         logger.info("_run_delta_load_job -Start")
         sql = text("EXECUTE msdb.dbo.sp_start_job N'PIRO_Clarity_Delta_Load';")
         # sql = text("""EXECUTE msdb.dbo.sp_start_job N'PIRO_Test_Package';""")
@@ -31,7 +31,7 @@ class SsisDataJobLoader:
         logger.info("_run_delta_load_job -End")
         return True
 
-    def _run_full_load_job(self):
+    def run_full_load(self):
         logger.info("_run_full_load_job -Start")
         sql = text(
             "EXECUTE msdb.dbo.sp_start_job N'PIRO_Clarity_Full_Data_Load';"
@@ -42,7 +42,7 @@ class SsisDataJobLoader:
         logger.info("_run_full_load_job -End")
         return True
 
-    def _close_db_connection(self) -> None:
+    def close_db_connection(self) -> None:
         """Close any connections to the database."""
         self._piro_db_session.close()
         self._piro_db_connection.close()

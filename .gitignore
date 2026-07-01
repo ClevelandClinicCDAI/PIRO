@@ -27,6 +27,8 @@ node_modules/
 dist/
 build/
 
+config.json
+
 *.log
 casecomment_dependency_graph.md
 casecomment_dependency_graph.txt
@@ -38,3 +40,4 @@ artifacts/db-migration/*
 
 # Local region seed extract (environment-specific)
 /Region.csv
+docker-compose.override.yml

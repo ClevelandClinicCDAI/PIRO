@@ -4,7 +4,7 @@
 
 export const environment = {
     production: false,
-    apiBaseUrl: 'http://localhost:8001/',
+    apiBaseUrl: '',
     recordsPerPage: 10,
     debounceTime: 1000,
     filterDataUrl: 'solrtest/filterdata',

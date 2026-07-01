@@ -25,12 +25,12 @@ class Settings:
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "tdd")
     POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"  # noqa:E501
 
-    MSSQL_USER: str | None = quote_plus(os.getenv("MSSQL_USER"))
+    MSSQL_USER: str | None = quote_plus(os.getenv("MSSQL_USER") or "")
     MSSQL_PASSWORD = quote_plus(os.getenv("MSSQL_PASSWORD", ""))
     MSSQL_SERVER: str = os.getenv("MSSQL_SERVER", "localhost")
     MSSQL_DB: str | None = os.getenv("MSSQL_DB")
     MSSQL_WINDOW_AUTH: str | None = os.getenv("MSSQL_WINDOW_AUTH")
-    MSSQL_DRIVER: str | None = quote_plus(os.getenv("MSSQL_DRIVER"))
+    MSSQL_DRIVER: str | None = quote_plus(os.getenv("MSSQL_DRIVER") or "")
     MSSQL_DB_URL_SQL = f"mssql+pyodbc://{MSSQL_USER}:{MSSQL_PASSWORD}@{MSSQL_SERVER}/{MSSQL_DB}?driver={MSSQL_DRIVER}&TrustServerCertificate=yes"  # noqa:E501
     MSSQL_DB_URL_WIN = (
         f"mssql+pyodbc://{MSSQL_SERVER}/{MSSQL_DB}?driver={MSSQL_DRIVER}"
@@ -64,7 +64,9 @@ class Settings:
     AD_LDAP_PATH: str | None = os.getenv("AD_LDAP_PATH")
     AD_SECURITY_GROUP: str | None = os.getenv("AD_SECURITY_GROUP")
     AD_DOMAIN: str | None = os.getenv("AD_DOMAIN")
-    EXCEL_Template_DIRECTORY: str | None = os.getenv("EXCEL_Template_DIRECTORY")
+    EXCEL_Template_DIRECTORY: str | None = os.getenv(
+        "EXCEL_Template_DIRECTORY"
+    )
     EXCEL_Output_DIRECTORY: str | None = os.getenv("EXCEL_Output_DIRECTORY")
     EXCEL_SEARCH_REQUEST_Template_FILE: str | None = os.getenv(
         "EXCEL_SearchRequest_Template_FILE",
@@ -100,7 +102,8 @@ class Settings:
     EMAIL_SMTP_SERVER: str | None = os.getenv("EMAIL_SMTP_SERVER")
     EMAIL_FROM: str | None = os.getenv("EMAIL_FROM")
 
-    AIRFLOW_HEADER_AUTH: str | None = os.getenv("AIRFLOW_HEADER_AUTH")
+    AIRFLOW_USERNAME: str | None = os.getenv("AIRFLOW_USERNAME")
+    AIRFLOW_PASSWORD: str | None = os.getenv("AIRFLOW_PASSWORD")
     AIRFLOW_DAG_COHORT_LOADER_URL: str | None = os.getenv(
         "AIRFLOW_DAG_COHORT_LOADER_URL"
     )
