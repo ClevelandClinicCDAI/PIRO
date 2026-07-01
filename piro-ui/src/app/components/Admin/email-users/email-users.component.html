@@ -1,0 +1,73 @@
+<div class="container pt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow p-4 bg-white rounded">
+        <div class="card-body">
+          <h4 class="card-title text-center mb-4">Email Users</h4>
+          <p class="text-muted text-center mb-4">
+            Send an email to all active PIRO users. Emails are addressed to
+            <strong>NUID&#64;domain</strong>.
+          </p>
+
+          <form [formGroup]="emailForm" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="form-group mb-3">
+              <label for="domain"><strong>Email Domain</strong> <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                id="domain"
+                formControlName="domain"
+                placeholder="e.g. @ccf.org"
+                [ngClass]="{ 'is-invalid': submitted && f['domain'].errors }"
+              />
+              <small class="text-muted">User emails will be constructed as NUID + domain (e.g. jsmith&#64;ccf.org).</small>
+              <div *ngIf="submitted && f['domain'].errors" class="invalid-feedback">
+                <div *ngIf="f['domain'].errors?.['required']">Domain is required</div>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="subject"><strong>Subject</strong> <span class="text-danger">*</span></label>
+              <input
+                type="text"
+                class="form-control"
+                id="subject"
+                formControlName="subject"
+                placeholder="Email subject"
+                [ngClass]="{ 'is-invalid': submitted && f['subject'].errors }"
+              />
+              <div *ngIf="submitted && f['subject'].errors" class="invalid-feedback">
+                <div *ngIf="f['subject'].errors?.['required']">Subject is required</div>
+                <div *ngIf="f['subject'].errors?.['maxlength']">Subject exceeds max length</div>
+              </div>
+            </div>
+
+            <div class="form-group mb-4">
+              <label for="body"><strong>Message</strong> <span class="text-danger">*</span></label>
+              <textarea
+                class="form-control"
+                id="body"
+                rows="10"
+                formControlName="body"
+                placeholder="Type your message here..."
+                [ngClass]="{ 'is-invalid': submitted && f['body'].errors }"
+              ></textarea>
+              <div *ngIf="submitted && f['body'].errors" class="invalid-feedback">
+                <div *ngIf="f['body'].errors?.['required']">Message body is required</div>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary px-5" [disabled]="sending">
+                <span *ngIf="sending" class="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
+                {{ sending ? 'Sending...' : 'Send' }}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

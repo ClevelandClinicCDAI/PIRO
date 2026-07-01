@@ -94,6 +94,7 @@ class Email:
         Send an email.
         """
         # Try to log in to server and send email
+        smtp_obj = None
         try:
             if to:
                 self.email["To"] = to
@@ -127,4 +128,5 @@ class Email:
             # Print any error messages to stdout
             logger.error(f"Send Email " f"<{str(exc)} : {exc.args}>")
         finally:
-            smtp_obj.quit()
+            if smtp_obj is not None:
+                smtp_obj.quit()

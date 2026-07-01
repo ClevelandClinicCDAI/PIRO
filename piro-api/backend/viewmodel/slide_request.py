@@ -14,9 +14,24 @@ if TYPE_CHECKING:  # pragma: no cover
 ACCESSION_PATTERN = re.compile(r"^[A-Za-z]{1,3}\d{2}-\d{3,6}$")
 
 
+def derive_slide_request_case_type(
+    accession_number: str,
+) -> Constants.SlideRequestCaseType:
+    cleaned = (accession_number or "").strip()
+    prefix = cleaned[:1].upper()
+    if prefix == "S":
+        return Constants.SlideRequestCaseType.SURGICAL
+    if prefix == "C":
+        return Constants.SlideRequestCaseType.CYTOLOGY
+    raise ValueError(
+        "Accession number must begin with S for Surgical or C for Cytology"
+    )
+
+
 class SlideRequestCreateVM(BaseModel):
-    accessionNumber: str = Field(..., min_length=1, max_length=100)
+    accessionNumber: str = Field(..., min_length=1, max_length=500)
     urgencyStatus: Constants.SlideRequestUrgency
+    reason: Constants.SlideRequestReason
     ePath: bool = Field(default=False)
     requesterNotes: Optional[str] = Field(default=None, max_length=2000)
 
@@ -39,6 +54,7 @@ class SlideRequestCreateVM(BaseModel):
             raise ValueError(
                 "Accession number must match format AAA12-123 (1-3 letters, 2 digits, dash, 3-6 digits)"
             )
+        derive_slide_request_case_type(cleaned)
         return cleaned
 
     @validator("requesterNotes")
@@ -59,8 +75,10 @@ class SlideRequestCreateVM(BaseModel):
 class SlideRequestVM(BaseModel):
     id: int
     accessionNumber: str
+    caseType: Constants.SlideRequestCaseType
     ePath: bool
     requesterNotes: Optional[str]
+    reason: Optional[str]
     status: str
     urgencyStatus: Constants.SlideRequestUrgency
     requestedAt: datetime
@@ -100,8 +118,10 @@ def to_slide_request_vm(request: "SlideRequest") -> SlideRequestVM:
     return SlideRequestVM(
         id=request.SlideRequestId,
         accessionNumber=request.AccessionNumber,
+        caseType=request.CaseType,
         ePath=bool(request.EPath),
         requesterNotes=request.Notes,
+        reason=request.Reason,
         status=request.Status,
         urgencyStatus=request.UrgencyStatus,
         requestedAt=request.CreateDate,

@@ -15,7 +15,7 @@ from db.repository.slide_request import (
     update_slide_room_notes,
 )
 from db.session import get_db
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from viewmodel.slide_request import (
     SlideRequestCreateVM,
@@ -82,10 +82,13 @@ async def list_my_slide_requests(
     response_model=List[SlideRequestVM],
 )
 async def list_pending_slide_requests(
+    case_type: Constants.SlideRequestCaseType | None = Query(default=None, alias="caseType"),
     db: Session = Depends(get_db),
 ):
     requests = list_slide_requests(
-        db=db, statuses=[Constants.SlideRequestStatus.PENDING.value]
+        db=db,
+        statuses=[Constants.SlideRequestStatus.PENDING.value],
+        case_type=case_type,
     )
     return [to_slide_request_vm(item) for item in requests]
 
@@ -96,10 +99,13 @@ async def list_pending_slide_requests(
     response_model=List[SlideRequestVM],
 )
 async def list_holding_slide_requests(
+    case_type: Constants.SlideRequestCaseType | None = Query(default=None, alias="caseType"),
     db: Session = Depends(get_db),
 ):
     requests = list_slide_requests(
-        db=db, statuses=[Constants.SlideRequestStatus.HOLDING.value]
+        db=db,
+        statuses=[Constants.SlideRequestStatus.HOLDING.value],
+        case_type=case_type,
     )
     return [to_slide_request_vm(item) for item in requests]
 
@@ -110,10 +116,13 @@ async def list_holding_slide_requests(
     response_model=List[SlideRequestVM],
 )
 async def list_in_process_slide_requests(
+    case_type: Constants.SlideRequestCaseType | None = Query(default=None, alias="caseType"),
     db: Session = Depends(get_db),
 ):
     requests = list_slide_requests(
-        db=db, statuses=[Constants.SlideRequestStatus.IN_PROCESS.value]
+        db=db,
+        statuses=[Constants.SlideRequestStatus.IN_PROCESS.value],
+        case_type=case_type,
     )
     return [to_slide_request_vm(item) for item in requests]
 
@@ -124,6 +133,7 @@ async def list_in_process_slide_requests(
     response_model=List[SlideRequestVM],
 )
 async def list_completed_slide_requests(
+    case_type: Constants.SlideRequestCaseType | None = Query(default=None, alias="caseType"),
     db: Session = Depends(get_db),
 ):
     requests = list_slide_requests(
@@ -133,6 +143,7 @@ async def list_completed_slide_requests(
             Constants.SlideRequestStatus.NIF.value,
             Constants.SlideRequestStatus.CANCELED.value,
         ],
+        case_type=case_type,
         order_by_completed_desc=True,
         limit=100,
     )

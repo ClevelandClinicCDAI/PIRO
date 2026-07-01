@@ -7,11 +7,13 @@ GO
 CREATE TABLE [SlideRequest](
 	[SlideRequestId] [int] IDENTITY(1,1) NOT NULL,
 	[AccessionNumber] [varchar](100) NOT NULL,
+	[CaseType] [varchar](20) NOT NULL,
 	[Notes] [varchar](2000) NULL,
 	[EPath] [bit] NOT NULL CONSTRAINT [DF_SlideRequest_EPath] DEFAULT (0),
 	[SlideRoomNotes] [varchar](2000) NULL,
 	[Status] [varchar](50) NOT NULL CONSTRAINT [DF_SlideRequest_Status] DEFAULT ('PENDING'),
 	[UrgencyStatus] [varchar](20) NOT NULL,
+	[Reason] [varchar](50) NULL,
 	[RequesterId] [int] NOT NULL,
 	[CompletedById] [int] NULL,
 	[InProcessById] [int] NULL,
@@ -43,4 +45,9 @@ ALTER TABLE [SlideRequest]  WITH CHECK ADD  CONSTRAINT [FK_SlideRequest_User_InP
 REFERENCES [User] ([UserId])
 GO
 ALTER TABLE [SlideRequest] CHECK CONSTRAINT [FK_SlideRequest_User_InProcessBy]
+GO
+
+ALTER TABLE [SlideRequest]  WITH CHECK ADD  CONSTRAINT [CK_SlideRequest_CaseType] CHECK  (([CaseType]='Surgical' OR [CaseType]='Cytology'))
+GO
+ALTER TABLE [SlideRequest] CHECK CONSTRAINT [CK_SlideRequest_CaseType]
 GO

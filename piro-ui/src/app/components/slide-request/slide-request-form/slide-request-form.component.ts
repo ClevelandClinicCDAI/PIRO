@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { SlideRequest, SlideRequestFormPayload, SlideRequestUrgency } from 'src/app/models/slide-request';
+import { SlideRequest, SlideRequestFormPayload, SlideRequestReason, SlideRequestUrgency } from 'src/app/models/slide-request';
 import { SlideRequestService } from 'src/app/services/slide-request.service';
 import { ToastService } from 'src/app/services/toast.service';
 
@@ -19,8 +19,18 @@ export class SlideRequestFormComponent implements OnInit {
   canceling: { [key: number]: boolean } = {};
   errorMessage = '';
   urgencyOptions: { value: SlideRequestUrgency; label: string }[] = [
-    { value: 'SameDay', label: 'Same Day' },
+    { value: 'Priority', label: 'Priority' },
     { value: 'Routine', label: 'Routine' }
+  ];
+  reasonOptions: { value: SlideRequestReason; label: string }[] = [
+    { value: 'Sign Out', label: 'Sign Out' },
+    { value: 'Additional Testing', label: 'Additional Testing' },
+    { value: 'Cap Inspection', label: 'Cap Inspection' },
+    { value: 'Conference', label: 'Conference' },
+    { value: 'QA', label: 'QA' },
+    { value: 'Send Outs', label: 'Send Outs' },
+    { value: 'Tumor Board', label: 'Tumor Board' },
+    { value: 'Validation', label: 'Validation' }
   ];
 
   constructor(
@@ -31,10 +41,11 @@ export class SlideRequestFormComponent implements OnInit {
 
   async ngOnInit() {
     this.requestForm = this.formBuilder.group({
-      accessionNumber: ['', [Validators.required, Validators.maxLength(100)]],
+      accessionNumber: ['', [Validators.required, Validators.maxLength(500)]],
       requesterNotes: ['', [Validators.maxLength(2000)]],
       ePath: [false],
-      urgencyStatus: ['Routine', [Validators.required]]
+      urgencyStatus: ['Routine', [Validators.required]],
+      reason: ['', [Validators.required]]
     });
     await this.loadMyRequests();
   }
@@ -53,6 +64,11 @@ export class SlideRequestFormComponent implements OnInit {
     }
 
     const payloads = this.buildPayloads();
+    if (payloads.length > 25) {
+      this.submitting = false;
+      this.errorMessage = 'You may submit a maximum of 25 cases at a time.';
+      return;
+    }
     const results: { payload: SlideRequestFormPayload; result: any }[] = await Promise.all(
       payloads.map(async (payload) => {
         const result = await this.slideRequestService.createRequest(payload);
@@ -77,6 +93,7 @@ export class SlideRequestFormComponent implements OnInit {
     this.requestForm.reset({
       accessionNumber: '',
       urgencyStatus: 'Routine',
+      reason: '',
       requesterNotes: '',
       ePath: false
     });
@@ -85,16 +102,18 @@ export class SlideRequestFormComponent implements OnInit {
   private buildPayloads(): SlideRequestFormPayload[] {
     const accessionRaw = (this.requestForm.value.accessionNumber as string) || '';
     const caseNumbers = accessionRaw
-      .split(',')
+      .split(/[\n,]+/)
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
     const urgencyStatus = this.requestForm.value.urgencyStatus as SlideRequestUrgency;
+    const reason = this.requestForm.value.reason as SlideRequestReason;
     const requesterNotes = (this.requestForm.value.requesterNotes as string)?.trim();
     const ePath = Boolean(this.requestForm.value.ePath);
 
     return caseNumbers.map((accessionNumber) => ({
       accessionNumber,
       urgencyStatus,
+      reason,
       requesterNotes,
       ePath
     }));
@@ -132,8 +151,8 @@ export class SlideRequestFormComponent implements OnInit {
   }
 
   getUrgencyLabel(urgency: SlideRequestUrgency | undefined) {
-    if (urgency === 'SameDay') {
-      return 'Same Day';
+    if (urgency === 'Priority') {
+      return 'Priority';
     }
     if (urgency === 'Routine') {
       return 'Routine';
@@ -142,7 +161,7 @@ export class SlideRequestFormComponent implements OnInit {
   }
 
   getUrgencyBadgeClasses(urgency: SlideRequestUrgency | undefined) {
-    if (urgency === 'SameDay') {
+    if (urgency === 'Priority') {
       return 'badge rounded-pill bg-danger urgency-badge';
     }
     if (urgency === 'Routine') {

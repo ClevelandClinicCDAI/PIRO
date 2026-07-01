@@ -8,11 +8,13 @@ class SlideRequest(Base):
     __tablename__ = "SlideRequest"
     SlideRequestId = Column(Integer, primary_key=True, index=True)
     AccessionNumber = Column(String, nullable=False)
+    CaseType = Column(String, nullable=False)
     Notes = Column(String, nullable=True)
     EPath = Column(Boolean, nullable=False, default=False)
     SlideRoomNotes = Column(String, nullable=True)
     Status = Column(String, nullable=False, default="PENDING")
     UrgencyStatus = Column(String, nullable=False)
+    Reason = Column(String, nullable=True)
     RequesterId = Column(Integer, ForeignKey("User.UserId"), nullable=False)
     CompletedById = Column(Integer, ForeignKey("User.UserId"), nullable=True)
     InProcessById = Column(Integer, ForeignKey("User.UserId"), nullable=True)
