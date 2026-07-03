@@ -13,4 +13,7 @@ RUN npm run build:prod
 FROM nginx:1.27-alpine
 COPY piro-ui/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/piro /usr/share/nginx/html
+COPY piro-ui/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 EXPOSE 80
+ENTRYPOINT ["/docker-entrypoint.sh"]
