@@ -109,6 +109,9 @@ services:
       context: .
       dockerfile: piro-ui/Dockerfile
     platform: linux/amd64
+    environment:
+      API_BASE_URL: /api/
+      IRB_DISCLAIMER_TEXT: ${PIRO_IRB_DISCLAIMER_TEXT:-}
     ports:
       - "8080:80"
     depends_on:

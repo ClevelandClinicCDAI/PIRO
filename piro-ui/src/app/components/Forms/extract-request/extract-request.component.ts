@@ -137,7 +137,13 @@ export class ExtractRequestComponent {
     if (result.status != true || !result.data?.query) {
       return false;
     }
-    return this.queryHasCasePatientAgeFilter(result.data.query);
+    if (this.queryHasCasePatientAgeFilter(result.data.query)) {
+      return true;
+    }
+    if (result.data.advsearch) {
+      return this.advancedFilterHasField(result.data.advsearch, 'casepatientageyears');
+    }
+    return false;
   }
 
   queryHasCasePatientAgeFilter(query: string) {
@@ -176,7 +182,13 @@ export class ExtractRequestComponent {
     if (result.status != true || !result.data?.query) {
       return false;
     }
-    return this.queryHasCollectionDateFilter(result.data.query);
+    if (this.queryHasCollectionDateFilter(result.data.query)) {
+      return true;
+    }
+    if (result.data.advsearch) {
+      return this.advancedFilterHasField(result.data.advsearch, 'collectiondate');
+    }
+    return false;
   }
 
   queryHasCollectionDateFilter(query: string) {
@@ -195,6 +207,24 @@ export class ExtractRequestComponent {
     } catch (error) {
       return query.includes('collectiondate');
     }
+  }
+
+  advancedFilterHasField(advsearch: string, fieldName: string): boolean {
+    try {
+      const filter = JSON.parse(advsearch);
+      return this.rulesHaveField(filter, fieldName);
+    } catch (error) {
+      return advsearch.includes(fieldName);
+    }
+  }
+
+  private rulesHaveField(node: any, fieldName: string): boolean {
+    if (!node) return false;
+    if (node.field === fieldName) return true;
+    if (Array.isArray(node.rules)) {
+      return node.rules.some((rule: any) => this.rulesHaveField(rule, fieldName));
+    }
+    return false;
   }
 
   async onSubmit() {
