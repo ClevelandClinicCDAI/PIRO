@@ -112,6 +112,7 @@ def get_search_display(searchId: int, db: Session):
                 "RequesterFirstName": requester.FirstName,
                 "RequesterLastName": requester.LastName,
                 "SearchQuery": search.SearchQuery,
+                "AdvancedQuery": search.AdvancedQuery,
                 "Name": search.Name,
                 "Description": search.Description,
                 "SearchName": search.SearchQuery,

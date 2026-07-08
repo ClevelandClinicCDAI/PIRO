@@ -56,5 +56,8 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.5.4"
+  },
+  "overrides": {
+    "parse5": "7.1.2"
   }
 }
