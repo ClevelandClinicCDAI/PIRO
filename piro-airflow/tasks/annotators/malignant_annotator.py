@@ -403,6 +403,7 @@ Interpret this pathology report:
 
         with self._piro_db_engine.connect() as connection:
             connection.execute(insert_query, results)
+            connection.commit()
 
     def _write_errors_to_db(self) -> None:
         """If any errors were captured, write them to the PIRO database.
