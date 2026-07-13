@@ -419,5 +419,6 @@ Interpret this pathology report:
 
             with self._piro_db_engine.connect() as connection:
                 connection.execute(insert_query, self._errors)
+                connection.commit()
 
                 self._errors = []
