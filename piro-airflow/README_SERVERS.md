@@ -84,8 +84,8 @@ This file provides example documentation of the Airflow installation process for
 
             [Unit]
             Description=PIRO Airflow triggerer daemon
-            After=network.target postgresql.service piro-airflow-triggerer.service
-            Wants=postgresql.service piro-airflow-triggerer.service
+            After=network.target postgresql.service piro-airflow-dag-processor.service
+            Wants=postgresql.service piro-airflow-dag-processor.service
 
             [Service]
             Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -138,7 +138,7 @@ This file provides example documentation of the Airflow installation process for
             User=piro-builder
             Group=piro-builder
             Type=simple
-            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow api-server -p 8080
+            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow api-server -p 8080 --proxy-headers
             Restart=on-failure
             RestartSec=5s
             PrivateTmp=true
@@ -251,7 +251,7 @@ This file provides example documentation of the Airflow installation process for
     * `sudo -u postgres psql` to access the command prompt.
     * `CREATE DATABASE airflow_db;`
     * `CREATE USER airflow_user WITH PASSWORD '<airflow_user password>';`
-    * `GRANT ALL PRIVILEGES ON DATABASE airflow_db TO airflow_user;`
+    * `ALTER DATABASE airflow_db OWNER TO airflow_user;`
 1. Create a 'Fernet Key' to encrypt Airflow Secrets:
     * With the project venv activated:
         * `python`
@@ -272,14 +272,11 @@ This file provides example documentation of the Airflow installation process for
     * `[database]`
       * `sql_alchemy_conn` = postgresql+psycopg2://airflow_user:`<airflow postgres database password>`@localhost:5432/airflow_db
     * `[api]`
-      * `auth_backends` = airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
       * `host` = 0.0.0.0
       * `port` = 8080
       * `secret_key` = `<a thoroughly random value>` # does not need to be added to Secret Server
     * `[api_auth]`
       * `jwt_secret` = `<Airflow "jwt" secret>`
-    * `[webserver]`
-      * `instance_name` = [as appropriate]
 1. Create the `smtp_default` connection (required in Airflow 3 for failure emails):
     * With the project venv activated:
         * `airflow connections delete smtp_default || true`
