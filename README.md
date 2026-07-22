@@ -74,7 +74,7 @@ Copy-Item piro-ui\src\assets\config.example.json piro-ui\src\assets\config.json
 
 Then open `piro-ui/src/assets/config.json` and set:
 
-- `apiBaseUrl` – URL the browser uses to reach the FastAPI backend. For the local Compose stack use `http://localhost:8080/` (nginx in the `ui` container proxies `/api` to the `api` service). For a direct-to-API setup use `http://localhost:8001/`.
+- `apiBaseUrl` – URL the browser uses to reach the FastAPI backend. For the local Compose stack use `/api/` (nginx in the `ui` container proxies `/api/` to the `api` service). For a direct-to-API setup use `http://localhost:8001/`.
 - `irbDisclaimerText` – the disclaimer string shown in the UI. Substitute your institution's wording.
 
 > **Note:** `piro-ui/src/assets/config.json` is gitignored (`piro-ui/.gitignore`) so environment-specific values never end up in version control. Recreate the file on every clean checkout, and rebuild the `ui` image (`docker compose build ui`) after any change to it.
