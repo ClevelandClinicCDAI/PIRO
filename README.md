@@ -142,7 +142,7 @@ Steps:
     docker compose build api
     ```
 
-> **Note:** Never commit `*.pem` files to git. The `.gitignore` entry at `piro-api/.gitignore` (`backend/certificates/*.pem`) already blocks them, but double-check `git status` before committing after touching this directory.
+> **Note:** Never commit `*.pem` files to git. The `.gitignore` entry at `piro-api/.gitignore` (`*.pem`) already blocks them, but double-check `git status` before committing after touching this directory.
 
 Example (macOS / Linux):
 
