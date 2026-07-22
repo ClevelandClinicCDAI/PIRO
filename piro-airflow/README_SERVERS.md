@@ -1,6 +1,8 @@
+# PIRO Airflow Servers
+
 This file provides example documentation of the Airflow installation process for `piro-airflow` on a Linux server.
 
-# Important Directories & Files
+## Important Directories & Files
 
 * Airflow config file: /home/piro-builder/airflow/airflow.cfg
 * SSL Certificates: /etc/ssl/certs/
@@ -9,15 +11,10 @@ This file provides example documentation of the Airflow installation process for
 ## Useful Commands
 
 * Airflow Services
-  * Checking service status:
-    * `sudo systemctl status piro-airflow-scheduler`
-    * `sudo systemctl status piro-airflow-webserver`
-  * Starting services:
-    * `sudo systemctl start piro-airflow-scheduler`
-    * `sudo systemctl start piro-airflow-webserver`
-  * Stopping services:
-    * `sudo systemctl stop piro-airflow-scheduler`
-    * `sudo systemctl stop piro-airflow-webserver`
+  * Service management script directory: `/home/piro-builder/airflow/systemd_service_management_scripts`
+    * Start all Airflow services: `sudo bash start_services.sh`
+    * Stop all Airflow services: `sudo bash stop_services.sh`
+    * Check status for all Airflow services: `sudo bash status_services.sh`
 * NGINX
   * Test config changes
     * `sudo nginx -t`
@@ -36,7 +33,7 @@ This file provides example documentation of the Airflow installation process for
     * MSODBC18 version has been installed in PROD
 1. Install system packages
     * `sudo add-apt-repository ppa:deadsnakes/ppa -y`
-    * `sudo apt-get install build-essential pkg-config python3-dev python3.11 python3.11-dev python3.11-venv`
+    * `sudo apt-get install build-essential pkg-config python3-dev python3.12 python3.12-dev python3.12-venv`
 1. Create a password for `piro-builder` in Thycotic.
 1. Create the `piro-builder` user:
     * `sudo adduser piro-builder`
@@ -49,74 +46,204 @@ This file provides example documentation of the Airflow installation process for
     * `sudo chgrp piro-builder piro-airflow`
     * `cd piro-airflow`
 1. Create the venv:
-    * `python3.11 -m venv piro-airflow_venv`
+    * `python3.12 -m venv piro-airflow_venv`
     * `source /opt/piro-airflow/piro-airflow_venv/bin/activate`
-1. Set up the codebase:
-    * `mkdir piro-airflow`
-    * `cd piro-airflow`
-    * `git clone [piro-airflow git repo url] .`
-1. Manually install Airflow
-    * `AIRFLOW_VERSION=2.8.0`
-    * `PYTHON_VERSION=3.11`
-    * `CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"`
-    * `pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"`
+1. Initial Deployment
+    * Review the scripts `azure-pipelines-dev.yml` and `azure-pipelines.yml` and note the directory used in the `rsync` step of the script.  Create the directory if needed.
+    * Execute the appropriate pipeline within our codebase to deploy the code to the server.  This should copy the code itself into the target directory (via `rsync`) and should also install python packages into the venv.
+    * Confirm that the code was copied to the server properly and that the venv has the necessary packages installed.
 1. Set up SystemD services for Airflow:
     * Create the following files
+    * /etc/systemd/system/piro-airflow-dag-processor.service:
+
+        ```bash
+            #piro-airflow-dag-processor.service
+
+            [Unit]
+            Description=PIRO Airflow dag-processor daemon
+            After=network.target postgresql.service
+            Wants=postgresql.service
+
+            [Service]
+            Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            User=piro-builder
+            Group=piro-builder
+            Type=simple
+            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow dag-processor
+            Restart=always
+            RestartSec=5s
+
+            [Install]
+            WantedBy=multi-user.target
+        ```
+
+    * /etc/systemd/system/piro-airflow-triggerer.service:
+
+        ```bash
+            #piro-airflow-triggerer.service
+
+            [Unit]
+            Description=PIRO Airflow triggerer daemon
+            After=network.target postgresql.service piro-airflow-dag-processor.service
+            Wants=postgresql.service piro-airflow-dag-processor.service
+
+            [Service]
+            Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            User=piro-builder
+            Group=piro-builder
+            Type=simple
+            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow triggerer
+            Restart=always
+            RestartSec=5s
+
+            [Install]
+            WantedBy=multi-user.target
+        ```
+
     * /etc/systemd/system/piro-airflow-scheduler.service:
 
         ```bash
-        #piro-airflow-scheduler.service
+            #piro-airflow-scheduler.service
 
-        [Unit]
-        Description=PIRO Airflow scheduler daemon
-        After=network.target postgresql.service
-        Wants=postgresql.service
+            [Unit]
+            Description=PIRO Airflow scheduler daemon
+            After=network.target postgresql.service piro-airflow-triggerer.service
+            Wants=postgresql.service piro-airflow-triggerer.service
 
-        [Service]
-        Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        User=piro-builder
-        Group=piro-builder
-        Type=simple
-        ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow scheduler
-        Restart=always
-        RestartSec=5s
+            [Service]
+            Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            User=piro-builder
+            Group=piro-builder
+            Type=simple
+            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow scheduler
+            Restart=always
+            RestartSec=5s
 
-        [Install]
-        WantedBy=multi-user.target
+            [Install]
+            WantedBy=multi-user.target
         ```
 
     * /etc/systemd/system/piro-airflow-webserver.service:
 
         ```bash
-        #piro-airflow-webserver.service
+            #piro-airflow-webserver.service
 
-        [Unit]
-        Description=PIRO Airflow webserver daemon
-        After=network.target postgresql.service
-        Wants=postgresql.service
+            [Unit]
+            Description=PIRO Airflow webserver daemon
+            After=network.target postgresql.service piro-airflow-scheduler.service
+            Wants=postgresql.service piro-airflow-scheduler.service
 
-        [Service]
-        Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        User=piro-builder
-        Group=piro-builder
-        Type=simple
-        ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow webserver -p 8080
-        Restart=on-failure
-        RestartSec=5s
-        PrivateTmp=true
+            [Service]
+            Environment="PATH=/opt/piro-airflow/piro-airflow_venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            User=piro-builder
+            Group=piro-builder
+            Type=simple
+            ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow api-server -p 8080 --proxy-headers
+            Restart=on-failure
+            RestartSec=5s
+            PrivateTmp=true
 
-        [Install]
-        WantedBy=multi-user.target
+            [Install]
+            WantedBy=multi-user.target
         ```
 
-    * Start and stop the 'schedule' service to create the 'airflow' folder in the 'piro-builder' account's home folder.
+    * Enable the services (one-time setup):
+        * Ensure these service units are enabled so they start on boot:
+            * `piro-airflow-dag-processor`
+            * `piro-airflow-triggerer`
+            * `piro-airflow-scheduler`
+            * `piro-airflow-webserver`
 
-        ```bash
-        sudo systemctl start piro-airflow-scheduler
-        sudo systemctl stop piro-airflow-scheduler
-        ```
+    * Service management scripts:
+        * Location on server: `/home/piro-builder/airflow/systemd_service_management_scripts`
+        * These scripts can be used to start, stop, and check all PIRO Airflow services together.
+
+        * `start_services.sh`
+
+            ```bash
+            #!/bin/bash
+            # Start all PIRO Airflow systemd services
+
+            SERVICES=(
+                "piro-airflow-dag-processor"
+                "piro-airflow-triggerer"
+                "piro-airflow-scheduler"
+                "piro-airflow-webserver"
+            )
+
+            echo "Starting PIRO Airflow services..."
+            echo "-----------------------------------"
+
+            for service in "${SERVICES[@]}"; do
+                echo -n "Starting ${service}... "
+                sudo systemctl start "${service}"
+                if [ $? -eq 0 ]; then
+                    echo "OK"
+                else
+                    echo "FAILED"
+                fi
+            done
+
+            echo "-----------------------------------"
+            echo "Done. Run status_services.sh to verify."
+            ```
+
+        * `stop_services.sh`
+
+            ```bash
+            #!/bin/bash
+            # Stop all PIRO Airflow systemd services
+
+            SERVICES=(
+                "piro-airflow-webserver"
+                "piro-airflow-scheduler"
+                "piro-airflow-triggerer"
+                "piro-airflow-dag-processor"
+            )
+
+            echo "Stopping PIRO Airflow services..."
+            echo "-----------------------------------"
+
+            for service in "${SERVICES[@]}"; do
+                echo -n "Stopping ${service}... "
+                sudo systemctl stop "${service}"
+                if [ $? -eq 0 ]; then
+                    echo "OK"
+                else
+                    echo "FAILED"
+                fi
+            done
+
+            echo "-----------------------------------"
+            echo "Done. Run status_services.sh to verify."
+            ```
+
+        * `status_services.sh`
+
+            ```bash
+            #!/bin/bash
+            # Check status of all PIRO Airflow systemd services
+
+            SERVICES=(
+                "piro-airflow-dag-processor"
+                "piro-airflow-triggerer"
+                "piro-airflow-scheduler"
+                "piro-airflow-webserver"
+            )
+
+            echo "PIRO Airflow Service Status"
+            echo "============================="
+
+            for service in "${SERVICES[@]}"; do
+                echo ""
+                echo "[ ${service} ]"
+                sudo systemctl status "${service}" --no-pager -l
+                echo "------------------------------"
+            done
+            ```
 
 1. Install and Enable Postgres:
+    * Note: we prefer PostgreSQL v16, if possible, and this may require additional apt repos to be added.  Adjust the commands below as necessary.
     * `sudo apt install postgresql postgresql-contrib`
     * `systemctl start postgresql.service`
 1. Set up the Airflow Postgres database:
@@ -124,7 +251,7 @@ This file provides example documentation of the Airflow installation process for
     * `sudo -u postgres psql` to access the command prompt.
     * `CREATE DATABASE airflow_db;`
     * `CREATE USER airflow_user WITH PASSWORD '<airflow_user password>';`
-    * `GRANT ALL PRIVILEGES ON DATABASE airflow_db TO airflow_user;`
+    * `ALTER DATABASE airflow_db OWNER TO airflow_user;`
 1. Create a 'Fernet Key' to encrypt Airflow Secrets:
     * With the project venv activated:
         * `python`
@@ -133,13 +260,23 @@ This file provides example documentation of the Airflow installation process for
         * `print(fernet_key.decode())`
     * Capture the printed secret in Thycotic
 1. Edit the Airflow config file, `/home/piro-builder/airflow/airflow.cfg`:
-    * dags_folder = /opt/piro-airflow/piro-airflow
-    * executor = LocalExecutor
-    * load_examples = False
-    * sql_alchemy_conn = postgresql+psycopg2://airflow_user:<"airflow postgres database password">@localhost:5432/airflow_db
-    * fernet_key = <Airflow "fernet" password>
-    * smtp_mail_from = piro-builder@[hostname]
-    * auth_backends = airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+    * Be sure to add the values to the file in the appropriate sections, as listed below (this list is not comprehensive, and only contains those settings that are either vital or need to be changed from the defaults).:
+    * `[core]`
+      * `dags_folder` = /opt/piro-airflow/piro-airflow
+      * `executor` = LocalExecutor
+      * `auth_manager` = airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      * `load_examples` = False
+      * `fernet_key` = `<Airflow "fernet" password>`
+      * `allowed_deserialization_classes` = airflow.*
+      * `sensitive_var_conn_names` = key,path,keys,encrypt,encrypted
+    * `[database]`
+      * `sql_alchemy_conn` = postgresql+psycopg2://airflow_user:`<airflow postgres database password>`@localhost:5432/airflow_db
+    * `[api]`
+      * `host` = 0.0.0.0
+      * `port` = 8080
+      * `secret_key` = `<a thoroughly random value>` # does not need to be added to Secret Server
+    * `[api_auth]`
+      * `jwt_secret` = `<Airflow "jwt" secret>`
 1. Create the `smtp_default` connection (required in Airflow 3 for failure emails):
     * With the project venv activated:
         * `airflow connections delete smtp_default || true`
@@ -193,10 +330,7 @@ This file provides example documentation of the Airflow installation process for
         * Also disable the 'default' if needed
         * Test the new config: `nginx -t`
         * Reload the nginx config to activate: `systemctl reload nginx`
-1. Install remaining python packages
-    * With venv activated, as 'piro-builder' account:
-        * `cd /opt/piro-airflow/piro-airflow`
-        * `pip install -r requirements.txt`
 1. Turn on Airflow Services
-    * `sudo systemctl start piro-airflow-scheduler`
-    * `sudo systemctl start piro-airflow-webserver`
+    * `cd /home/piro-builder/airflow/systemd_service_management_scripts`
+    * `sudo bash start_services.sh`
+    * `sudo bash status_services.sh`
