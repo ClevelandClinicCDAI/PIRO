@@ -396,13 +396,15 @@ Interpret this pathology report:
     def _upload_to_piro(self, results: list[dict]) -> None:
         """Write the resulting annotations to the PIRO database."""
 
-        insert_query = text("""
-            INSERT INTO AnnotationData (CaseId, ModelName, AnnotationValue, AnnotationKey, CreateDate, CreateBy)
-            VALUES (:CaseId, :ModelName, :AnnotationValue, :AnnotationKey, :CreateDate, :CreateBy)
-            """)  # noqa:E501
+        if results:
+            insert_query = text("""
+                INSERT INTO AnnotationData (CaseId, ModelName, AnnotationValue, AnnotationKey, CreateDate, CreateBy)
+                VALUES (:CaseId, :ModelName, :AnnotationValue, :AnnotationKey, :CreateDate, :CreateBy)
+                """)  # noqa:E501
 
-        with self._piro_db_engine.connect() as connection:
-            connection.execute(insert_query, results)
+            with self._piro_db_engine.connect() as connection:
+                connection.execute(insert_query, results)
+                connection.commit()
 
     def _write_errors_to_db(self) -> None:
         """If any errors were captured, write them to the PIRO database.
@@ -418,5 +420,6 @@ Interpret this pathology report:
 
             with self._piro_db_engine.connect() as connection:
                 connection.execute(insert_query, self._errors)
+                connection.commit()
 
                 self._errors = []

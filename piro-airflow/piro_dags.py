@@ -64,7 +64,7 @@ def get_developer_emails() -> list[str]:
     try:
         value = Variable.get(
             DEVELOPER_EMAILS_VAR_NAME,
-            default_var=[],
+            default=[],
             deserialize_json=True,
         )
         emails = _parse_email_list(value)

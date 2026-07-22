@@ -181,4 +181,4 @@ labs
 /test_results/
 /.ruff_cache/
 .vscode
-backend/certificates/*.pem
+*.pem
