@@ -125,7 +125,7 @@ Behind the scenes:
 
 The API's `POST /cohort/create` endpoint triggers an Airflow DAG that loads the new cohort into Solr. Two things must be in place:
 
-1. **Certificate file on disk.** Place the PEM used to verify TLS to your Airflow host in `piro-api/backend/certificates/` (see [Providing certificate files](#providing-certificate-files) below for how to obtain and copy the file). Files there are gitignored (`backend/certificates/*.pem`) but are still baked into the API image at build time via `COPY backend /app` — Docker builds do not honor `.gitignore`. Rebuild the API image (`docker compose build api`) after adding or replacing a cert.
+1. **Certificate file on disk.** Place the PEM used to verify TLS to your Airflow host in `piro-api/backend/certificates/` (see [Providing certificate files](#providing-certificate-files) below for how to obtain and copy the file). Files there are gitignored (`piro-api/.gitignore` ignores `*.pem`) but are still baked into the API image at build time via `COPY backend /app` — Docker builds do not honor `.gitignore`. Rebuild the API image (`docker compose build api`) after adding or replacing a cert.
 2. **Environment variables.** Set the four `AIRFLOW_*` variables listed above. If any of them are unset or empty, the API returns HTTP 500 with `FileNotFoundError: Certificates directory not found` — the message is misleading; the same error covers a missing cert *and* a missing `AIRFLOW_CERTIFICATE` value.
 
 #### Providing certificate files
