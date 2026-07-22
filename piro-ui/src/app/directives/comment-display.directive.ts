@@ -1,6 +1,7 @@
 import { Directive, ElementRef, Input } from '@angular/core';
 
 @Directive({
+  standalone: false,
   selector: '[appCommentDisplay]'
 })
 export class CommentDisplayDirective {

@@ -5,6 +5,7 @@ import { RoleService } from '../../../../services/role.service';
 import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 @Component({
+  standalone: false,
   selector: 'app-updateuser',
   templateUrl: './updateuser.component.html',
   styleUrls: ['./updateuser.component.css']

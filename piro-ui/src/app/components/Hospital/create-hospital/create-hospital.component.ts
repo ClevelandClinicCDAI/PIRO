@@ -4,6 +4,7 @@ import { HospitalService } from '../../../services/hospital.service';
 import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 @Component({
+  standalone: false,
   selector: 'app-create-hospital',
   templateUrl: './create-hospital.component.html',
   styleUrls: ['./create-hospital.component.css']

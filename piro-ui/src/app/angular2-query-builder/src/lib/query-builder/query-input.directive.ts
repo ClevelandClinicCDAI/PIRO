@@ -1,6 +1,6 @@
 import { Directive, Input, TemplateRef } from '@angular/core';
 
-@Directive({selector: '[queryInput]'})
+@Directive({standalone: false, selector: '[queryInput]'})
 export class QueryInputDirective {
   private _type: string;
   /** Unique name for query input type. */

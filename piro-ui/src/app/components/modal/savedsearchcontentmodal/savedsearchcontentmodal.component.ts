@@ -8,6 +8,7 @@ import { SavedSearchContentService } from '../../../services/saved-search-conten
 import { LocalStorageService } from '../../../services/localStorage.service';
 
 @Component({
+  standalone: false,
   selector: 'app-savedsearchcontentmodal',
   templateUrl: './savedsearchcontentmodal.component.html',
   styleUrls: ['./savedsearchcontentmodal.component.css']

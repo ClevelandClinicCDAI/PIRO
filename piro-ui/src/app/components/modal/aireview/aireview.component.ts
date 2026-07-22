@@ -5,6 +5,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
+  standalone: false,
 	selector: 'app-aireview',
 	templateUrl: './aireview.component.html',
 	styleUrls: ['./aireview.component.css']

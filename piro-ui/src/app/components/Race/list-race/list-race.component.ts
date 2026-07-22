@@ -6,6 +6,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-list-race',
   templateUrl: './list-race.component.html',
   styleUrls: ['./list-race.component.css']

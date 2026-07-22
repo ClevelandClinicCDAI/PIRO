@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-create-race',
   templateUrl: './create-race.component.html',
   styleUrls: ['./create-race.component.css']

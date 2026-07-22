@@ -3,6 +3,7 @@ import { FormGroup,Validators,FormBuilder } from '@angular/forms';
 import { UserService } from '../../../services/user.service';
 
 @Component({
+  standalone: false,
   selector: 'app-preference',
   templateUrl: './preference.component.html',
   styleUrls: ['./preference.component.css']

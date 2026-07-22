@@ -8,6 +8,7 @@ import { FilterService } from '../../services/filter.service';
 import {AivoteService} from '../../services/aivote.service';
 import { ToastrService } from 'ngx-toastr';
 @Component({
+  standalone: false,
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']

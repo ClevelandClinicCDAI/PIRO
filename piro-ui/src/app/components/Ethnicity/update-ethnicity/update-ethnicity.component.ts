@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-update-ethnicity',
   templateUrl: './update-ethnicity.component.html',
   styleUrls: ['./update-ethnicity.component.css']

@@ -6,6 +6,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-etllogs',
   templateUrl: './etllogs.component.html',
   styleUrls: ['./etllogs.component.css']

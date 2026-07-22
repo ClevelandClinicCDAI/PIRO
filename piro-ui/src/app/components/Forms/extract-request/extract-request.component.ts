@@ -14,6 +14,7 @@ import { SavesearchService } from 'src/app/services/savesearch.service';
 import { AppConfigService } from '../../../services/app-config.service';
 
 @Component({
+  standalone: false,
   selector: 'app-extract-request',
   templateUrl: './extract-request.component.html',
   styleUrls: ['./extract-request.component.css'],

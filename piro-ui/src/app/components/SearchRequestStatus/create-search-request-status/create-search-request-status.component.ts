@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-create-search-request-status',
   templateUrl: './create-search-request-status.component.html',
   styleUrls: ['./create-search-request-status.component.css']

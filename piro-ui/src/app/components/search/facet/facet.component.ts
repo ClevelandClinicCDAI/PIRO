@@ -11,6 +11,7 @@ import { PatientService } from '../../../services/patient.service';
 import { CohortService } from '../../../services/cohort.service';
 
 @Component({
+  standalone: false,
 	selector: 'app-facet',
 	templateUrl: './facet.component.html',
 	styleUrls: ['./facet.component.css']

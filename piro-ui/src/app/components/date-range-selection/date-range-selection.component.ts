@@ -3,6 +3,7 @@ import { NgbDateStruct, NgbInputDatepicker } from '@ng-bootstrap/ng-bootstrap';
 import moment from 'moment';
 import { Common } from '../../helpers';
 @Component({
+  standalone: false,
   selector: 'app-date-range-selection',
   templateUrl: './date-range-selection.component.html',
   styleUrls: ['./date-range-selection.component.scss'],

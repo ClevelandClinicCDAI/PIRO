@@ -7,6 +7,7 @@ import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-list-comment-type',
   templateUrl: './list-comment-type.component.html',
   styleUrls: ['./list-comment-type.component.css']

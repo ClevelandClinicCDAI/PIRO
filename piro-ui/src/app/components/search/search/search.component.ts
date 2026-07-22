@@ -6,6 +6,7 @@ import { SearchService } from '../../../services/search.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
+  standalone: false,
   selector: 'app-search',
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.css']

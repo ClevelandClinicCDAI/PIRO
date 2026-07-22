@@ -3,6 +3,7 @@ import { Store } from '@ngrx/store';
 import { SearchService } from '../../../services/search.service';
 
 @Component({
+  standalone: false,
   selector: 'app-autosuggest',
   templateUrl: './autosuggest.component.html',
   styleUrls: ['./autosuggest.component.css']

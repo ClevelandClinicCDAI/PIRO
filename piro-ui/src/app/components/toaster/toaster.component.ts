@@ -3,6 +3,7 @@ import { ToastEvent } from '../../models/toast-event';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
+  standalone: false,
   selector: 'app-toaster',
   templateUrl: './toaster.component.html',
   styleUrls: ['./toaster.component.css'],

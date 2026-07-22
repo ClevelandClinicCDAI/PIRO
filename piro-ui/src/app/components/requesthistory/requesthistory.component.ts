@@ -11,6 +11,7 @@ import { ViewsearchComponent } from '../modal/viewsearch/viewsearch.component';
 import { ExportfieldComponent } from '../modal/exportfield/exportfield.component';
 import { RequestNotesComponent } from '../modal/request-notes/request-notes.component';
 @Component({
+  standalone: false,
   selector: 'app-requesthistory',
   templateUrl: './requesthistory.component.html',
   styleUrls: ['./requesthistory.component.css']

@@ -3,7 +3,7 @@ import { EMFJS, RTFJS, WMFJS } from 'rtf.js';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { LocalStorageService } from '../../../services/localStorage.service';
 
-@Pipe({ name: 'rtfPipe' })
+@Pipe({ name: 'rtfPipe', standalone: false })
 export class CatImageUrlPipe implements PipeTransform {
     //   constructor(/* inject your cache service */) {}
     

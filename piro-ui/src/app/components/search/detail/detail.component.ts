@@ -10,6 +10,7 @@ import { AireviewComponent } from '../../modal/aireview/aireview.component';
 import { AuthService } from '../../../services/auth.service';
 import { AiAuditComponent } from '../../modal/ai-audit/ai-audit.component';
 @Component({
+  standalone: false,
 	selector: 'app-detail',
 	templateUrl: './detail.component.html',
 	styleUrls: ['./detail.component.css']

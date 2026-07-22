@@ -6,6 +6,7 @@ import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-list-search-request-status',
   templateUrl: './list-search-request-status.component.html',
   styleUrls: ['./list-search-request-status.component.css']

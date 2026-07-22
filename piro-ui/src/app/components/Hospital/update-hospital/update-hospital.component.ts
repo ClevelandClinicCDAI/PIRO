@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-update-hospital',
   templateUrl: './update-hospital.component.html',
   styleUrls: ['./update-hospital.component.css']

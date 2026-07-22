@@ -4,6 +4,7 @@ import { EmailUsersService } from '../../../services/email-users.service';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
+  standalone: false,
   selector: 'app-email-users',
   templateUrl: './email-users.component.html',
   styleUrls: ['./email-users.component.css']
@@ -17,7 +18,7 @@ export class EmailUsersComponent {
     private fb: FormBuilder,
     private emailUsersService: EmailUsersService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.emailForm = this.fb.group({

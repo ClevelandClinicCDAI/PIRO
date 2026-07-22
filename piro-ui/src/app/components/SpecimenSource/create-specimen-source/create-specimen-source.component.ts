@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-create-specimen-source',
   templateUrl: './create-specimen-source.component.html',
   styleUrls: ['./create-specimen-source.component.css']

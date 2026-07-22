@@ -4,6 +4,7 @@ import { ToastrService } from 'ngx-toastr';
 import { SavesearchService } from '../../../services/savesearch.service';
 
 @Component({
+  standalone: false,
   selector: 'app-viewsearch',
   templateUrl: './viewsearch.component.html',
   styleUrls: ['./viewsearch.component.css']

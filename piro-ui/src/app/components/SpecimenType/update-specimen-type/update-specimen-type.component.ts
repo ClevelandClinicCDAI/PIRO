@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
+  standalone: false,
   selector: 'app-update-specimen-type',
   templateUrl: './update-specimen-type.component.html',
   styleUrls: ['./update-specimen-type.component.css']

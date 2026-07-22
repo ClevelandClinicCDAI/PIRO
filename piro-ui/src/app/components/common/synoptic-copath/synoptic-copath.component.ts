@@ -4,6 +4,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ToastrService } from 'ngx-toastr';
 
 @Component({
+  standalone: false,
   selector: 'app-synoptic-copath',
   templateUrl: './synoptic-copath.component.html',
   styleUrls: ['./synoptic-copath.component.css']

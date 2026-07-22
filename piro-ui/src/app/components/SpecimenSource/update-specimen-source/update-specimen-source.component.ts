@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 
 @Component({
+  standalone: false,
   selector: 'app-update-specimen-source',
   templateUrl: './update-specimen-source.component.html',
   styleUrls: ['./update-specimen-source.component.css']

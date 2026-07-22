@@ -7,6 +7,7 @@ import { RequesthistoryService } from 'src/app/services/requesthistory.service';
 
 
 @Component({
+  standalone: false,
   selector: 'app-request-notes',
   templateUrl: './request-notes.component.html',
   styleUrls: ['./request-notes.component.css']

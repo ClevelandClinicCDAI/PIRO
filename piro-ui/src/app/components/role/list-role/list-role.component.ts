@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import { ConfirmDialogService } from '../../../services/confirm-dialog.service';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 @Component({
+  standalone: false,
   selector: 'app-list-role',
   templateUrl: './list-role.component.html',
   styleUrls: ['./list-role.component.css']
