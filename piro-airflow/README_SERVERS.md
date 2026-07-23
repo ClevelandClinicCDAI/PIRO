@@ -5,6 +5,8 @@ This file provides example documentation of the Airflow installation process for
 ## Important Directories & Files
 
 * Airflow config file: /home/piro-builder/airflow/airflow.cfg
+* Airflow service logs: /var/log/piro-airflow/
+* Airflow service logrotate policy: /etc/logrotate.d/piro-airflow
 * SSL Certificates: /etc/ssl/certs/
 * Codebase: /opt/piro-airflow/piro-airflow
 
@@ -53,6 +55,10 @@ This file provides example documentation of the Airflow installation process for
     * Execute the appropriate pipeline within our codebase to deploy the code to the server.  This should copy the code itself into the target directory (via `rsync`) and should also install python packages into the venv.
     * Confirm that the code was copied to the server properly and that the venv has the necessary packages installed.
 1. Set up SystemD services for Airflow:
+    * Create a directory for Airflow service logs:
+        * `sudo mkdir -p /var/log/piro-airflow`
+        * `sudo chown -R piro-builder:piro-builder /var/log/piro-airflow`
+        * `sudo chmod 755 /var/log/piro-airflow`
     * Create the following files
     * /etc/systemd/system/piro-airflow-dag-processor.service:
 
@@ -72,6 +78,8 @@ This file provides example documentation of the Airflow installation process for
             ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow dag-processor
             Restart=always
             RestartSec=5s
+            StandardOutput=append:/var/log/piro-airflow/dag-processor.out.log
+            StandardError=append:/var/log/piro-airflow/dag-processor.err.log
 
             [Install]
             WantedBy=multi-user.target
@@ -95,6 +103,8 @@ This file provides example documentation of the Airflow installation process for
             ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow triggerer
             Restart=always
             RestartSec=5s
+            StandardOutput=append:/var/log/piro-airflow/triggerer.out.log
+            StandardError=append:/var/log/piro-airflow/triggerer.err.log
 
             [Install]
             WantedBy=multi-user.target
@@ -118,6 +128,8 @@ This file provides example documentation of the Airflow installation process for
             ExecStart=/opt/piro-airflow/piro-airflow_venv/bin/airflow scheduler
             Restart=always
             RestartSec=5s
+            StandardOutput=append:/var/log/piro-airflow/scheduler.out.log
+            StandardError=append:/var/log/piro-airflow/scheduler.err.log
 
             [Install]
             WantedBy=multi-user.target
@@ -142,10 +154,33 @@ This file provides example documentation of the Airflow installation process for
             Restart=on-failure
             RestartSec=5s
             PrivateTmp=true
+            StandardOutput=append:/var/log/piro-airflow/webserver.out.log
+            StandardError=append:/var/log/piro-airflow/webserver.err.log
 
             [Install]
             WantedBy=multi-user.target
         ```
+
+    * Configure log rotation for Airflow service logs:
+        * Create `/etc/logrotate.d/piro-airflow` with:
+
+            ```bash
+            /var/log/piro-airflow/*.log {
+                daily
+                rotate 14
+                compress
+                delaycompress
+                missingok
+                notifempty
+                copytruncate
+                su piro-builder piro-builder
+            }
+            ```
+
+        * Validate the logrotate configuration:
+            * `sudo logrotate -d /etc/logrotate.d/piro-airflow`
+        * Optional: force a one-time rotation test:
+            * `sudo logrotate -f /etc/logrotate.d/piro-airflow`
 
     * Enable the services (one-time setup):
         * Ensure these service units are enabled so they start on boot:
