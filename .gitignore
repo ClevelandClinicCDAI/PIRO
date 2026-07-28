@@ -41,3 +41,4 @@ artifacts/db-migration/*
 # Local region seed extract (environment-specific)
 /Region.csv
 docker-compose.override.yml
+.inference-audit/
