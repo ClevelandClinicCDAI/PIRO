@@ -32,7 +32,9 @@ export const environment = {
     saveAttestationUrl: "token/saveattest",
     errorExceptionMessage: 'Error during data fetch',
     accessExceptionMessage: 'Permission denied for the request',
-    slideRequestUrl: 'sliderequest'
+    slideRequestUrl: 'sliderequest',
+    cytologyEvaluationUrl: 'cytologyevaluation',
+    userSearchUrl: 'user/search'
 };
 
 
@@ -66,7 +68,9 @@ export const environment_local = {
     saveAttestationUrl: "token/saveattest",
     errorExceptionMessage: 'Error during data fetch',
     accessExceptionMessage: 'Permission denied for the request',
-    slideRequestUrl: 'sliderequest'
+    slideRequestUrl: 'sliderequest',
+    cytologyEvaluationUrl: 'cytologyevaluation',
+    userSearchUrl: 'user/search'
 };
 
 /*

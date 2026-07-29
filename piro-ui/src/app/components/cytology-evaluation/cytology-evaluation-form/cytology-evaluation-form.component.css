@@ -1,0 +1,36 @@
+.evaluation-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.cytology-evaluation-form table input.form-control-sm,
+.cytology-evaluation-form table select.form-control-sm {
+  min-width: 90px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  .cytology-evaluation-form .card {
+    break-inside: avoid;
+    border: 1px solid #999 !important;
+  }
+
+  .cytology-evaluation-form input,
+  .cytology-evaluation-form select,
+  .cytology-evaluation-form textarea {
+    border: none !important;
+    background: transparent !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+

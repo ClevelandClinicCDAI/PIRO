@@ -157,6 +157,26 @@ ordered_piro_view_files(){
     fi
   done < <(find "$dir" -type f -name '*.sql' | sort)
 }
+apply_reference_data(){
+  # Reference/lookup data (e.g. dropdown terminology values) that must always be
+  # present regardless of PIRO_LOAD_SAMPLE_DATA. These scripts live under MISC/
+  # but, unlike other one-off MISC scripts, are written to be idempotent
+  # (IF NOT EXISTS guards) and are safe/expected to run on every bootstrap.
+  local reference_scripts=(
+    "${SCRIPTS_ROOT}/MISC/CytologyTerminology_Seed.sql"
+  )
+  local file
+  for file in "${reference_scripts[@]}"; do
+    if [ ! -f "$file" ]; then
+      continue
+    fi
+    log "Applying ${file#/seed/}"
+    local sql_input
+    sql_input=$(normalize_sql_file "$file")
+    run_sql "$SQL_DB" -i "$sql_input"
+    rm -f "$sql_input"
+  done
+}
 seed_sql_data(){
   if [ ! -f "$SAMPLE_SQL" ]; then
     return
@@ -225,6 +245,7 @@ main(){
   for dir in Table Function View/PIRO View/SOLR PLSQL Airflow; do
     apply_dir "${SCRIPTS_ROOT}/${dir}"
   done
+  apply_reference_data
   seed_sql_data
   if wait_for_solr; then
     post_solr PIROCase /seed/solr-case-docs.json

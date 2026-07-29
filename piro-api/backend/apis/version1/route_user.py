@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from core.auth_bearer import JWTBearer
 from core.constants import Constants
@@ -10,13 +10,19 @@ from db.repository.user import (
     get_user_by_id,
     list_user,
     list_user_active,
+    search_users_active,
     update_user,
 )
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi_pagination import Page, paginate
 from sqlalchemy.orm import Session
-from viewmodel.user import UserVM, UserVMCreate, UserVMUpdate
+from viewmodel.user import (
+    UserSearchResultVM,
+    UserVM,
+    UserVMCreate,
+    UserVMUpdate,
+)
 
 router = APIRouter()
 
@@ -102,6 +108,29 @@ async def read_all(db: Session = Depends(get_db)):
 async def read_all_active(db: Session = Depends(get_db)):
     users = list_user_active(db=db)
     return paginate(users)
+
+
+@router.get(
+    "/search",
+    dependencies=[Depends(JWTBearer())],
+    response_model=List[UserSearchResultVM],
+)
+async def search(
+    q: str = Query(..., min_length=1, alias="q"),
+    db: Session = Depends(get_db),
+):
+    """Fast typeahead lookup of active users by NUID or name, used by
+    user-picker controls so the full user list never has to be loaded."""
+    users = search_users_active(query=q, db=db)
+    return [
+        UserSearchResultVM(
+            userId=user.UserId,
+            nuid=user.NUID,
+            firstName=user.FirstName,
+            lastName=user.LastName,
+        )
+        for user in users
+    ]
 
 
 @router.get(

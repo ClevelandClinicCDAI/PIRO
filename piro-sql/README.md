@@ -26,3 +26,14 @@ Deploy the scripts in the below sequence
         TRUNCATE --> Scripts that truncate the SSIS Staging tables during staging data load
     TABLES --> This will created SSIS Staging Tables
     JOBS --> SSIS job creation for delta load and full data loads
+
+# MISC
+
+One-off scripts (schema tweaks, backfills, etc.) that are run manually per environment
+and are NOT part of the automated deployment sequence above.
+
+Exception: reference/lookup data scripts that a feature depends on to function (e.g.
+`CytologyTerminology_Seed.sql`) are written to be idempotent and are applied
+automatically by `piro-sample-data/entrypoint.sh` on every bootstrap, in addition to
+being runnable manually. See that script's `apply_reference_data` function for the
+current list.

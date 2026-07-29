@@ -41,6 +41,13 @@ class UserAuthVM(BaseModel):
         allow_population_by_field_name = True
 
 
+class UserSearchResultVM(BaseModel):
+    userId: int
+    nuid: str
+    firstName: str
+    lastName: str
+
+
 class UserDetailsVM(BaseModel):
     Name: str = Field(alias="name")
     Nuid: str = Field(alias="nuid")

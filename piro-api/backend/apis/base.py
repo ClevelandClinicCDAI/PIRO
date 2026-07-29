@@ -3,6 +3,7 @@ from apis.version1 import (
     route_casecomment,
     route_commentType,
     route_cohort,
+    route_cytology_evaluation,
     route_email_users,
     route_ethnicity,
     route_etl_log,
@@ -119,4 +120,9 @@ api_router.include_router(
     route_slide_request.router,
     prefix="/sliderequest",
     tags=["Slide Requests"],
+)
+api_router.include_router(
+    route_cytology_evaluation.router,
+    prefix="/cytologyevaluation",
+    tags=["Cytology Evaluations"],
 )

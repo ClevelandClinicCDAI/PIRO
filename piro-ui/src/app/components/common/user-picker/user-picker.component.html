@@ -1,0 +1,33 @@
+<div class="user-picker position-relative">
+  <div class="input-group">
+    <input
+      type="text"
+      class="form-control"
+      [placeholder]="placeholder"
+      [value]="query"
+      [disabled]="disabled"
+      (input)="onInput($any($event.target).value)"
+      (focus)="showResults = true"
+      (blur)="blurSoon()"
+    />
+    <button
+      *ngIf="query"
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="clear()"
+      title="Clear"
+    >
+      &times;
+    </button>
+  </div>
+  <ul class="list-group user-picker-results" *ngIf="showResults && (results.length || searching)">
+    <li class="list-group-item text-muted" *ngIf="searching">Searching...</li>
+    <li
+      class="list-group-item list-group-item-action"
+      *ngFor="let user of results"
+      (mousedown)="select(user)"
+    >
+      {{ user.lastName }}, {{ user.firstName }} <small class="text-muted">({{ user.nuid }})</small>
+    </li>
+  </ul>
+</div>

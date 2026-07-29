@@ -49,6 +49,8 @@ import { CohortComponent } from './components/cohort/cohort.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { CytologyEvaluationFormComponent } from './components/cytology-evaluation/cytology-evaluation-form/cytology-evaluation-form.component';
+import { CytologyEvaluationCompletedListComponent } from './components/cytology-evaluation/cytology-evaluation-completed-list/cytology-evaluation-completed-list.component';
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -123,6 +125,24 @@ const routes: Routes = [
     path: 'slide-request-queue', component: SlideRequestQueueComponent, canActivate: [AuthGuard],
     data: {
       role: ['ADMIN', 'DEMOADMIN', 'SLIDEROOM']
+    }
+  },
+  {
+    path: 'cytology-evaluation', component: CytologyEvaluationFormComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'cytology-evaluation/completed', component: CytologyEvaluationCompletedListComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
+    }
+  },
+  {
+    path: 'cytology-evaluation/:id', component: CytologyEvaluationFormComponent, canActivate: [AuthGuard],
+    data: {
+      role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']
     }
   },
   {

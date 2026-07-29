@@ -1,0 +1,293 @@
+<div class="container-fluid cytology-evaluation-form py-3">
+  <h2>Cytology Telepathology Evaluation</h2>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <div class="row">
+    <div class="col-md-3 no-print" *ngIf="!readonlyMode">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>My Evaluations</span>
+          <button type="button" class="btn btn-sm btn-primary" (click)="startNewEvaluation()">+ New</button>
+        </div>
+        <ul class="list-group list-group-flush evaluation-list">
+          <li
+            class="list-group-item list-group-item-action"
+            *ngFor="let item of myEvaluations; trackBy: trackById"
+            [class.active]="evaluation?.id === item.id"
+            (click)="openEvaluation(item)"
+          >
+            <div class="d-flex justify-content-between align-items-center">
+              <span>#{{ item.id }} - {{ item.patientIdentifiers || 'Untitled' }}</span>
+              <span [ngClass]="getStatusBadgeClasses(item.status)">{{ item.status }}</span>
+            </div>
+          </li>
+          <li class="list-group-item text-muted" *ngIf="!myEvaluations.length">No evaluations yet.</li>
+        </ul>
+        <div class="card-body border-top">
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100" (click)="viewCompletedEvaluations()">
+            View My Completed Evaluations
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-9 print-full-width" [class.col-md-12]="readonlyMode">
+      <div *ngIf="loading" class="text-muted">Loading evaluation...</div>
+
+      <form [formGroup]="form" (ngSubmit)="onSave()" *ngIf="!loading">
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span *ngIf="evaluation">Evaluation #{{ evaluation.id }}</span>
+            <span *ngIf="!evaluation">New Evaluation</span>
+            <span *ngIf="evaluation" [ngClass]="getStatusBadgeClasses(evaluation.status)">{{ evaluation.status }}</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label>Patient MRN</label>
+                <input type="text" class="form-control" formControlName="patientIdentifiers" />
+              </div>
+              <div class="form-group col-md-6">
+                <label>Procedure Type</label>
+                <select class="form-control" formControlName="procedureType">
+                  <option value="">-- Select --</option>
+                  <option *ngFor="let opt of terminology.procedureType" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="form-group col-md-4">
+                <label>Procedure Performed By</label>
+                <select class="form-control" formControlName="procedurePerformedBy">
+                  <option value="">-- Select --</option>
+                  <option value="Attending">Attending</option>
+                  <option value="Fellow">Fellow</option>
+                  <option value="Resident">Resident</option>
+                </select>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Evaluation Performed By</label>
+                <select class="form-control" formControlName="evaluationPerformedBy">
+                  <option value="">-- Select --</option>
+                  <option value="Onsite">Onsite</option>
+                  <option value="Telecytology">Telecytology</option>
+                </select>
+              </div>
+              <div class="form-group col-md-4">
+                <label class="d-block">Via Telecytology?</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" [value]="true" formControlName="viaTelecytology" id="teleYes" />
+                  <label class="form-check-label" for="teleYes">Yes</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" [value]="false" formControlName="viaTelecytology" id="teleNo" />
+                  <label class="form-check-label" for="teleNo">No</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label>Read Location</label>
+                <select class="form-control" formControlName="readLocation">
+                  <option value="">-- Select --</option>
+                  <option *ngFor="let opt of terminology.readLocation" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label>Procedure Location</label>
+                <select class="form-control" formControlName="procedureLocation">
+                  <option value="">-- Select --</option>
+                  <option *ngFor="let opt of terminology.procedureLocation" [value]="opt">{{ opt }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">Participants</div>
+          <div class="card-body">
+            <div class="row">
+              <div class="form-group col-md-6">
+                <label>Assign Screened Case To</label>
+                <app-user-picker
+                  [initialLabel]="evaluation?.assignedToName"
+                  (userSelected)="onAssignedToSelected($event)"
+                ></app-user-picker>
+              </div>
+              <div class="form-group col-md-6">
+                <label>Cytology Personnel</label>
+                <app-user-picker
+                  [initialLabel]="evaluation?.cytologyPersonnelName"
+                  (userSelected)="onCytologyPersonnelSelected($event)"
+                ></app-user-picker>
+              </div>
+            </div>
+            <div class="row">
+              <div class="form-group col-md-4">
+                <label>Pathologist</label>
+                <app-user-picker
+                  [initialLabel]="evaluation?.pathologistName"
+                  (userSelected)="onPathologistSelected($event)"
+                ></app-user-picker>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Fellow</label>
+                <app-user-picker
+                  [initialLabel]="evaluation?.fellowName"
+                  (userSelected)="onFellowSelected($event)"
+                ></app-user-picker>
+              </div>
+              <div class="form-group col-md-4">
+                <label>Resident</label>
+                <app-user-picker
+                  [initialLabel]="evaluation?.residentName"
+                  (userSelected)="onResidentSelected($event)"
+                ></app-user-picker>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Specimen Sites</span>
+            <button type="button" class="btn btn-sm btn-outline-primary no-print" *ngIf="!readonlyMode" (click)="addSite()">+ Add Site</button>
+          </div>
+          <div class="card-body table-responsive">
+            <table class="table table-sm align-middle" formArrayName="sites">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th>Eval Episode #</th>
+                  <th>Adequacy</th>
+                  <th>DQ</th>
+                  <th>Pap</th>
+                  <th>ThinPrep</th>
+                  <th>Cell Block</th>
+                  <th>Unstained</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let site of sites.controls; index as i; trackBy: trackByIndex" [formGroupName]="i">
+                  <td>
+                    <select class="form-control form-control-sm" formControlName="site">
+                      <option value="">-- Select --</option>
+                      <option *ngFor="let opt of terminology.site" [value]="opt">{{ opt }}</option>
+                    </select>
+                  </td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="evalEpisodeNumber" /></td>
+                  <td>
+                    <select class="form-control form-control-sm" formControlName="adequacy">
+                      <option value="">-- Select --</option>
+                      <option *ngFor="let opt of terminology.adequacy" [value]="opt">{{ opt }}</option>
+                    </select>
+                  </td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="dqCount" /></td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="papCount" /></td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="thinPrepCount" /></td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="cellBlockCount" /></td>
+                  <td><input type="number" min="0" class="form-control form-control-sm" formControlName="unstainedSlidesCount" /></td>
+                  <td class="no-print" *ngIf="!readonlyMode">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSite(i)">&times;</button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="fw-bold">
+                  <td colspan="3">Totals</td>
+                  <td>{{ totals.totalDQ }}</td>
+                  <td>{{ totals.totalPap }}</td>
+                  <td>{{ totals.totalThinPrep }}</td>
+                  <td>{{ totals.totalCellBlock }}</td>
+                  <td>{{ totals.totalUnstainedSlides }}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-header">Clinical Details</div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Clinical History</label>
+              <textarea class="form-control" rows="3" formControlName="clinicalHistory"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Patient History</label>
+              <textarea class="form-control" rows="3" formControlName="patientHistory"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea class="form-control" rows="3" formControlName="notes"></textarea>
+            </div>
+            <div class="form-group col-md-3">
+              <label>Total Time Spent (minutes)</label>
+              <input type="number" min="0" class="form-control" formControlName="totalTimeSpentMinutes" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3" *ngIf="evaluation">
+          <div class="card-header">Verification</div>
+          <div class="card-body">
+            <p class="mb-1" *ngIf="evaluation.prelimVerifierName">
+              Preliminarily verified by {{ evaluation.prelimVerifierName }} ({{ evaluation.prelimVerifierNuid }}) on
+              {{ evaluation.prelimVerifiedDate | date: 'short' }}
+            </p>
+            <p class="mb-1" *ngIf="evaluation.finalVerifierName">
+              Finally verified by {{ evaluation.finalVerifierName }} ({{ evaluation.finalVerifierNuid }}) on
+              {{ evaluation.finalVerifiedDate | date: 'short' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 no-print">
+          <button type="submit" class="btn btn-primary" *ngIf="!readonlyMode" [disabled]="saving || form.invalid">
+            {{ saving ? 'Saving...' : (evaluation ? 'Save Changes' : 'Create Draft') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning"
+            *ngIf="!readonlyMode && evaluation && evaluation.status === 'Draft'"
+            [disabled]="prelimVerifying"
+            (click)="onPrelimVerify()"
+          >
+            {{ prelimVerifying ? 'Verifying...' : 'Preliminary Verify' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-success"
+            *ngIf="!readonlyMode && evaluation && evaluation.status === 'Prelim Verified'"
+            [disabled]="finalVerifying"
+            (click)="onFinalVerify()"
+          >
+            {{ finalVerifying ? 'Verifying...' : 'Final Verify' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            *ngIf="!readonlyMode && evaluation && evaluation.status === 'Draft'"
+            [disabled]="deleting"
+            (click)="onDelete()"
+          >
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary ms-auto"
+            *ngIf="evaluation"
+            (click)="onPrint()"
+          >
+            Print / Save as PDF
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

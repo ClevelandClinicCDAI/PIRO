@@ -3,6 +3,9 @@ from db.models.AuditTrailSearch import AuditTrailSearch
 from db.models.Case import Case
 from db.models.CaseComment import CaseComment
 from db.models.CommentType import CommentType
+from db.models.CytologyEvaluation import CytologyEvaluation
+from db.models.CytologyEvaluationSite import CytologyEvaluationSite
+from db.models.CytologyTerminology import CytologyTerminology
 from db.models.Ethnicity import Ethnicity
 from db.models.ETL_Log import ETL_Log
 from db.models.Gender import Gender
@@ -30,6 +33,9 @@ __all__ = [
     "Case",
     "CaseComment",
     "CommentType",
+    "CytologyEvaluation",
+    "CytologyEvaluationSite",
+    "CytologyTerminology",
     "Ethnicity",
     "ETL_Log",
     "Gender",

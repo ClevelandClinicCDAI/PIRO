@@ -25,6 +25,7 @@ export class HeaderComponent {
   isAdminSecurity:Boolean = false;
   canRequestSlides:Boolean = false;
   canViewSlideQueue:Boolean = false;
+  canAccessCytologyEvaluation:Boolean = false;
 
   authListenerSubs: any;
   burgerChecked: boolean = false;
@@ -81,6 +82,7 @@ export class HeaderComponent {
     this.isAdminSecurity = ['SECURITYADMIN'].includes(this.role);
     this.canRequestSlides = ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER', 'SLIDEROOM'].includes(this.role);
     this.canViewSlideQueue = ['ADMIN', 'DEMOADMIN', 'SLIDEROOM'].includes(this.role);
+    this.canAccessCytologyEvaluation = ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER'].includes(this.role);
     // console.log("this.isSearch", this.isSearch);
     // console.log("this.isAdmin", this.isAdmin);
     // console.log("this.isRequestForm", this.isRequestForm);

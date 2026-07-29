@@ -43,6 +43,27 @@ class Constants:
         SURGICAL = "Surgical"
         CYTOLOGY = "Cytology"
 
+    class CytologyEvaluationStatus(str, Enum):
+        DRAFT = "Draft"
+        PRELIM_VERIFIED = "Prelim Verified"
+        FINAL_VERIFIED = "Final Verified"
+
+    class CytologyProcedurePerformedBy(str, Enum):
+        FELLOW_RESIDENT_ONLY = "Fellow/resident ONLY"
+        FELLOW_RESIDENT_AND_PATHOLOGIST = "Fellow/ Resident AND Pathologist"
+        CLINICIAN = "Clinician"
+
+    class CytologyEvaluationPerformedBy(str, Enum):
+        FELLOW_RESIDENT_CYTOTECH_ONLY = "Fellow/Resident/Cytotech ONLY"
+        CYTOLOGY_PERSONNEL_AND_PATHOLOGIST = "Cytology Personnel AND Pathologist"
+
+    class CytologyTerminologyCategory(str, Enum):
+        PROCEDURE_TYPE = "ProcedureType"
+        READ_LOCATION = "ReadLocation"
+        PROCEDURE_LOCATION = "ProcedureLocation"
+        SITE = "Site"
+        ADEQUACY = "Adequacy"
+
     class StatusCode(Enum):
         S = 1
         W = 2

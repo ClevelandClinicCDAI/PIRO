@@ -27,7 +27,9 @@ export const environment = {
     annotationConfigUrl: 'solrtest/case/annotationconfig',
     errorExceptionMessage: 'Error during data fetch',
     accessExceptionMessage: 'Permission denied for the request',
-    slideRequestUrl: 'sliderequest'
+    slideRequestUrl: 'sliderequest',
+  cytologyEvaluationUrl: 'cytologyevaluation',
+  userSearchUrl: 'user/search'
 };
 
 /*

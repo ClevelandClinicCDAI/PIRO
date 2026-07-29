@@ -141,6 +141,18 @@ a.disabled {
   border: #0d6efd 1px solid !important;
 }
 
+/* Hides global app chrome (nav, toaster, footer) when printing any page.
+   Feature-specific print rules (e.g. hiding a sidebar/action buttons) live in
+   that feature's own component stylesheet via @media print. */
+@media print {
+  app-header,
+  app-toaster,
+  footer,
+  app-confirm-dialog {
+    display: none !important;
+  }
+}
+
 .disabledDiv {
   pointer-events: none; 
   opacity: 0.5;    

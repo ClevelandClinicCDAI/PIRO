@@ -115,6 +115,9 @@ import { AireviewcasedetailComponent } from './components/modal/aireviewcasedeta
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+import { CytologyEvaluationFormComponent } from './components/cytology-evaluation/cytology-evaluation-form/cytology-evaluation-form.component';
+import { CytologyEvaluationCompletedListComponent } from './components/cytology-evaluation/cytology-evaluation-completed-list/cytology-evaluation-completed-list.component';
+import { UserPickerComponent } from './components/common/user-picker/user-picker.component';
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
 
 export function initializeApp(appConfigService: AppConfigService) {
@@ -211,6 +214,9 @@ export function initializeApp(appConfigService: AppConfigService) {
     UserattestComponent,
     SlideRequestFormComponent,
     SlideRequestQueueComponent,
+    CytologyEvaluationFormComponent,
+    CytologyEvaluationCompletedListComponent,
+    UserPickerComponent,
     EmailUsersComponent
   ],
   imports: [

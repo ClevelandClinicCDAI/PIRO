@@ -119,6 +119,27 @@ def list_user(db: Session):
     return users
 
 
+def search_users_active(query: str, db: Session, limit: int = 15):
+    """Fast typeahead lookup of active users by NUID or name.
+
+    Used by user-picker controls (e.g. the cytology evaluation form) so the
+    frontend never has to load the full user list.
+    """
+    like_query = f"%{query.strip()}%"
+    return (
+        db.query(User)
+        .filter(User.IsActive == True)  # noqa: E712
+        .filter(
+            (User.NUID.ilike(like_query))
+            | (User.FirstName.ilike(like_query))
+            | (User.LastName.ilike(like_query))
+        )
+        .order_by(asc(User.LastName), asc(User.FirstName))
+        .limit(limit)
+        .all()
+    )
+
+
 def list_user_active(db: Session):
     users = []
     data = (
