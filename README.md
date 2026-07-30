@@ -79,6 +79,30 @@ Then open `piro-ui/src/assets/config.json` and set:
 
 > **Note:** `piro-ui/src/assets/config.json` is gitignored (`piro-ui/.gitignore`) so environment-specific values never end up in version control. Recreate the file on every clean checkout, and rebuild the `ui` image (`docker compose build ui`) after any change to it.
 
+### Local OAuth/SSO testing: `hosts` file entry
+
+The Compose stack includes a `mock-oauth` service (based on `ghcr.io/navikt/mock-oauth2-server`) that stands in for the organization's SSO provider so you can exercise the OAuth login flow entirely on your workstation, with no VPN or corporate network access required.
+
+For this to work, the mock IdP must be reachable at the **same hostname** from both your browser (during the redirect to the login page) and the `api` container (during token exchange and JWKS lookup). Otherwise the `iss` claim on the issued JWT will not match what the API expects and token validation will fail.
+
+The Compose file uses `piro-auth` as that shared hostname. You must map it to `127.0.0.1` in your OS `hosts` file **before** running `docker compose up`:
+
+- **Windows:** open `C:\Windows\System32\drivers\etc\hosts` in an editor running as Administrator and add:
+
+    ```text
+    127.0.0.1  piro-auth
+    ```
+
+- **macOS / Linux:** append the same line to `/etc/hosts` (needs `sudo`):
+
+    ```bash
+    echo "127.0.0.1  piro-auth" | sudo tee -a /etc/hosts
+    ```
+
+Inside the `api` container the same name resolves via the `extra_hosts: - "piro-auth:host-gateway"` entry already defined in `docker-compose.yml`, so no additional configuration is needed there.
+
+Once the entry is in place, the mock login page is reachable at <http://piro-auth:8888/piro> and the UI's OAuth redirect flow will complete against it. To skip OAuth entirely and use the legacy LDAP bypass instead, set `ACCESS_TOKEN_TEST_USER` as described below.
+
 ### One-time bootstrap with sample data
 
 macOS / Linux:

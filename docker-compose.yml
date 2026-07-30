@@ -28,7 +28,51 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://localhost:8983/solr/admin/cores?action=STATUS"
+          "http://localhost:8983/solr/admin/cores?action=STATUS",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  mock-oauth:
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    platform: linux/amd64
+    ports:
+      - "8888:8888"
+    environment:
+      SERVER_PORT: 8888
+      # Pin the issuer so the browser and the api container agree on it.
+      # Any username typed at the login form becomes `sub` / `preferred_username`.
+      # The `groups` claim mirrors AD_SECURITY_GROUP so group-based auth tests have
+      # something realistic to match on.
+      JSON_CONFIG: |
+        {
+          "interactiveLogin": true,
+          "httpServer": "NettyWrapper",
+          "tokenCallbacks": [
+            {
+              "issuerId": "piro",
+              "tokenExpiry": 3600,
+              "requestMappings": [
+                {
+                  "requestParam": "scope",
+                  "match": "openid",
+                  "claims": {
+                    "sub": "{{login}}",
+                    "preferred_username": "{{login}}",
+                    "email": "{{login}}@ccf.org.local",
+                    "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
+                    "roles": ["USER"]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8888/piro/.well-known/openid-configuration || exit 1",
         ]
       interval: 10s
       timeout: 5s
@@ -99,9 +143,22 @@ services:
       AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-}
       AIRFLOW_DAG_COHORT_LOADER_URL: ${AIRFLOW_DAG_COHORT_LOADER_URL:-}
       AIRFLOW_CERTIFICATE: ${AIRFLOW_CERTIFICATE:-}
+      # OAuth / OIDC settings. `piro-auth` must resolve to 127.0.0.1 from both
+      # the browser (via the Windows hosts file) and the api container (via the
+      # extra_hosts entry below). This keeps the issuer URL identical on both
+      # sides so JWT validation succeeds.
+      OIDC_ISSUER: ${OIDC_ISSUER:-http://piro-auth:8888/piro}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-piro-api}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-dev-secret-not-a-real-secret}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
+      OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
+    extra_hosts:
+      - "piro-auth:host-gateway"
     depends_on:
       sample-data:
         condition: service_completed_successfully
+      mock-oauth:
+        condition: service_healthy
     ports:
       - "8001:8001"
   ui:
@@ -112,6 +169,11 @@ services:
     environment:
       API_BASE_URL: /api/
       IRB_DISCLAIMER_TEXT: ${PIRO_IRB_DISCLAIMER_TEXT:-}
+      # Browser-facing OIDC endpoints (the UI runs in the browser, so it uses
+      # the same `piro-auth` hostname resolved via the Windows hosts file).
+      OIDC_ISSUER_PUBLIC: ${OIDC_ISSUER_PUBLIC:-http://piro-auth:8888/piro}
+      OIDC_CLIENT_ID: ${OIDC_UI_CLIENT_ID:-piro-ui}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
     ports:
       - "8080:80"
     depends_on:
