@@ -50,9 +50,11 @@ import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'auth/callback', component: AuthCallbackComponent },
   { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
   {
     path: 'search', component: SearchComponent, canActivate: [AuthGuard], data: {

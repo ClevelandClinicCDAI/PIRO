@@ -6,7 +6,24 @@
           <h4 class="card-title text-center mb-4 mt-1">Login</h4>
           <hr>
           <p class="text-success text-center"><img src="/assets/images/cc-logo.png" alt="logo"></p>
-          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+          <!-- OAuth / SSO mode: single button, no local form. -->
+          <ng-container *ngIf="isOAuthMode">
+            <p class="text-muted text-center small mb-3">
+              Sign in with your organization account.
+            </p>
+            <div class="form-group">
+              <button type="button" class="btn btn-primary btn-block login_btn" (click)="ssoLogin()"
+                [disabled]="ssoInFlight">
+                <span *ngIf="ssoInFlight" class="spinner-border spinner-border-sm me-2" role="status"
+                  aria-hidden="true"></span>
+                Sign in with SSO
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- LDAP mode: preserved username/password form. -->
+          <form *ngIf="!isOAuthMode" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <div class="form-group  mb-3">
               <div class="input-group">
                 <span class="input-group-text" id="basic-addon1"><i class="fa fa-user"></i></span>
@@ -28,7 +45,7 @@
               <div *ngIf="submitted && f.password.errors" class="invalid-feedback">
                 <div *ngIf="f.password.errors.required">Password is required</div>
               </div>
-            </div>           
+            </div>
             <div class="form-group">
               <button type="submit" class="btn btn-primary btn-block login_btn"> Sign In
               </button>

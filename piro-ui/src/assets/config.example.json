@@ -1,4 +1,9 @@
 {
     "apiBaseUrl": "https://your-api-server:8082/",
-    "irbDisclaimerText": "Your IRB disclaimer text here."
+    "irbDisclaimerText": "Your IRB disclaimer text here.",
+    "authMode": "LDAP",
+    "oidcIssuer": "https://your-idp.example.com/tenant",
+    "oidcClientId": "piro-ui",
+    "oidcRedirectUri": "https://your-ui-server/auth/callback",
+    "oidcScopes": "openid profile email"
 }

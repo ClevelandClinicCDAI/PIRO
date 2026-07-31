@@ -1,16 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../services/localStorage.service';
 import { FilterService } from '../../services/filter.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { UserattestComponent } from '../modal/userattest/userattest.component';
 import { ToastrService } from 'ngx-toastr';
+import { AppConfigService } from '../../services/app-config.service';
+import { OidcService } from '../../services/oidc.service';
 declare var $: any;
 @Component({
-  standalone: false,
+	standalone: false,
 	selector: 'app-login',
 	templateUrl: './login.component.html',
 	styleUrls: ['./login.component.css']
@@ -18,14 +20,19 @@ declare var $: any;
 export class LoginComponent implements OnInit {
 	loginForm: any = FormGroup;
 	submitted = false;
+	isOAuthMode = false;
+	ssoInFlight = false;
 	constructor(private formBuilder: FormBuilder,
 		private authService: AuthService,
 		private toastService: ToastService,
 		private router: Router,
-		private filterService:FilterService,
-		private localStorageService:LocalStorageService,
+		private route: ActivatedRoute,
+		private filterService: FilterService,
+		private localStorageService: LocalStorageService,
 		private modalService: NgbModal,
-		private toastr: ToastrService) { }
+		private toastr: ToastrService,
+		private appConfig: AppConfigService,
+		private oidcService: OidcService) { }
 
 	get f() { return this.loginForm.controls; }
 
@@ -38,7 +45,7 @@ export class LoginComponent implements OnInit {
 		//True if all the fields are filled
 		if (this.submitted) {
 			const resp = await this.authService.login(this.loginForm.get('username').value, this.loginForm.get('password').value, true);
-			if(resp.status == true){
+			if (resp.status == true) {
 				console.clear();
 				//Open popup
 				this.authService.getAttestation().then(async (data: any) => {
@@ -46,7 +53,7 @@ export class LoginComponent implements OnInit {
 						this.openAttestPopup(resp.status, resp.role, true, data.textAttest, data.requireAttest, this.loginForm.get('username').value, this.loginForm.get('password').value);
 					} else {
 						const resp = await this.authService.login(this.loginForm.get('username').value, this.loginForm.get('password').value, false);
-						if(resp.status == true){
+						if (resp.status == true) {
 							this.filterService.setLogin(resp.status, resp.role, true);
 							this.router.navigate(['/search']);
 						}
@@ -61,14 +68,30 @@ export class LoginComponent implements OnInit {
 		}
 	}
 
+	/**
+	 * Kick off the OIDC authorization-code + PKCE flow. Called from the
+	 * "Sign in with SSO" button when `appConfig.isOAuthMode` is true.
+	 */
+	async ssoLogin() {
+		this.ssoInFlight = true;
+		try {
+			const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/search';
+			await this.oidcService.login(returnUrl);
+		} catch (err: any) {
+			this.ssoInFlight = false;
+			this.toastService.showErrorToast('Error', err?.message || 'Failed to start SSO.', []);
+		}
+	}
+
 	ngOnInit(): void {
+		this.isOAuthMode = this.appConfig.isOAuthMode;
 		//Add User form validations
 		this.loginForm = this.formBuilder.group({
 			username: ['', [Validators.required]],
 			password: ['', [Validators.required]]
 		});
 		// if(localStorage.getItem('api-token')){
-		if(this.localStorageService.getApiToken()){
+		if (this.localStorageService.getApiToken()) {
 			this.router.navigate(['/home']);
 		}
 	}

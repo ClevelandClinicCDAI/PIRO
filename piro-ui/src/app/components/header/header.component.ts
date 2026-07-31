@@ -5,7 +5,7 @@ import { ToastService } from '../../services/toast.service';
 import { EventTypes } from '../../models/event-types';
 import { LocalStorageService } from '../../services/localStorage.service';
 import { FilterService } from '../../services/filter.service';
-import {AivoteService} from '../../services/aivote.service';
+import { AivoteService } from '../../services/aivote.service';
 import { ToastrService } from 'ngx-toastr';
 @Component({
   standalone: false,
@@ -16,25 +16,25 @@ import { ToastrService } from 'ngx-toastr';
 export class HeaderComponent {
   token: any = '';
   isAuthenticated: Boolean = false;
-  role:string = '';
-  isSearch:Boolean = false;
-  isAdmin:Boolean = false;
-  isRequestForm:Boolean = false;
-  isRequestReview:Boolean = false;
-  isMyHistory:Boolean = false;
-  isAdminSecurity:Boolean = false;
-  canRequestSlides:Boolean = false;
-  canViewSlideQueue:Boolean = false;
+  role: string = '';
+  isSearch: Boolean = false;
+  isAdmin: Boolean = false;
+  isRequestForm: Boolean = false;
+  isRequestReview: Boolean = false;
+  isMyHistory: Boolean = false;
+  isAdminSecurity: Boolean = false;
+  canRequestSlides: Boolean = false;
+  canViewSlideQueue: Boolean = false;
 
   authListenerSubs: any;
   burgerChecked: boolean = false;
-  loginSubscription:any;
+  loginSubscription: any;
   setIntervalId: any;
   constructor(private authService: AuthService,
     private voteService: AivoteService,
     private router: Router,
     private toastService: ToastService,
-    private filterService:FilterService,
+    private filterService: FilterService,
     private toastr: ToastrService,
     private localStorageService: LocalStorageService) {
 
@@ -50,7 +50,7 @@ export class HeaderComponent {
 
     this.setIntervalId = setInterval(async () => {
       var auth: any = await this.authService.getIsAuth();
-      if(!auth?.isauth) {
+      if (!auth?.isauth) {
         this.logout();
       }
     }, 60000);
@@ -60,12 +60,12 @@ export class HeaderComponent {
         this.isAuthenticated = data.isAuth;
         this.role = data.role;
         this.setSecurity();
-        if(this.isAdmin) {
-            this.voteService.isPending().then((data: any) => {
-                if (data?.status && data?.data) {
-                  this.toastr.success('', 'There are AI annotation review pending. Please go to "AI Annotation Feedback" page.');
-                }
-            });
+        if (this.isAdmin) {
+          this.voteService.isPending().then((data: any) => {
+            if (data?.status && data?.data) {
+              this.toastr.success('', 'There are AI annotation review pending. Please go to "AI Annotation Feedback" page.');
+            }
+          });
         }
       }
     });
@@ -96,6 +96,27 @@ export class HeaderComponent {
       this.isAuthenticated = false;
       this.router.navigate(['/login']);
     }
+  }
+
+  /**
+   * Notifies the API (which returns the IdP end-session URL when in
+   * OAuth mode) and, if provided, hands the browser off to the IdP for
+   * an RP-initiated logout. Falls back to the local-only `logout()` on
+   * any error.
+   */
+  async logoutAsync() {
+    this.burgerChecked = false;
+    try {
+      const { endSessionUrl } = await this.authService.logoutRemote();
+      this.isAuthenticated = false;
+      if (endSessionUrl) {
+        window.location.assign(endSessionUrl);
+        return;
+      }
+    } catch (_err) {
+      // AuthService.logoutRemote() already clears local state on error.
+    }
+    this.router.navigate(['/login']);
   }
   ngOnDestroy() {
     this.authListenerSubs.unsubscribe();

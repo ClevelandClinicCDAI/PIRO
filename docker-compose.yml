@@ -183,11 +183,15 @@ services:
     environment:
       API_BASE_URL: /api/
       IRB_DISCLAIMER_TEXT: ${PIRO_IRB_DISCLAIMER_TEXT:-}
+      # Auth mode selector for the SPA. Same knob as the api service — set
+      # PIRO_AUTH_MODE=OAUTH in your shell to enable browser SSO.
+      AUTH_MODE: ${PIRO_AUTH_MODE:-LDAP}
       # Browser-facing OIDC endpoints (the UI runs in the browser, so it uses
       # the same `piro-auth` hostname resolved via the Windows hosts file).
       OIDC_ISSUER_PUBLIC: ${OIDC_ISSUER_PUBLIC:-http://piro-auth:8888/piro}
       OIDC_CLIENT_ID: ${OIDC_UI_CLIENT_ID:-piro-ui}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
+      OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
     ports:
       - "8080:80"
     depends_on:

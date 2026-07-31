@@ -1,7 +1,8 @@
 <app-toaster></app-toaster>
 <nav class=" navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid" style="vertical-align: middle;">
-    <a class="navbar-brand" style="display: flex;" routerLink="home"><img src="/assets/images/cc-logo.png" alt="logo" style="margin-right: 8px">
+    <a class="navbar-brand" style="display: flex;" routerLink="home"><img src="/assets/images/cc-logo.png" alt="logo"
+        style="margin-right: 8px">
       <span class="d-none d-md-block">Pathology Information Retrieval Optimizer (PIRO)</span>
       <span class="d-block d-sm-none">PIRO</span>
     </a>
@@ -24,7 +25,7 @@
         <li class="nav-item" *ngIf="isAdminSecurity">
           <a routerLink="adminuser" class="nav-link" routerLinkActive="active">User Management</a>
         </li>
-        <li class="nav-item dropdown"  *ngIf="isAdmin">
+        <li class="nav-item dropdown" *ngIf="isAdmin">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
             aria-expanded="false">
             Admin
@@ -33,8 +34,7 @@
             <li class="border-bottom"><a class="dropdown-item" routerLink="adminuser"
                 routerLinkActive="active">Users</a>
             </li>
-            <li class="border-bottom"><a class="dropdown-item" routerLink="sex"
-                routerLinkActive="active">Sex</a>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="sex" routerLinkActive="active">Sex</a>
             </li>
             <li class="border-bottom"><a class="dropdown-item" routerLink="roles" routerLinkActive="active">Roles</a>
             </li>
@@ -54,8 +54,10 @@
                 routerLinkActive="active">Ethnicity</a></li>
             <li class="border-bottom"><a class="dropdown-item" routerLink="comment-types"
                 routerLinkActive="active">Comment Types</a></li>
-            <li class="border-bottom"><a class="dropdown-item" routerLink="etl-logs" routerLinkActive="active">ETL Logs</a></li>
-            <li class="border-bottom"><a class="dropdown-item" routerLink="ai-reviews" routerLinkActive="active">AI Annotation Feedback</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="etl-logs" routerLinkActive="active">ETL
+                Logs</a></li>
+            <li class="border-bottom"><a class="dropdown-item" routerLink="ai-reviews" routerLinkActive="active">AI
+                Annotation Feedback</a></li>
             <li><a class="dropdown-item" routerLink="email-users" routerLinkActive="active">Email Users</a></li>
           </ul>
         </li>
@@ -75,8 +77,9 @@
           <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown"
             aria-expanded="false"><i class="fa fa-user"></i></a>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
-            <li  *ngIf="isMyHistory"><a class="dropdown-item" routerLink="my-history" routerLinkActive="active">My History</a></li>
-            <li><a class="dropdown-item" href="javascript:void(0);" (click)="logout()">Logout</a>
+            <li *ngIf="isMyHistory"><a class="dropdown-item" routerLink="my-history" routerLinkActive="active">My
+                History</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0);" (click)="logoutAsync()">Logout</a>
             </li>
           </ul>
         </li>

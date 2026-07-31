@@ -36,7 +36,11 @@ export class HeaderInterceptor implements HttpInterceptor {
       timeoutMsec = 300000;
     }
     // return next.handle(req).timeout(timeout);
-    var isExcludeToken: Boolean = (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
+    // Absolute URLs are cross-origin (e.g. OIDC discovery + token endpoint on the
+    // IdP). Never attach the PIRO JWT to those — the IdP shouldn't receive it,
+    // and it would also leak the token to a foreign origin.
+    var isAbsoluteUrl: boolean = /^https?:\/\//i.test(urlRequest);
+    var isExcludeToken: Boolean = isAbsoluteUrl || (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
     return next.handle((httpRequest.headers.get('Content-Type') == null && httpRequest.headers.get('ContentType') == null) ?
       httpRequest.clone(isExcludeToken ? {
         setHeaders:
@@ -53,13 +57,13 @@ export class HeaderInterceptor implements HttpInterceptor {
         })).pipe(timeout(timeoutMsec)).pipe(tap((event: HttpEvent<any>) => {
           if (event instanceof HttpResponse) {
             // console.log(event.status)
-            if(event.status == 200) {
-              if(event.headers.has('Refreshtoken')) {
+            if (event.status == 200) {
+              if (event.headers.has('Refreshtoken')) {
                 this.localStorageService.setApiToken(event.headers.get("Refreshtoken"));
               }
             }
           }
-         },
+        },
           (err: any) => {
             if (err instanceof HttpErrorResponse) {
               console.log("Error: ", err);
@@ -84,7 +88,7 @@ export class HeaderInterceptor implements HttpInterceptor {
                     return;
                   }
                   this.showoast(EventTypes.Error, environment.accessExceptionMessage, []);
-                } else if (err.status == 510) {                  
+                } else if (err.status == 510) {
                   // console.log(err);
                   if ((err?.error?.detail || '') != '') {
                     this.showoast(EventTypes.Error, err?.error?.detail, []);

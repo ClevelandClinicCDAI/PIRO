@@ -21,6 +21,49 @@ This application - `piro-ui` - acts as the user interface for the PIRO applicati
 * Execute `npm install` to install the necessary packages.
 * Create a configuration file - `config.json` - in the `piro-ui/src/assets` directory (next to the `config.example.json` file).  See the `config.example.json` file for an example of the file format and values.
 
+### Runtime Configuration (`config.json`)
+
+The Angular SPA loads `assets/config.json` at startup via
+`AppConfigService`. Fields:
+
+| Field               | Default              | Purpose                                                                                                             |
+| ------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `apiBaseUrl`        | *(required)*         | Base URL of `piro-api`. All relative HTTP requests are resolved against this.                                        |
+| `irbDisclaimerText` | *(required)*         | Text shown in the IRB disclaimer banner.                                                                             |
+| `authMode`          | `"LDAP"`             | `"LDAP"` renders the username/password form. `"OAUTH"` renders a single-sign-on button and enables the PKCE flow. Case-insensitive. |
+| `oidcIssuer`        | *(required if OAUTH)* | Issuer URL. Used to discover `authorization_endpoint`, `token_endpoint`, and `end_session_endpoint`.                 |
+| `oidcClientId`      | *(required if OAUTH)* | OIDC client id registered with the IdP.                                                                              |
+| `oidcRedirectUri`   | *(required if OAUTH)* | Redirect URI. Must be `<your-ui-origin>/auth/callback` and be registered with the IdP. `/auth/callback` is a public route (no `AuthGuard`). |
+| `oidcScopes`        | `"openid profile email"` | Space-separated scopes requested during authorization.                                                          |
+
+Under Docker Compose, `docker-entrypoint.sh` writes `config.json` at
+container start from the `AUTH_MODE`, `OIDC_ISSUER_PUBLIC`,
+`OIDC_CLIENT_ID`, `OIDC_REDIRECT_URI`, and `OIDC_SCOPES` environment
+variables — no rebuild is needed to switch modes.
+
+### Local OAuth Testing
+
+The repo ships with a `mock-oauth` compose service. To exercise the
+end-to-end SSO flow on Windows:
+
+1. Add `127.0.0.1  piro-auth` to `%WINDIR%\System32\drivers\etc\hosts`
+   so the same URL (`http://piro-auth:8888/piro`) is reachable from
+   both the browser and the api container.
+2. Start the stack in OAuth mode:
+
+    ```powershell
+    $env:PIRO_AUTH_MODE = "OAUTH"
+    docker compose up -d
+    ```
+
+3. Browse to <http://localhost:8080/login>, click the SSO button,
+   enter any username at the mock IdP (no password is required), and
+   you will be redirected back to `/auth/callback` and signed in.
+
+Logout (`POST /token/logout`) returns `{end_session_url}` in OAUTH
+mode; the SPA follows that URL so the mock IdP session is terminated
+as well.
+
 ## Server Deployment
 
 ### Azure DevOps Pipeline Deployment

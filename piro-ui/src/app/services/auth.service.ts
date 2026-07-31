@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { LocalStorageService } from '../services/localStorage.service';
 import { FilterService } from '../services/filter.service';
@@ -13,16 +13,13 @@ export class AuthService {
   roleAs: any = '';
 
   constructor(private http: HttpClient,
-    private filterService:FilterService,
+    private filterService: FilterService,
     private localStorageService: LocalStorageService) { }
 
   //Login User into system
   generateToken(username: any, password: any, islog: boolean) {
     let promise = new Promise((resolve, reject) => {
       let apiURL = environment.apiBaseUrl + 'token/token';
-      // const body = {
-      //   'query':'username='+username
-      // };
       const body = {
         'username': username,
         'password': password,
@@ -38,6 +35,28 @@ export class AuthService {
           },
           complete: () => {
 
+          },
+        });
+    });
+    return promise;
+  }
+
+  /**
+   * Exchange an OIDC id_token for a PIRO JWT. Mirrors `generateToken`
+   * but uses the OAuth request body shape supported by the FastAPI
+   * union endpoint (`{id_token, islog}`).
+   */
+  generateTokenFromIdToken(idToken: string, islog: boolean) {
+    let promise = new Promise((resolve, reject) => {
+      let apiURL = environment.apiBaseUrl + 'token/token';
+      const body = { id_token: idToken, islog };
+      this.http.post(apiURL, body)
+        .subscribe({
+          next: (res: any) => {
+            resolve({ status: 200, body: res });
+          },
+          error: (err: any) => {
+            resolve({ status: false, body: [] });
           },
         });
     });
@@ -152,6 +171,26 @@ export class AuthService {
     }
   }
 
+  /**
+   * OAuth counterpart to `login()`. Takes an IdP-issued id_token,
+   * exchanges it at the PIRO API, and completes the same local-state
+   * bookkeeping so downstream code (guards, interceptor, header) can't
+   * tell which auth mode is in use.
+   */
+  async loginWithIdToken(idToken: string, islog: boolean) {
+    const result: any = await this.generateTokenFromIdToken(idToken, islog);
+    if (result.body?.access_token) {
+      this.localStorageService.clear();
+      this.localStorageService.setApiToken(result.body?.access_token);
+      const userDetail = this.parseJwt(result.body?.access_token);
+      this.isAuthenticated = true;
+      this.roleAs = userDetail.role;
+      this.authStatusListener.next(true);
+      return { status: true, message: 'Login Successful.', role: this.roleAs };
+    }
+    return { status: false, message: 'invalid.', role: '' };
+  }
+
   //Logout User from system
   logout() {
     // localStorage.removeItem('api-token');
@@ -165,6 +204,28 @@ export class AuthService {
     return { 'status': true, 'message': 'Login Successful.' }
   }
 
+  /**
+   * Ask the API to record the logout and, in OAuth mode, hand back the
+   * IdP's RP-initiated logout URL so the caller can redirect the
+   * browser to it. Always resolves — a failure to reach the API still
+   * clears local state.
+   */
+  async logoutRemote(): Promise<{ endSessionUrl: string | null }> {
+    let endSessionUrl: string | null = null;
+    if (this.localStorageService.getApiToken()) {
+      try {
+        const apiURL = environment.apiBaseUrl + 'token/logout';
+        const res: any = await firstValueFrom(this.http.post(apiURL, {}));
+        endSessionUrl = res?.end_session_url ?? null;
+      } catch (_err) {
+        // Ignore: local logout still succeeds.
+        endSessionUrl = null;
+      }
+    }
+    this.logout();
+    return { endSessionUrl };
+  }
+
 
   // getRole() {
   //   this.roleAs = localStorage.getItem('role');
@@ -174,7 +235,7 @@ export class AuthService {
   getAttestation() {
     let promise = new Promise((resolve, reject) => {
       let apiURL = environment.apiBaseUrl + environment.getAttestationUrl;
-      this.http.post(apiURL,{})
+      this.http.post(apiURL, {})
         .subscribe({
           next: (res: any) => {
             resolve(res);
