@@ -56,6 +56,7 @@ class Constants:
         ROLE = 5
         ATTEST = 6
         TOKEN = 7
+        OAUTH = 8
 
     CommentTypeFinalDiagnosis: str = "FINAL DIAGNOSIS"
     CommentTypeFlowCytometry: str = "FLOW CYTOMETRY RESULTS"
@@ -72,7 +73,9 @@ class Constants:
     # AttestationText: str = "<p>Attestation Text</p><br/>I <b>attest</b> the application....."
     # AttestationRequiredDate: str = "2024-06-12"
 
-    AppConfigurationAttestationCertificatoinText: str = "Attestation.CertificatoinText"
+    AppConfigurationAttestationCertificatoinText: str = (
+        "Attestation.CertificatoinText"
+    )
     AppConfigurationAttestationRequiredDate: str = "Attestation.RequiredDate"
     AppConfigurationAttestationEnable: str = "Attestation.Enable"
 

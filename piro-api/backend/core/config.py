@@ -64,6 +64,37 @@ class Settings:
     AD_LDAP_PATH: str | None = os.getenv("AD_LDAP_PATH")
     AD_SECURITY_GROUP: str | None = os.getenv("AD_SECURITY_GROUP")
     AD_DOMAIN: str | None = os.getenv("AD_DOMAIN")
+
+    # Authentication mode selector. Supported values: "LDAP" (default,
+    # preserves the existing corporate-AD flow) or "OAUTH" (validates an
+    # OIDC id_token supplied by the client and mints a PIRO JWT from its
+    # claims). Case-insensitive; parsed once at import time.
+    AUTH_MODE: str = os.getenv("AUTH_MODE", "LDAP").upper()
+
+    # OIDC / OAuth settings. Only consulted when AUTH_MODE == "OAUTH".
+    OIDC_ISSUER: str | None = os.getenv("OIDC_ISSUER")
+    OIDC_AUDIENCE: str | None = os.getenv("OIDC_AUDIENCE")
+    # If OIDC_JWKS_URL is empty, oauth_auth derives it from OIDC_ISSUER via
+    # the standard /.well-known/openid-configuration discovery document.
+    OIDC_JWKS_URL: str | None = os.getenv("OIDC_JWKS_URL")
+    OIDC_ALGORITHMS: str = os.getenv("OIDC_ALGORITHMS", "RS256")
+    # Comma-separated list of group names; user is authorized if their
+    # `groups` claim intersects this list (OR semantics).
+    OIDC_ALLOWED_GROUPS: str = os.getenv("OIDC_ALLOWED_GROUPS", "")
+    # Claim-name mapping so we can point at different IdPs (Entra ID,
+    # Ping, mock-oauth2-server, etc.) without code changes.
+    OIDC_NUID_CLAIM: str = os.getenv("OIDC_NUID_CLAIM", "preferred_username")
+    OIDC_GIVEN_NAME_CLAIM: str = os.getenv(
+        "OIDC_GIVEN_NAME_CLAIM", "given_name"
+    )
+    OIDC_FAMILY_NAME_CLAIM: str = os.getenv(
+        "OIDC_FAMILY_NAME_CLAIM", "family_name"
+    )
+    OIDC_GROUPS_CLAIM: str = os.getenv("OIDC_GROUPS_CLAIM", "groups")
+    OIDC_CLOCK_SKEW_SECONDS: int = int(
+        os.getenv("OIDC_CLOCK_SKEW_SECONDS", "60")
+    )
+
     EXCEL_Template_DIRECTORY: str | None = os.getenv(
         "EXCEL_Template_DIRECTORY"
     )

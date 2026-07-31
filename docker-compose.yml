@@ -54,12 +54,29 @@ services:
               "tokenExpiry": 3600,
               "requestMappings": [
                 {
-                  "requestParam": "scope",
-                  "match": "openid",
+                  "requestParam": "grant_type",
+                  "match": "authorization_code",
                   "claims": {
                     "sub": "{{login}}",
                     "preferred_username": "{{login}}",
+                    "given_name": "Local",
+                    "family_name": "Developer",
+                    "name": "Local Developer",
                     "email": "{{login}}@ccf.org.local",
+                    "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
+                    "roles": ["USER"]
+                  }
+                },
+                {
+                  "requestParam": "grant_type",
+                  "match": "password",
+                  "claims": {
+                    "sub": "testuser",
+                    "preferred_username": "testuser",
+                    "given_name": "Local",
+                    "family_name": "Developer",
+                    "name": "Local Developer",
+                    "email": "testuser@ccf.org.local",
                     "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
                     "roles": ["USER"]
                   }
