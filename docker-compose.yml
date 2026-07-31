@@ -69,14 +69,11 @@ services:
           ]
         }
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "wget -qO- http://localhost:8888/piro/.well-known/openid-configuration || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+      # The mock-oauth2-server image is distroless (no shell, no wget/curl,
+      # no /dev/tcp), so any exec-based healthcheck fails with
+      # `exec: "/bin/sh": no such file or directory`. Disable the healthcheck
+      # entirely and use `service_started` on the api's depends_on instead.
+      disable: true
   sample-data:
     build:
       context: .
@@ -158,7 +155,7 @@ services:
       sample-data:
         condition: service_completed_successfully
       mock-oauth:
-        condition: service_healthy
+        condition: service_started
     ports:
       - "8001:8001"
   ui:
