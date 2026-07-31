@@ -396,7 +396,9 @@ def test_end_session_endpoint_none_on_discovery_failure(monkeypatch, mocker):
 def test_end_session_endpoint_none_when_discovery_missing_field(
     monkeypatch, mocker
 ):
-    """Discovery doc without `end_session_endpoint` -> None (SLO not supported)."""
+    """
+    Discovery doc without `end_session_endpoint` -> None (SLO not supported).
+    """
 
     monkeypatch.setattr(
         settings, "OIDC_ISSUER", "https://idp.example.com/tenant"

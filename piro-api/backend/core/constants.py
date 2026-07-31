@@ -70,9 +70,6 @@ class Constants:
     RoleDemoAdmin: str = "DEMOADMIN"
     RoleSlideRoom: str = "SLIDEROOM"
 
-    # AttestationText: str = "<p>Attestation Text</p><br/>I <b>attest</b> the application....."
-    # AttestationRequiredDate: str = "2024-06-12"
-
     AppConfigurationAttestationCertificatoinText: str = (
         "Attestation.CertificatoinText"
     )
