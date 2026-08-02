@@ -18,6 +18,10 @@
       </div>
     </div>
     <div class="col-auto d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="openSearchPicker()" title="Load cases from a saved search">
+        <i class="bi bi-search me-1"></i>
+        Load Saved Search
+      </button>
       <button class="btn btn-outline-secondary" (click)="suggestFields()" [disabled]="suggesting || queuedCases.length === 0">
         <span *ngIf="suggesting" class="spinner-border spinner-border-sm me-1"></span>
         <i *ngIf="!suggesting" class="bi bi-stars me-1"></i>
@@ -37,7 +41,24 @@
 
   <div *ngIf="queuedCases.length === 0" class="alert alert-warning mb-3">
     <i class="bi bi-exclamation-triangle me-2"></i>
-    No cases in the queue. Go to <a routerLink="/search">Search</a> and use <strong>Send to Extraction Suite</strong> to add cases.
+    No cases in the queue. Go to <a routerLink="/search">Search</a> and use <strong>Send to Extraction Suite</strong> to add cases,
+    or <a href="#" (click)="$event.preventDefault(); openSearchPicker()">load from a saved search</a>.
+  </div>
+
+  <!-- Saved search picker -->
+  <div *ngIf="showSearchPicker" class="card mb-3 border-primary">
+    <div class="card-body d-flex align-items-center gap-2 py-2">
+      <span class="fw-semibold text-nowrap small">Load from saved search:</span>
+      <select class="form-select form-select-sm" [(ngModel)]="selectedSearchId" style="max-width: 350px;">
+        <option *ngFor="let s of savedSearches" [value]="s.value">{{ s.text }}</option>
+      </select>
+      <button class="btn btn-sm btn-primary" (click)="loadFromSavedSearch()" [disabled]="loadingFromSearch || !selectedSearchId">
+        <span *ngIf="loadingFromSearch" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!loadingFromSearch" class="bi bi-plus-circle me-1"></i>
+        Add Cases
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" (click)="showSearchPicker = false">Cancel</button>
+    </div>
   </div>
 
   <!-- Two-panel layout -->
@@ -148,10 +169,16 @@
       <div class="card h-100">
         <div class="card-header d-flex justify-content-between align-items-center">
           <strong>Live Preview</strong>
-          <div *ngIf="queuedCases.length > 0">
+          <div *ngIf="queuedCases.length > 0" class="d-flex align-items-center gap-1">
+            <button class="btn btn-sm btn-outline-secondary" (click)="stepCase(-1)" [disabled]="selectedCaseIndex <= 0" title="Previous case">
+              <i class="bi bi-chevron-up"></i>
+            </button>
             <select class="form-select form-select-sm" style="width: 250px;" [(ngModel)]="selectedCaseId" (ngModelChange)="onCaseChange()">
-              <option *ngFor="let c of previewCasesShown" [value]="c.CaseId">Case {{ c.CaseId }}</option>
+              <option *ngFor="let c of previewCasesShown" [value]="c.CaseId">{{ c.CaseNumber ?? c.CaseId }}</option>
             </select>
+            <button class="btn btn-sm btn-outline-secondary" (click)="stepCase(1)" [disabled]="selectedCaseIndex >= previewCasesShown.length - 1" title="Next case">
+              <i class="bi bi-chevron-down"></i>
+            </button>
           </div>
         </div>
         <div class="card-body overflow-auto p-0" style="max-height: calc(100vh - 250px);">

@@ -99,6 +99,11 @@ services:
       AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-}
       AIRFLOW_DAG_COHORT_LOADER_URL: ${AIRFLOW_DAG_COHORT_LOADER_URL:-}
       AIRFLOW_CERTIFICATE: ${AIRFLOW_CERTIFICATE:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://localhost:11434}
+      LLM_MODEL: ${LLM_MODEL:-llama3.2}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_API_VERSION: ${LLM_API_VERSION:-2024-02-01}
     depends_on:
       sample-data:
         condition: service_completed_successfully

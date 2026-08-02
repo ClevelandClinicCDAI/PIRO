@@ -41,7 +41,11 @@ from db.repository.extraction import (
     update_session_status,
     upsert_result,
 )
-from db.session import SessionLocal, get_db
+from db.repository.cohort import get_cohort
+from db.repository.search import get_search
+from urllib.parse import parse_qs, urlparse
+import json as _json
+from db.session import SessionLocal, get_db, get_solr
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger import logger
@@ -53,6 +57,7 @@ from viewmodel.extraction import (
     ExtractionPreviewVM,
     ExtractionPreviewFieldVM,
     ExtractionQueueAdd,
+    ExtractionQueueFromSearch,
     ExtractionQueueItemVM,
     ExtractionResultPatch,
     ExtractionResultVM,
@@ -192,6 +197,74 @@ async def add_to_queue(
     added = add_cases_to_queue(
         session_id=payload.session_id,
         case_ids=payload.case_ids,
+        user=current_user,
+        db=db,
+    )
+    return get_queue(payload.session_id, db)
+
+
+@router.post(
+    "/queue/from-saved-search",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+    response_model=List[ExtractionQueueItemVM],
+)
+async def add_saved_search_to_queue(
+    payload: ExtractionQueueFromSearch,
+    current_user: Annotated[str, Depends(get_current_user_nuid)],
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+    solr=Depends(get_solr),
+):
+    from core.search_util import filter_str_object
+    from solr.repository.piro import search_Q
+    from viewmodel.solr.search import SearchFilterVM
+
+    _require_session_ownership(payload.session_id, current_user_id, db)
+
+    saved = get_search(payload.search_id, db)
+    if saved is None:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+
+    # Parse the stored URL query string to reconstruct the filter array
+    parsed_q = parse_qs(urlparse(saved.SearchQuery).query)
+    raw_filters = _json.loads(parsed_q.get("searchFilter", ["[]"])[0])
+    filters = [
+        SearchFilterVM(
+            field=f["field"],
+            search=f["search"],
+            category=f["category"],
+            andcondition=f["andcondition"],
+            displaysingular=f.get("displaysingular", ""),
+        )
+        for f in raw_filters
+    ]
+
+    adv_filter = filter_str_object(saved.AdvancedQuery or "{}")
+    mrn = saved.MRN or ""
+
+    docs = search_Q(
+        input_arr=filters,
+        input_adv=adv_filter,
+        mrn=mrn,
+        sortBy="accessiondate",
+        sortOrder="desc",
+        page=0,
+        count=999999,
+        db=db,
+        solr=solr,
+        finalRtf=False,
+        fields="id,caseid",
+    )
+
+    case_ids = docs.get("caseIds", [])
+    if not case_ids:
+        total = docs.get("total", 0)
+        detail = "Saved search returned no cases" if total == 0 else f"Search matched {total} documents but none had a caseId field"
+        raise HTTPException(status_code=400, detail=detail)
+
+    add_cases_to_queue(
+        session_id=payload.session_id,
+        case_ids=case_ids,
         user=current_user,
         db=db,
     )

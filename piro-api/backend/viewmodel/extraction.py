@@ -61,10 +61,16 @@ class ExtractionQueueAdd(BaseModel):
     case_ids: List[int]
 
 
+class ExtractionQueueFromSearch(BaseModel):
+    session_id: int
+    search_id: int
+
+
 class ExtractionQueueItemVM(BaseModel):
     ExtractionQueueId: int
     ExtractionSessionId: int
     CaseId: int
+    CaseNumber: Optional[str] = None
     Status: str
     ErrorMessage: Optional[str] = None
     AttemptCount: int
@@ -100,6 +106,7 @@ class ExtractionResultVM(BaseModel):
     ExtractionRunId: int
     ExtractionSessionId: int
     CaseId: int
+    CaseNumber: Optional[str] = None
     FieldName: str
     ExtractedValue: Optional[str] = None
     ReviewedValue: Optional[str] = None

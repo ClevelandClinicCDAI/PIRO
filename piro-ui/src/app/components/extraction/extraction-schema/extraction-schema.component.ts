@@ -1,10 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ExtractionService } from '../../../services/extraction.service';
+import { SavedSearchContentService } from '../../../services/saved-search-content.service';
 
 export interface FieldDefinition {
   name: string;
@@ -18,6 +21,8 @@ export interface FieldDefinition {
 
 @Component({
   selector: 'app-extraction-schema',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './extraction-schema.component.html',
   styleUrls: ['./extraction-schema.component.css']
 })
@@ -39,6 +44,12 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   suggesting = false;
   loadingSession = true;
 
+  // Saved search loader
+  savedSearches: any[] = [];
+  selectedSearchId: number | null = null;
+  showSearchPicker = false;
+  loadingFromSearch = false;
+
   private schemaChange$ = new Subject<void>();
   private previewSub?: Subscription;
   private subs: Subscription[] = [];
@@ -47,6 +58,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private extractionService: ExtractionService,
+    private savedSearchContentService: SavedSearchContentService,
     private toastr: ToastrService
   ) {}
 
@@ -364,6 +376,51 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     } catch (e: any) {
       this.toastr.error(e?.error?.detail || 'Failed to start extraction.');
     }
+  }
+
+  // ── Load from saved search ───────────────────────────────────────────────
+
+  async openSearchPicker() {
+    if (this.savedSearches.length === 0) {
+      try {
+        const result: any = await this.savedSearchContentService.getDropdown(1, 100);
+        this.savedSearches = result?.data ?? [];
+      } catch {
+        this.toastr.error('Failed to load saved searches.');
+        return;
+      }
+    }
+    this.selectedSearchId = this.savedSearches.length > 0 ? this.savedSearches[0].value : null;
+    this.showSearchPicker = true;
+  }
+
+  async loadFromSavedSearch() {
+    if (!this.selectedSearchId) return;
+    this.loadingFromSearch = true;
+    try {
+      this.queuedCases = await this.extractionService.addFromSavedSearch(this.sessionId, this.selectedSearchId) ?? [];
+      if (this.queuedCases.length > 0 && !this.selectedCaseId) {
+        this.selectedCaseId = this.queuedCases[0].CaseId;
+        this.loadCaseText();
+      }
+      this.toastr.success(`${this.queuedCases.length} case(s) in queue after loading saved search.`);
+      this.showSearchPicker = false;
+    } catch (e: any) {
+      this.toastr.error(e?.error?.detail || 'Failed to load cases from saved search.');
+    } finally {
+      this.loadingFromSearch = false;
+    }
+  }
+
+  get selectedCaseIndex(): number {
+    return this.previewCasesShown.findIndex(c => c.CaseId === this.selectedCaseId);
+  }
+
+  stepCase(direction: -1 | 1) {
+    const idx = this.selectedCaseIndex + direction;
+    if (idx < 0 || idx >= this.previewCasesShown.length) return;
+    this.selectedCaseId = this.previewCasesShown[idx].CaseId;
+    this.onCaseChange();
   }
 
   get previewCasesShown(): any[] {

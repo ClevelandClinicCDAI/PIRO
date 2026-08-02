@@ -1,4 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -6,6 +8,8 @@ import { ExtractionService } from '../../../services/extraction.service';
 
 @Component({
   selector: 'app-send-to-extraction',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './send-to-extraction.component.html',
   styleUrls: ['./send-to-extraction.component.css']
 })

@@ -55,7 +55,6 @@ import { EmailUsersComponent } from './components/Admin/email-users/email-users.
 import { ExtractionSessionsComponent } from './components/extraction/extraction-sessions/extraction-sessions.component';
 import { ExtractionSchemaComponent } from './components/extraction/extraction-schema/extraction-schema.component';
 import { ExtractionReviewComponent } from './components/extraction/extraction-review/extraction-review.component';
->>>>>>> 6a81bf3 (Initial UI and Database changes)
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },

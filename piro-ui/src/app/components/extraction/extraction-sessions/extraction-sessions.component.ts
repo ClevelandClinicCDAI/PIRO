@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ExtractionService } from '../../../services/extraction.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-extraction-sessions',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './extraction-sessions.component.html',
   styleUrls: ['./extraction-sessions.component.css']
 })

@@ -61,17 +61,17 @@
       <table *ngIf="rows.length > 0" class="table table-bordered table-sm review-grid">
         <thead class="table-light sticky-top">
           <tr>
-            <th class="case-col">Case ID</th>
+            <th class="case-col">Case Number</th>
             <th *ngFor="let f of fields" class="field-col">{{ f }}</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of rows">
-            <td class="case-col text-muted small fw-semibold">{{ row.caseId }}</td>
+            <td class="case-col text-muted small fw-semibold">{{ row.caseNumber }}</td>
             <td
               *ngFor="let f of fields"
               [class]="'field-cell ' + cellClass(row.cells[f])"
-              (click)="selectCell(row.cells[f], row.caseId, f)"
+              (click)="selectCell(row.cells[f], row.caseId, row.caseNumber, f)"
               [class.selected]="selectedCaseId === row.caseId && selectedField === f"
             >
               <!-- Viewing mode -->
@@ -109,7 +109,7 @@
       <div class="d-flex justify-content-between align-items-center p-3 border-bottom flex-shrink-0">
         <div>
           <strong>{{ selectedField }}</strong>
-          <div class="text-muted small">Case {{ selectedCaseId }}</div>
+          <div class="text-muted small">Case {{ selectedCaseNumber }}</div>
         </div>
         <button class="btn-close" (click)="closePanel()"></button>
       </div>

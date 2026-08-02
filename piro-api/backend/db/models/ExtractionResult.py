@@ -52,3 +52,7 @@ class ExtractionResult(Base):
 
     Run = relationship("ExtractionRun", back_populates="Results")
     Case = relationship("Case", foreign_keys=[CaseId])
+
+    @property
+    def CaseNumber(self) -> str | None:
+        return self.Case.CaseNumber if self.Case else None

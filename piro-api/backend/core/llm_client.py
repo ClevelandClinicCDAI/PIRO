@@ -7,6 +7,8 @@ Supported providers (configured via LLM_PROVIDER env var):
   - ollama      (default) — local Ollama server, HIPAA-safe
   - openai      — OpenAI API (requires OPENAI_API_KEY + BAA)
   - anthropic   — Anthropic API (requires ANTHROPIC_API_KEY + BAA)
+  - azure       — Azure OpenAI / AI Services (requires LLM_API_KEY + BAA)
+  - generic     — Any OpenAI-compatible endpoint
 """
 
 from __future__ import annotations
@@ -436,6 +438,63 @@ class GenericOpenAICompatibleClient(LLMClient):
         return raw if isinstance(raw, list) else []
 
 
+class AzureOpenAIClient(LLMClient):
+    """Azure OpenAI / Azure AI Services client.
+
+    Constructs the Azure-specific URL:
+      {base_url}/openai/deployments/{model}/chat/completions?api-version={api_version}
+
+    Uses the ``api-key`` header (not ``Authorization: Bearer``).
+    LLM_MODEL should be the Azure deployment name.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        api_key: str,
+        api_version: str = "2024-02-01",
+        timeout: float = 120.0,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.api_key = api_key
+        self.api_version = api_version
+        self.timeout = timeout
+
+    async def _chat(self, system: str, user: str) -> str:
+        url = (
+            f"{self.base_url}/openai/deployments/{self.model}"
+            f"/chat/completions?api-version={self.api_version}"
+        )
+        headers = {"api-key": self.api_key, "Content-Type": "application/json"}
+        payload = {
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0,
+            "response_format": {"type": "json_object"},
+        }
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+
+    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+        user_prompt = _build_extraction_user_prompt(report_text, schema)
+        raw_text = await self._chat(_EXTRACTION_SYSTEM_PROMPT, user_prompt)
+        raw = _parse_json_from_response(raw_text)
+        return _normalize_extraction_response(raw, schema)
+
+    async def suggest_fields(self, sample_text: str) -> List[dict]:
+        user_prompt = f"Suggest extraction fields for this pathology report:\n\n{sample_text}"
+        raw_text = await self._chat(_SUGGEST_SYSTEM_PROMPT, user_prompt)
+        raw = _parse_json_from_response(raw_text)
+        return raw if isinstance(raw, list) else []
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Factory
 # ──────────────────────────────────────────────────────────────────────────────
@@ -474,6 +533,15 @@ def get_llm_client() -> LLMClient:
             base_url=settings.LLM_BASE_URL or "http://localhost:8080",
             model=settings.LLM_MODEL or "default",
             api_key=settings.LLM_API_KEY or "not-needed",
+        )
+    elif provider == "azure":
+        if not settings.LLM_API_KEY:
+            raise ValueError("LLM_API_KEY is required for Azure provider")
+        return AzureOpenAIClient(
+            base_url=settings.LLM_BASE_URL,
+            model=settings.LLM_MODEL,
+            api_key=settings.LLM_API_KEY,
+            api_version=settings.LLM_API_VERSION,
         )
     else:
         raise ValueError(

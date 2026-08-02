@@ -218,14 +218,7 @@ import { SendToExtractionComponent } from './components/modal/send-to-extraction
     UserattestComponent,
     SlideRequestFormComponent,
     SlideRequestQueueComponent,
-<<<<<<< HEAD
     EmailUsersComponent
-=======
-    ExtractionSessionsComponent,
-    ExtractionSchemaComponent,
-    ExtractionReviewComponent,
-    SendToExtractionComponent
->>>>>>> 6a81bf3 (Initial UI and Database changes)
   ],
   imports: [
     CommonModule,
@@ -251,7 +244,11 @@ import { SendToExtractionComponent } from './components/modal/send-to-extraction
     }),
     !environment.production ? StoreDevtoolsModule.instrument() : [],
     NgxSliderModule,
-    NgxSkeletonLoaderModule
+    NgxSkeletonLoaderModule,
+    ExtractionSessionsComponent,
+    ExtractionSchemaComponent,
+    ExtractionReviewComponent,
+    SendToExtractionComponent
   ],
   providers: [
     {

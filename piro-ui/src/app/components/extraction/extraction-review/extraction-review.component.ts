@@ -1,10 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ExtractionService } from '../../../services/extraction.service';
 
 interface GridRow {
   caseId: number;
+  caseNumber: string;
   cells: { [fieldName: string]: GridCell };
 }
 
@@ -22,6 +26,8 @@ interface GridCell {
 
 @Component({
   selector: 'app-extraction-review',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './extraction-review.component.html',
   styleUrls: ['./extraction-review.component.css']
 })
@@ -34,6 +40,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   // Side panel
   selectedCell: GridCell | null = null;
   selectedCaseId: number | null = null;
+  selectedCaseNumber: string | null = null;
   selectedField: string | null = null;
   reportText = '';
   reportHtml = '';
@@ -91,7 +98,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     const caseMap = new Map<number, GridRow>();
     for (const r of results) {
       if (!caseMap.has(r.CaseId)) {
-        caseMap.set(r.CaseId, { caseId: r.CaseId, cells: {} });
+        caseMap.set(r.CaseId, { caseId: r.CaseId, caseNumber: r.CaseNumber ?? String(r.CaseId), cells: {} });
       }
       const row = caseMap.get(r.CaseId)!;
       const displayValue = r.IsReviewed ? this.parseJsonValue(r.ReviewedValue) : this.parseJsonValue(r.ExtractedValue);
@@ -158,10 +165,11 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   // ── Side panel ────────────────────────────────────────────────────────────
 
-  async selectCell(cell: GridCell | undefined, caseId: number, field: string) {
+  async selectCell(cell: GridCell | undefined, caseId: number, caseNumber: string, field: string) {
     if (!cell) return;
     this.selectedCell = cell;
     this.selectedCaseId = caseId;
+    this.selectedCaseNumber = caseNumber;
     this.selectedField = field;
 
     if (this.reportText === '' || this.selectedCaseId !== caseId) {
@@ -194,6 +202,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   closePanel() {
     this.selectedCell = null;
     this.selectedCaseId = null;
+    this.selectedCaseNumber = null;
     this.selectedField = null;
   }
 

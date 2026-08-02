@@ -26,3 +26,7 @@ class ExtractionQueue(Base):
 
     Session = relationship("ExtractionSession", back_populates="Queue")
     Case = relationship("Case", foreign_keys=[CaseId])
+
+    @property
+    def CaseNumber(self) -> str | None:
+        return self.Case.CaseNumber if self.Case else None

@@ -115,14 +115,16 @@ class Settings:
     CONCENTRIQ_URL: str | None = os.getenv("CONCENTRIQ_URL")
 
     # ── Extraction Suite LLM settings ────────────────────────────────────────
-    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic
+    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic | azure
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
     # Base URL for Ollama or generic OpenAI-compatible servers
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "http://localhost:11434")
-    # Model name/identifier passed to the provider
+    # Model name/identifier passed to the provider (Azure: deployment name)
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.2")
-    # Optional generic API key (used for generic provider or LLM_API_KEY override)
+    # Optional generic API key (used for generic/azure provider)
     LLM_API_KEY: str | None = os.getenv("LLM_API_KEY")
+    # Azure OpenAI API version (used when LLM_PROVIDER=azure)
+    LLM_API_VERSION: str = os.getenv("LLM_API_VERSION", "2024-02-01")
     # OpenAI — requires Business Associate Agreement before use with PHI
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     # Anthropic — requires Business Associate Agreement before use with PHI

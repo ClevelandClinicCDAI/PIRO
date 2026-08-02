@@ -6,13 +6,18 @@ import json
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
+from db.models.CommentType import CommentType as CommentTypeModel
 from db.models.ExtractionQueue import ExtractionQueue
 from db.models.ExtractionResult import ExtractionResult
 from db.models.ExtractionRun import ExtractionRun
 from db.models.ExtractionSession import ExtractionSession
 from db.views.VCaseCommentText import VCaseCommentText
+
+# Comment types included in extraction, in the order they appear in the report.
+_EXTRACTION_COMMENT_CODES = ["FINAL", "COMMENT", "ADDEND", "MICROSCOPIC"]
+_EXTRACTION_CODE_ORDER = {code: i for i, code in enumerate(_EXTRACTION_COMMENT_CODES)}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -193,6 +198,7 @@ def add_cases_to_queue(
 def get_queue(session_id: int, db: Session) -> List[ExtractionQueue]:
     return (
         db.query(ExtractionQueue)
+        .options(joinedload(ExtractionQueue.Case))
         .filter(ExtractionQueue.ExtractionSessionId == session_id)
         .order_by(ExtractionQueue.CreateDate)
         .all()
@@ -301,6 +307,7 @@ def get_results_for_session(session_id: int, db: Session) -> List[ExtractionResu
         return []
     return (
         db.query(ExtractionResult)
+        .options(joinedload(ExtractionResult.Case))
         .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
         .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
         .all()
@@ -368,13 +375,20 @@ def bulk_approve_high_confidence(
 # ──────────────────────────────────────────────────────────────────────────────
 
 def get_case_text_segments(case_id: int, db: Session) -> List[VCaseCommentText]:
-    """Fetch labelled comment segments using the existing VCaseCommentText view."""
-    return (
-        db.query(VCaseCommentText)
+    """Fetch comment segments for extraction-relevant types in display order.
+
+    Only includes: Final, Comment, Addendum, Microscopic (by CommentType.Code).
+    Segments are returned in that fixed order regardless of DB ordering.
+    """
+    rows = (
+        db.query(VCaseCommentText, CommentTypeModel.Code)
+        .join(CommentTypeModel, VCaseCommentText.CommentTypeId == CommentTypeModel.CommentTypeId)
         .filter(VCaseCommentText.CaseId == case_id)
-        .order_by(VCaseCommentText.CommentType)
+        .filter(CommentTypeModel.Code.in_(_EXTRACTION_COMMENT_CODES))
         .all()
     )
+    rows.sort(key=lambda r: _EXTRACTION_CODE_ORDER.get(r[1], 99))
+    return [r[0] for r in rows]
 
 
 def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
