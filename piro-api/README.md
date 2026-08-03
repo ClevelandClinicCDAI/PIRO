@@ -29,11 +29,11 @@ changes are required to keep it working.
 
 Relevant variables:
 
-| Variable            | Purpose                                                             |
-| ------------------- | ------------------------------------------------------------------- |
-| `AD_LDAP_PATH`      | LDAP URL (e.g. `ldap://ad.corp.example`).                            |
-| `AD_DOMAIN`         | AD domain used to build the bind DN.                                 |
-| `AD_SECURITY_GROUP` | Group membership required for access.                                |
+| Variable | Purpose |
+| :---- | :---- |
+| `AD_LDAP_PATH` | LDAP URL (e.g. `ldap://ad.corp.example`). |
+| `AD_DOMAIN` | AD domain used to build the bind DN. |
+| `AD_SECURITY_GROUP` | Group membership required for access. |
 
 ### AUTH_MODE=OAUTH
 
@@ -46,18 +46,18 @@ posts the resulting id_token to this endpoint. `POST /token/logout`
 returns `{end_session_url}` — non-null only in OAUTH mode — so the
 SPA can perform IdP-side single-logout.
 
-| Variable                   | Default            | Purpose                                                                                                                    |
-| -------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `OIDC_ISSUER`              | *(unset)*          | Issuer URL published in the id_token's `iss` claim. Also used to discover `end_session_endpoint` via `/.well-known/openid-configuration`. |
-| `OIDC_AUDIENCE`            | *(unset)*          | Expected `aud` claim. When empty, audience validation is disabled (`verify_aud=False`).                                    |
-| `OIDC_JWKS_URL`            | *(derived)*        | JWKS endpoint. If unset, `oauth_auth` derives it from `OIDC_ISSUER` via discovery.                                          |
-| `OIDC_ALGORITHMS`          | `RS256`            | Comma-separated list of accepted JWS algorithms.                                                                            |
-| `OIDC_ALLOWED_GROUPS`      | *(empty)*          | Comma-separated allowed groups. Empty **disables** the group check (any authenticated user passes). Non-empty uses OR semantics — one match is enough. Case-insensitive. |
-| `OIDC_NUID_CLAIM`          | `preferred_username` | Claim used as the PIRO `nuid` (user identifier).                                                                          |
-| `OIDC_GIVEN_NAME_CLAIM`    | `given_name`       | Claim used for `firstName`. Falls back to splitting `name` on whitespace when both name claims are absent.                  |
-| `OIDC_FAMILY_NAME_CLAIM`   | `family_name`      | Claim used for `lastName`. See fallback note above.                                                                         |
-| `OIDC_GROUPS_CLAIM`        | `groups`           | Claim inspected for group membership. May be a JSON array or a single string.                                              |
-| `OIDC_CLOCK_SKEW_SECONDS`  | `60`               | Leeway applied to `exp`/`nbf`/`iat` during signature validation.                                                            |
+| Variable | Default | Purpose |
+| :---- | :---- | :---- |
+| `OIDC_ISSUER` | *(unset)* | Issuer URL published in the id_token's `iss` claim. Also used to discover `end_session_endpoint` via `/.well-known/openid-configuration`. |
+| `OIDC_AUDIENCE` | *(unset)* | Expected `aud` claim. When empty, audience validation is disabled (`verify_aud=False`). |
+| `OIDC_JWKS_URL` | *(derived)* | JWKS endpoint. If unset, `oauth_auth` derives it from `OIDC_ISSUER` via discovery. |
+| `OIDC_ALGORITHMS` | `RS256` | Comma-separated list of accepted JWS algorithms. |
+| `OIDC_ALLOWED_GROUPS` | *(empty)* | Comma-separated allowed groups. Empty **disables** the group check (any authenticated user passes). Non-empty uses OR semantics — one match is enough. Case-insensitive. |
+| `OIDC_NUID_CLAIM` | `preferred_username` | Claim used as the PIRO `nuid` (user identifier). |
+| `OIDC_GIVEN_NAME_CLAIM` | `given_name` | Claim used for `firstName`. Falls back to splitting `name` on whitespace when both name claims are absent. |
+| `OIDC_FAMILY_NAME_CLAIM` | `family_name` | Claim used for `lastName`. See fallback note above. |
+| `OIDC_GROUPS_CLAIM` | `groups` | Claim inspected for group membership. May be a JSON array or a single string. |
+| `OIDC_CLOCK_SKEW_SECONDS` | `60` | Leeway applied to `exp`/`nbf`/`iat` during signature validation. |
 
 Sample values for the bundled `mock-oauth` compose service (see
 `docker-compose.yml`) are already wired in when you run
