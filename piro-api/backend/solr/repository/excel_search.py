@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import List
+from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 from core.config import Settings
@@ -11,7 +11,7 @@ from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE, Cell
 from pytest import Session
 from solr.models.document import document
-from solr.repository.piro import search_Q
+from solr.repository.piro import read_result, search_Q
 from viewmodel.solr.search import SearchFilterVM
 from pysolr import Solr
 from core.search_util import filter_str_object
@@ -71,7 +71,38 @@ def get_search_data(
     return list(docs["items"])
 
 
-def create_excel(searchId: int, data: List[document], fields: []):
+def get_case_data_by_ids(
+    case_ids: List[int],
+    db: Session,
+    solr: Solr,
+    fields: str,
+):
+    """Fetch Solr document data for an explicit list of case ids.
+
+    Used for LLM-assisted data requests, where the source of cases is an
+    ExtractionSession's queue rather than a Saved Search query.
+    """
+    if not case_ids:
+        return []
+
+    ids_query = " OR ".join(str(c) for c in case_ids)
+    query = f"caseid:({ids_query})"
+    solr_query_params = {"start": 0, "rows": len(case_ids)}
+    results = solr.search(query, fl=fields, **solr_query_params)
+
+    docs: List[document] = []
+    for result in results:
+        docs.append(read_result(result, db=db))
+    return docs
+
+
+def create_excel(
+    searchId: int,
+    data: List[document],
+    fields: [],
+    extraction_fields: Optional[List[str]] = None,
+    extraction_data: Optional[Dict[str, Dict[str, Any]]] = None,
+):
     wb = Workbook()
     ws1 = wb.active
     ws1.title = "Data"
@@ -82,6 +113,13 @@ def create_excel(searchId: int, data: List[document], fields: []):
     row = 1
     for field in fields:
         ws1.cell(row, col + offset_col, field.DataFieldDisplayName)
+        col = col + 1
+
+    extraction_fields = extraction_fields or []
+    extraction_data = extraction_data or {}
+    extraction_col_start = col
+    for extraction_field in extraction_fields:
+        ws1.cell(row, col + offset_col, extraction_field)
         col = col + 1
 
     row = 2
@@ -121,6 +159,22 @@ def create_excel(searchId: int, data: List[document], fields: []):
                     ILLEGAL_CHARACTERS_RE.sub(r"", ""),
                 )
             col = col + 1
+
+        if extraction_fields:
+            case_key = str(rowDic.get("caseid", ""))
+            row_extracted = extraction_data.get(case_key, {})
+            col = extraction_col_start
+            for extraction_field in extraction_fields:
+                value = row_extracted.get(extraction_field)
+                str_data = (
+                    ""
+                    if value is None
+                    else ILLEGAL_CHARACTERS_RE.sub(r"", str(value))
+                )
+                cell: Cell = ws1.cell(row + offset_row, col + offset_col, str_data)
+                cell.data_type = "s"
+                col = col + 1
+
         row += 1
 
     file = f"PIRO_{searchId}.xlsx"

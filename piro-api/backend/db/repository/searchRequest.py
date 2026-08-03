@@ -27,6 +27,10 @@ from logger import logger
 def create_new_searchRequest(
     input: SearchRequestVMCreate, user: str, userId: int, db: Session
 ):
+    if bool(input.searchId) == bool(input.extractionSessionId):
+        raise DataException(
+            "Exactly one of searchId or extractionSessionId must be provided"
+        )
 
     submitId = SearchRequestStatus_get_id(
         code=str(Constants.SearchRequestStatus.SUBMIT.name), db=db
@@ -35,6 +39,8 @@ def create_new_searchRequest(
     searchRequest = SearchRequest(
         RequesterId=userId,
         SearchId=input.searchId,
+        ExtractionSessionId=input.extractionSessionId,
+        IsLlmAssisted=input.extractionSessionId is not None,
         SearchRequestReasonId=input.reasonId,
         SearchRequestStatusId=submitId,
         RequestName=input.name,
@@ -165,7 +171,7 @@ def list_searchRequest(
         db.query(
             SearchRequest, Search, SearchRequestStatus, Reviewer, Approver
         )
-        .join(SearchRequest, SearchRequest.SearchId == Search.SearchId)
+        .join(SearchRequest, SearchRequest.SearchId == Search.SearchId, isouter=True)
         .join(
             SearchRequestStatus,
             SearchRequest.SearchRequestStatusId
@@ -195,8 +201,10 @@ def list_searchRequest(
                 "RequesterId": searchRequest.RequesterId,
                 "Requester": requester.NUID,
                 "SearchId": searchRequest.SearchId,
+                "ExtractionSessionId": searchRequest.ExtractionSessionId,
+                "IsLlmAssisted": searchRequest.IsLlmAssisted,
                 "SearchRequestReasonId": searchRequest.SearchRequestReasonId,
-                "SearchName": search.Name,
+                "SearchName": search.Name if search else None,
                 "RequestName": searchRequest.RequestName,
                 "FromDate": searchRequest.FromDate,
                 "ToDate": searchRequest.ToDate,
@@ -248,6 +256,10 @@ def list_searchRequest_display(
             {
                 "SearchRequestId": searchRequest.SearchRequestId,
                 "SearchId": searchRequest.SearchId,
+                "ExtractionSessionId": searchRequest.ExtractionSessionId,
+                "ExtractionRunId": searchRequest.ExtractionRunId,
+                "IsLlmAssisted": searchRequest.IsLlmAssisted,
+                "ExtractionStatus": searchRequest.ExtractionStatus,
                 "RequesterId": searchRequest.RequesterId,
                 "RequestName": searchRequest.RequestName,
                 "SearchRequestStatusId": searchRequest.SearchRequestStatusId,
@@ -289,6 +301,70 @@ def get_searchRequest_all(searchRequestId: int, db: Session):
     for item in data:
         return item
     raise DataException("SearchRequest does not exist")
+
+
+def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Session):
+    """Prepare a new ExtractionRun for an approved, LLM-assisted SearchRequest.
+
+    Returns (searchRequest, run, case_ids, role-agnostic schema_json) so the
+    caller (route layer) can schedule the actual background extraction job.
+    Raises DataException on invalid state.
+    """
+    from db.repository.extraction import create_run, get_latest_run, get_queue
+    from db.models.ExtractionSession import ExtractionSession
+
+    searchRequest = (
+        db.query(SearchRequest)
+        .filter(SearchRequest.SearchRequestId == searchRequestId)
+        .filter(SearchRequest.IsActive == True)  # noqa
+        .first()
+    )
+    if searchRequest is None:
+        raise DataException("SearchRequest does not exist")
+    if not searchRequest.IsLlmAssisted or searchRequest.ExtractionSessionId is None:
+        raise DataException("SearchRequest is not LLM-assisted")
+
+    approveId = SearchRequestStatus_get_id(
+        code=str(Constants.SearchRequestStatus.APPROVE.name), db=db
+    )
+    if searchRequest.SearchRequestStatusId != approveId:
+        raise DataException("SearchRequest must be approved before extraction can start")
+
+    session = (
+        db.query(ExtractionSession)
+        .filter(ExtractionSession.ExtractionSessionId == searchRequest.ExtractionSessionId)
+        .first()
+    )
+    if session is None or not session.SchemaJson:
+        raise DataException("Extraction schema is not defined for this request")
+
+    queue = get_queue(searchRequest.ExtractionSessionId, db)
+    if not queue:
+        raise DataException("Extraction schema has no queued cases")
+
+    latest = get_latest_run(searchRequest.ExtractionSessionId, db)
+    if latest and latest.Status in ("pending", "running"):
+        raise DataException(
+            f"A run is already {latest.Status}. Wait for it to finish before starting another."
+        )
+
+    from core.config import settings
+
+    run = create_run(
+        session_id=searchRequest.ExtractionSessionId,
+        schema_json=session.SchemaJson,
+        llm_provider=settings.LLM_PROVIDER or "ollama",
+        llm_model=settings.LLM_MODEL or "llama3.2",
+        user=user,
+        db=db,
+        run_type="full",
+    )
+
+    searchRequest.ExtractionRunId = run.ExtractionRunId
+    db.commit()
+
+    case_ids = [q.CaseId for q in queue]
+    return searchRequest, run, case_ids
 
 
 def delete_searchRequest(searchRequestId: int, db: Session):

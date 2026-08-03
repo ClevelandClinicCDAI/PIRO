@@ -350,6 +350,17 @@ def get_results_for_session(session_id: int, db: Session) -> List[ExtractionResu
     )
 
 
+def get_results_for_run(run_id: int, db: Session) -> List[ExtractionResult]:
+    """Return results for a specific run (rather than always the latest one)."""
+    return (
+        db.query(ExtractionResult)
+        .options(joinedload(ExtractionResult.Case))
+        .filter(ExtractionResult.ExtractionRunId == run_id)
+        .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
+        .all()
+    )
+
+
 def get_incorrect_case_ids(session_id: int, db: Session) -> List[int]:
     """Return distinct case IDs from the latest run that have any field marked incorrect."""
     latest_run = get_latest_run(session_id, db)

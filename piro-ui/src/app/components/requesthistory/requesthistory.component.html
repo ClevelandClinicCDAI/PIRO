@@ -35,6 +35,7 @@
                 <th class="text-center">Export Fields</th>
                 <th class="text-center">Saved Search</th>
                 <th>IRB</th>
+                <th class="text-center">Source</th>
                 <th width="5%" class="text-center">Action</th>
             </tr>
         </thead>
@@ -92,8 +93,9 @@
                 </td>
                 <td class="text-center">
                     <!-- <p class="text-muted mb-0">{{item.searchName}}</p> -->
-                    <a class="btn btn-primary" (click)="viewsearch(item.searchId)" href="javascript:void(0);"
+                    <a *ngIf="!item.isLlmAssisted" class="btn btn-primary" (click)="viewsearch(item.searchId)" href="javascript:void(0);"
                         title="Click to view the saved search"><i class="fa fa-save"></i></a>
+                    <span *ngIf="item.isLlmAssisted">-</span>
                 </td>
                 <td align="left">
                     <a *ngIf="item.fileExtn" class="btn btn-success" (click)="filedownload(item.searchRequestId, item.fileExtn)"
@@ -105,11 +107,24 @@
                 }"></i></a>
                 </td>
                 <td class="text-center">
+                    <span *ngIf="item.isLlmAssisted" class="badge-success" title="Data will be extracted by the LLM extraction pipeline">LLM-Assisted</span>
+                    <span *ngIf="item.isLlmAssisted" class="d-block small text-muted">
+                        Status: {{item.extractionStatus || 'not_started'}}
+                    </span>
+                    <span *ngIf="!item.isLlmAssisted">Saved Search</span>
+                </td>
+                <td class="text-center">
                     <table width="100%" style="margin-top:0px">
                         <tr>
-                            <td *ngIf="isApproved || isClosed"><a class="btn btn-success"
+                            <td *ngIf="(isApproved || isClosed) && (!item.isLlmAssisted || item.extractionStatus === 'completed')">
+                                <a class="btn btn-success"
                                     (click)="onexcel(item.searchRequestId)" href="javascript:void(0);"
                                     title="Click to export the data request"><i class="fa fa-file-excel-o"></i></a>
+                            </td>
+                            <td *ngIf="isApproved && item.isLlmAssisted && (!item.extractionStatus || item.extractionStatus === 'not_started' || item.extractionStatus === 'failed')">
+                                <a class="btn btn-info" (click)="onStartExtraction(item.searchRequestId)"
+                                    href="javascript:void(0);" title="Start the LLM-assisted extraction"><i
+                                        class="fa fa-play"></i></a>
                             </td>
                             <td *ngIf="isSubmit">
                                 <a class="btn btn-success" (click)="onapprove(item.searchRequestId)"

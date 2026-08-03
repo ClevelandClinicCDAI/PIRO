@@ -12,6 +12,7 @@ import { ExportfieldComponent } from '../../modal/exportfield/exportfield.compon
 import { DataService } from '../../../services/data.service';
 import { SavesearchService } from 'src/app/services/savesearch.service';
 import { AppConfigService } from '../../../services/app-config.service';
+import { ExtractionService } from 'src/app/services/extraction.service';
 
 @Component({
   standalone: false,
@@ -26,6 +27,8 @@ export class ExtractRequestComponent {
   dataRequestForm: any = FormGroup;
   submitted = false;
   searches: any = [];
+  schemas: any[] = [];
+  sourceType: 'search' | 'schema' = 'search';
   reasons: any = [];
   userName: string = "";
   role: string = "";
@@ -39,6 +42,7 @@ export class ExtractRequestComponent {
   constructor(private modalService: NgbModal,
     private formBuilder: FormBuilder,
     private extractRequestService: ExtractRequestService,
+    private extractionService: ExtractionService,
     private savedSearchService: SavedSearchContentService,
     private saveSearchService: SavesearchService,
     private confirmDialogService: ConfirmDialogService,
@@ -54,6 +58,7 @@ export class ExtractRequestComponent {
     this.dataRequestForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       searchId: ['', [Validators.required]],
+      extractionSessionId: [''],
       comment: ['', [Validators.required]],
       reasonId: ['', [Validators.required]],
       request_file: ['', [Validators.nullValidator]],
@@ -61,10 +66,32 @@ export class ExtractRequestComponent {
       isPediatric: ['', [Validators.required]]
     });
     this.searches = await this.savedSearchService.getDropdownContentFromDB();
+    this.schemas = await this.extractionService.getSessions();
     this.reasons = await this.extractRequestService.getDropdownReasonsFromDB();
     var auth: any = await this.authService.getUser();
     this.userName = auth.name;
     this.role = auth.role;
+  }
+
+  onSourceTypeChange(type: 'search' | 'schema') {
+    this.sourceType = type;
+    this.pediatricFilterError = "";
+    this.collectionDateFilterError = "";
+    if (type === 'schema') {
+      this.dataRequestForm.get('searchId').clearValidators();
+      this.dataRequestForm.get('searchId').setValue('');
+      this.dataRequestForm.get('searchId').updateValueAndValidity();
+
+      this.dataRequestForm.get('extractionSessionId').setValidators([Validators.required]);
+      this.dataRequestForm.get('extractionSessionId').updateValueAndValidity();
+    } else {
+      this.dataRequestForm.get('extractionSessionId').clearValidators();
+      this.dataRequestForm.get('extractionSessionId').setValue('');
+      this.dataRequestForm.get('extractionSessionId').updateValueAndValidity();
+
+      this.dataRequestForm.get('searchId').setValidators([Validators.required]);
+      this.dataRequestForm.get('searchId').updateValueAndValidity();
+    }
   }
 
   get f() { return this.dataRequestForm.controls; }
@@ -129,6 +156,9 @@ export class ExtractRequestComponent {
   }
 
   async hasCasePatientAgeFilter() {
+    if (this.sourceType === 'schema') {
+      return true;
+    }
     const searchId = this.dataRequestForm.get('searchId').value;
     if (!searchId) {
       return false;
@@ -174,6 +204,9 @@ export class ExtractRequestComponent {
   }
 
   async hasCollectionDateFilter() {
+    if (this.sourceType === 'schema') {
+      return true;
+    }
     const searchId = this.dataRequestForm.get('searchId').value;
     if (!searchId) {
       return false;
@@ -306,7 +339,11 @@ export class ExtractRequestComponent {
       const formData: FormData = new FormData();
       formData.append('name', this.dataRequestForm.get('name').value);
       formData.append('comment', this.dataRequestForm.get('comment').value);
-      formData.append('searchId', this.dataRequestForm.get('searchId').value);
+      if (this.sourceType === 'schema') {
+        formData.append('extractionSessionId', this.dataRequestForm.get('extractionSessionId').value);
+      } else {
+        formData.append('searchId', this.dataRequestForm.get('searchId').value);
+      }
       formData.append('reasonId', this.dataRequestForm.get('reasonId').value);
       formData.append('isPediatric', this.dataRequestForm.get('isPediatric').value);
       formData.append('irb', this.dataRequestForm.get('irbNumber').value);
