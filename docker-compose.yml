@@ -57,12 +57,12 @@ services:
                   "requestParam": "grant_type",
                   "match": "authorization_code",
                   "claims": {
-                    "sub": "{{login}}",
-                    "preferred_username": "{{login}}",
+                    "sub": "$${subject}",
+                    "preferred_username": "$${subject}",
                     "given_name": "Local",
                     "family_name": "Developer",
                     "name": "Local Developer",
-                    "email": "{{login}}@ccf.org.local",
+                    "email": "$${subject}@ccf.org.local",
                     "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
                     "roles": ["USER"]
                   }

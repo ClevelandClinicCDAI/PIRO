@@ -94,6 +94,11 @@ class Settings:
     OIDC_CLOCK_SKEW_SECONDS: int = int(
         os.getenv("OIDC_CLOCK_SKEW_SECONDS", "60")
     )
+    # Hardening default: do not auto-create PIRO users from OAuth claims
+    # unless this is explicitly enabled.
+    OAUTH_AUTO_PROVISION_USERS: bool = os.getenv(
+        "OAUTH_AUTO_PROVISION_USERS", "false"
+    ).lower() in {"1", "true", "yes", "on"}
 
     EXCEL_Template_DIRECTORY: str | None = os.getenv(
         "EXCEL_Template_DIRECTORY"

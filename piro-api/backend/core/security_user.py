@@ -92,6 +92,7 @@ def _get_or_provision_user(
     resolve_names: Callable[[], dict],
     islog: bool,
     db: Session,
+    allow_provision: bool = True,
 ):
     """Shared user lookup + provisioning branch used by both auth paths.
 
@@ -104,6 +105,9 @@ def _get_or_provision_user(
     ``{"firstName": ..., "lastName": ...}``. Wrapping it in a callable
     defers name resolution to the provisioning branch only: the LDAP
     path avoids a redundant AD lookup when the user already exists.
+
+    ``allow_provision`` controls whether a missing user is auto-created.
+    LDAP keeps historical behaviour (True). OAuth hardening can pass False.
     """
     credentials_active_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -132,6 +136,24 @@ def _get_or_provision_user(
             # userCheck values, True: user active, False: user inactive,
             # None: User never created in database
             if userCheck is None:
+                if not allow_provision:
+                    message = (
+                        f"User '{nuid}' not found in PIRO database and "
+                        "OAuth auto-provisioning is disabled."
+                    )
+                    logger.error(message)
+                    create_user_log(
+                        nuid,
+                        -1,
+                        -1,
+                        Constants.StatusCode.E.name,
+                        Constants.LoginTypeCode.ACCOUNT.name,
+                        message,
+                        islog,
+                        db=db,
+                    )
+                    return False
+
                 message = "User not active in the system"
                 logger.error(message)
                 create_user_log(
@@ -327,7 +349,13 @@ def _authenticate_via_oauth(body: OAuthLoginVM, islog: bool, db: Session):
             "lastName": identity["lastName"],
         }
 
-    return _get_or_provision_user(nuid, resolve_names, islog, db)
+    return _get_or_provision_user(
+        nuid,
+        resolve_names,
+        islog,
+        db,
+        allow_provision=settings.OAUTH_AUTO_PROVISION_USERS,
+    )
 
 
 def authenticate_user(

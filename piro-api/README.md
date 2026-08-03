@@ -58,6 +58,7 @@ SPA can perform IdP-side single-logout.
 | `OIDC_FAMILY_NAME_CLAIM` | `family_name` | Claim used for `lastName`. See fallback note above. |
 | `OIDC_GROUPS_CLAIM` | `groups` | Claim inspected for group membership. May be a JSON array or a single string. |
 | `OIDC_CLOCK_SKEW_SECONDS` | `60` | Leeway applied to `exp`/`nbf`/`iat` during signature validation. |
+| `OAUTH_AUTO_PROVISION_USERS` | `false` | Hardening switch for just-in-time PIRO user creation during OAuth login. Default `false` means OAuth logins must map to an existing PIRO user row; missing users are rejected instead of auto-created. |
 
 Sample values for the bundled `mock-oauth` compose service (see
 `docker-compose.yml`) are already wired in when you run
