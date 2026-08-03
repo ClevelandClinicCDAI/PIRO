@@ -70,15 +70,17 @@ def issuer_configured(monkeypatch):
 
 
 @pytest.fixture
-def patch_jwks_client(mocker):
+def patch_jwks_client(monkeypatch):
     """Replace the JWKS client factory with a benign stub."""
 
     stub_key = types.SimpleNamespace(key="not-a-real-key")
     stub_client = types.SimpleNamespace(
-        get_signing_key_from_jwt=mocker.Mock(return_value=stub_key)
+        get_signing_key_from_jwt=Mock(return_value=stub_key)
     )
-    mocker.patch.object(
-        oauth_auth, "_get_jwks_client", return_value=stub_client
+    monkeypatch.setattr(
+        oauth_auth,
+        "_get_jwks_client",
+        lambda: stub_client,
     )
     return stub_client
 
@@ -96,62 +98,67 @@ def test_verify_oauth_token_missing_issuer_returns_none(monkeypatch):
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
-def test_verify_oauth_token_jwks_key_lookup_fails(issuer_configured, mocker):
+def test_verify_oauth_token_jwks_key_lookup_fails(
+    issuer_configured, monkeypatch
+):
     """Failure to resolve the signing key returns None (no exception)."""
 
-    mocker.patch.object(
+    def raise_boom():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
         oauth_auth,
         "_get_jwks_client",
-        side_effect=RuntimeError("boom"),
+        raise_boom,
     )
     db = _mock_db()
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
 def test_verify_oauth_token_expired_returns_none(
-    issuer_configured, patch_jwks_client, mocker
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
-    mocker.patch.object(
-        pyjwt, "decode", side_effect=pyjwt.ExpiredSignatureError()
+    monkeypatch.setattr(
+        pyjwt, "decode", Mock(side_effect=pyjwt.ExpiredSignatureError())
     )
     db = _mock_db()
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
 def test_verify_oauth_token_wrong_issuer_returns_none(
-    issuer_configured, patch_jwks_client, mocker
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
-    mocker.patch.object(
-        pyjwt, "decode", side_effect=pyjwt.InvalidIssuerError()
+    monkeypatch.setattr(
+        pyjwt, "decode", Mock(side_effect=pyjwt.InvalidIssuerError())
     )
     db = _mock_db()
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
 def test_verify_oauth_token_wrong_audience_returns_none(
-    issuer_configured, patch_jwks_client, mocker
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
-    mocker.patch.object(
-        pyjwt, "decode", side_effect=pyjwt.InvalidAudienceError()
+    monkeypatch.setattr(
+        pyjwt, "decode", Mock(side_effect=pyjwt.InvalidAudienceError())
     )
     db = _mock_db()
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
 def test_verify_oauth_token_generic_invalid_returns_none(
-    issuer_configured, patch_jwks_client, mocker
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
-    mocker.patch.object(
+    monkeypatch.setattr(
         pyjwt,
         "decode",
-        side_effect=pyjwt.InvalidTokenError("bad signature"),
+        Mock(side_effect=pyjwt.InvalidTokenError("bad signature")),
     )
     db = _mock_db()
     assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
 
 
 def test_verify_oauth_token_success_returns_claims(
-    issuer_configured, patch_jwks_client, mocker
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
     """Happy path: valid token -> claims dict is returned unchanged."""
 
@@ -161,19 +168,20 @@ def test_verify_oauth_token_success_returns_claims(
         "aud": "piro-api",
         "groups": ["Group-A"],
     }
-    mocker.patch.object(pyjwt, "decode", return_value=claims)
+    monkeypatch.setattr(pyjwt, "decode", Mock(return_value=claims))
     db = _mock_db()
     result = oauth_auth.verify_oauth_token("any", islog=False, db=db)
     assert result == claims
 
 
 def test_verify_oauth_token_skips_audience_when_unset(
-    issuer_configured, patch_jwks_client, mocker, monkeypatch
+    issuer_configured, patch_jwks_client, monkeypatch
 ):
     """When OIDC_AUDIENCE is empty, `verify_aud` is disabled."""
 
     monkeypatch.setattr(settings, "OIDC_AUDIENCE", "")
-    decode = mocker.patch.object(pyjwt, "decode", return_value={"sub": "x"})
+    decode = Mock(return_value={"sub": "x"})
+    monkeypatch.setattr(pyjwt, "decode", decode)
     db = _mock_db()
     oauth_auth.verify_oauth_token("any", islog=False, db=db)
     kwargs = decode.call_args.kwargs
@@ -367,34 +375,36 @@ def test_end_session_endpoint_none_when_no_issuer(monkeypatch):
     assert oauth_auth.get_end_session_endpoint() is None
 
 
-def test_end_session_endpoint_returns_from_discovery(monkeypatch, mocker):
+def test_end_session_endpoint_returns_from_discovery(monkeypatch):
     monkeypatch.setattr(
         settings, "OIDC_ISSUER", "https://idp.example.com/tenant"
     )
-    fake_response = mocker.Mock()
+    fake_response = Mock()
     fake_response.json.return_value = {
         "end_session_endpoint": "https://idp.example.com/tenant/logout"
     }
     fake_response.raise_for_status.return_value = None
-    mocker.patch.object(requests, "get", return_value=fake_response)
+    monkeypatch.setattr(requests, "get", Mock(return_value=fake_response))
     assert (
         oauth_auth.get_end_session_endpoint()
         == "https://idp.example.com/tenant/logout"
     )
 
 
-def test_end_session_endpoint_none_on_discovery_failure(monkeypatch, mocker):
+def test_end_session_endpoint_none_on_discovery_failure(monkeypatch):
     monkeypatch.setattr(
         settings, "OIDC_ISSUER", "https://idp.example.com/tenant"
     )
-    mocker.patch.object(
-        requests, "get", side_effect=requests.ConnectionError("nope")
+    monkeypatch.setattr(
+        requests,
+        "get",
+        Mock(side_effect=requests.ConnectionError("nope")),
     )
     assert oauth_auth.get_end_session_endpoint() is None
 
 
 def test_end_session_endpoint_none_when_discovery_missing_field(
-    monkeypatch, mocker
+    monkeypatch,
 ):
     """
     Discovery doc without `end_session_endpoint` -> None (SLO not supported).
@@ -403,8 +413,8 @@ def test_end_session_endpoint_none_when_discovery_missing_field(
     monkeypatch.setattr(
         settings, "OIDC_ISSUER", "https://idp.example.com/tenant"
     )
-    fake_response = mocker.Mock()
+    fake_response = Mock()
     fake_response.json.return_value = {"issuer": "x"}
     fake_response.raise_for_status.return_value = None
-    mocker.patch.object(requests, "get", return_value=fake_response)
+    monkeypatch.setattr(requests, "get", Mock(return_value=fake_response))
     assert oauth_auth.get_end_session_endpoint() is None

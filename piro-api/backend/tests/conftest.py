@@ -1,5 +1,6 @@
 import pytest
 from datetime import datetime
+from pathlib import Path
 from typing import Callable, Generator
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -14,14 +15,12 @@ from core.auth_bearer import JWTBearer
 from core.config import settings
 from core.constants import Constants
 from core.security_token import create_access_token
-from crud.crud import get_row, write_row
+from crud.crud import write_row
 from db.models.Role import Role
 from db.models.User import User
 from db.models.UserRole import UserRole
 from db.views.VCase import VCase
 from tests.consts import SQLA_DB_URL
-from tests.utils import populate_tables
-from utils import get_model_dict
 from db.base_class import Base  # noqa E402
 from db.session import get_db, get_solr  # noqa E402
 
@@ -42,7 +41,7 @@ class MockSolr:
 
 
 def get_mock_solr():
-    """Utility function returning our MockSolr object; replaces the 'get_solr()' dependency during testing."""
+    """Return the mock Solr client used during tests."""
     return MockSolr()
 
 
@@ -67,21 +66,22 @@ def get_test_db() -> Generator:
 
 @pytest.fixture(scope="session", autouse=True)
 def create_test_database():
-    """Universally-used fixture that configures the database for each testing session.
+    """Create a fresh SQLite test database for the session."""
 
-    Note that we use a localhost SQLite database for testing."""
+    sqlite_path = Path(SQLA_DB_URL.replace("sqlite:///", ""))
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
 
     # recreate the database
     if database_exists(SQLA_DB_URL):
         drop_database(SQLA_DB_URL)
     create_database(SQLA_DB_URL)
 
-    # create the application tables and populate them with test data
+    # create the application tables only; individual tests now create the
+    # records they need explicitly.
     engine = create_engine(
         SQLA_DB_URL, connect_args={"check_same_thread": False}
     )
     Base.metadata.create_all(engine)
-    populate_tables(next(get_test_db()))
 
 
 # ############################################### #
@@ -90,17 +90,14 @@ def get_test_user(db: Session) -> User:
     """Get or create a user to use for testing."""
     email = settings.TEST_USER_EMAIL
 
-    # attempt to retrieve an existing user
-    _, user = get_row(
-        id_str=email, session_inst=db, model=User, pk_field="NUID"
-    )
+    user = db.query(User).filter(User.NUID == email).first()
 
     if user:
         return user
 
     # otherwise, create a new one
     user_data = {
-        "NUID": "test@example.com",
+        "NUID": email,
         "FirstName": "David",
         "LastName": "Dixon",
         "CreateBy": "AutoAdmin",
@@ -112,33 +109,47 @@ def get_test_user(db: Session) -> User:
 
 
 def get_and_configure_test_role(db: Session, user: User) -> Role:
-    """Create a UserRole record associating the test user with a role and return that role."""
+    """Create a user-role link for the test user and return the role."""
 
-    _, role = get_row(
-        id_str="csmt", session_inst=db, model=Role, pk_field="Code"
+    role = db.query(Role).filter(Role.Code == "csmt").first()
+    if not role:
+        role_data = {
+            "RoleId": 2,
+            "ShortName": Constants.RoleAdmin,
+            "Code": "csmt",
+            "Description": "Test role",
+            "DataLabReference": "Test reference",
+            "IsActive": True,
+            "CreateBy": "AutoAdmin",
+        }
+        _, role = write_row(data_row=Role(**role_data), session_inst=db)
+
+    user_role = (
+        db.query(UserRole).filter(UserRole.UserId == user.UserId).first()
     )
-
-    user_role_data = {
-        "IsActive": True,
-        "UserId": user.UserId,
-        "RoleId": role.RoleId,
-        "CreateBy": "AutoAdmin",
-    }
-    write_row(data_row=UserRole(**user_role_data), session_inst=db)
+    if not user_role:
+        user_role_data = {
+            "IsActive": True,
+            "UserId": user.UserId,
+            "RoleId": role.RoleId,
+            "CreateBy": "AutoAdmin",
+        }
+        write_row(data_row=UserRole(**user_role_data), session_inst=db)
 
     return role
 
 
-def get_mock_jwt_bearer_token() -> str:
+def get_mock_jwt_bearer_token() -> None:
     """Generates a JWT bearer token suitable for use in tests."""
+
+    return None
 
 
 @pytest.fixture
 def normal_user_token_headers():
     """Returns a header with a JWT bearer token suitable for use in tests.
 
-    The token is specifically tied to the user associated with the TEST_USER_EMAIL.
-    This function also handles setup and role assignment for the associated user.
+    The token is tied to the test user created in this module.
     """
 
     db = next(get_test_db())
@@ -157,7 +168,7 @@ def normal_user_token_headers():
 # ############################################### #
 # ##### Test App and Client Configuration ##### #
 def get_test_app():
-    """Instantiates the test app, overriding dependencies as needed for testing."""
+    """Instantiate the FastAPI test app with dependency overrides."""
     app = FastAPI()
     app.include_router(api_router)
     add_pagination(app)
@@ -202,8 +213,8 @@ def patch_create_user() -> Callable:
         success, row = write_row(new_user, db)
         if success:
             logger.info(
-                f"Data successfully written to db! See the "
-                f"payload: {get_model_dict(new_user)}"
+                f"Data successfully written to db! See the payload: "
+                f"{new_user_dict}"
             )
             role_data = {
                 "RoleId": user.roleId,
@@ -223,7 +234,7 @@ def patch_create_user() -> Callable:
             )
 
             new_user = User(**new_user_dict)
-            logger.info(get_model_dict(new_user))
+            logger.info(new_user_dict)
         return new_user
 
     return new_create_user
