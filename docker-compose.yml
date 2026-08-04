@@ -40,6 +40,7 @@ services:
       - "8888:8888"
     environment:
       SERVER_PORT: 8888
+      MOCK_OAUTH_AD_GROUP: ${MOCK_OAUTH_AD_GROUP:-}
       # Pin the issuer so the browser and the api container agree on it.
       # Any username typed at the login form becomes `sub` / `preferred_username`.
       # The `groups` claim mirrors AD_SECURITY_GROUP so group-based auth tests have
@@ -62,8 +63,8 @@ services:
                     "given_name": "Local",
                     "family_name": "Developer",
                     "name": "Local Developer",
-                    "email": "$${subject}@ccf.org.local",
-                    "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
+                    "email": "$${subject}@test.local",
+                    "groups": ["${MOCK_OAUTH_AD_GROUP}"],
                     "roles": ["USER"]
                   }
                 },
@@ -76,8 +77,8 @@ services:
                     "given_name": "Local",
                     "family_name": "Developer",
                     "name": "Local Developer",
-                    "email": "testuser@ccf.org.local",
-                    "groups": ["GS-CC-LABMD-APPS-Piro-DEV"],
+                    "email": "testuser@test.local",
+                    "groups": ["${MOCK_OAUTH_AD_GROUP}"],
                     "roles": ["USER"]
                   }
                 }
@@ -124,11 +125,13 @@ services:
     environment:
       PROJECT_NAME: PIRO
       PROJECT_VERSION: "1.0.0"
+      # Auth mode selector for the API. Set PIRO_AUTH_MODE=OAUTH in .env for local SSO.
+      AUTH_MODE: ${PIRO_AUTH_MODE:-LDAP}
       DATABASE: MSSQL
-      MSSQL_USER: sa
+      MSSQL_USER: ${MSSQL_USER:-sa}
       MSSQL_PASSWORD: ${PIRO_MSSQL_SA_PASSWORD:-P1ro!LocalDev}
-      MSSQL_SERVER: sqlserver
-      MSSQL_DB: PIRO
+      MSSQL_SERVER: ${MSSQL_SERVER:-sqlserver}
+      MSSQL_DB: ${MSSQL_DB:-PIRO}
       MSSQL_WINDOW_AUTH: "False"
       MSSQL_DRIVER: ODBC Driver 18 for SQL Server
       ACCESS_TOKEN_SECRET_KEY: ${PIRO_ACCESS_TOKEN_SECRET:-change-me}
@@ -137,13 +140,13 @@ services:
       # ACCESS_TOKEN_TEST_USER deliberately has no default—set it explicitly for temporary local bypass only.
       ACCESS_TOKEN_TEST_USER: ${ACCESS_TOKEN_TEST_USER:-}
       API_CORS: http://localhost:8080
-      SOLR_URL: http://solr:8983/solr
+      SOLR_URL: ${SOLR_URL:-http://solr:8983/solr}
       SOLR_CORE: PIROCase
       SOLR_SUGGEST_COMMENT: PIROSuggestComment/suggest?q=
       SOLR_SUGGEST_STAFF: PIROSuggestStaff/suggest?q=
       SOLR_SUGGEST_CASE: PIROSuggestCase/suggest?q=
-      SOLR_USER_NAME: ""
-      SOLR_USER_PASSWORD: ""
+      SOLR_USER_NAME: ${SOLR_USER_NAME:-}
+      SOLR_USER_PASSWORD: ${SOLR_USER_PASSWORD:-}
       AD_LDAP_PATH: ${AD_LDAP_PATH:-}
       AD_SECURITY_GROUP: ${AD_SECURITY_GROUP:-}
       AD_DOMAIN: ${AD_DOMAIN:-}
@@ -166,6 +169,7 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-dev-secret-not-a-real-secret}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
       OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
+      OIDC_ALLOWED_GROUPS: ${OIDC_ALLOWED_GROUPS:-}
     extra_hosts:
       - "piro-auth:host-gateway"
     depends_on:
