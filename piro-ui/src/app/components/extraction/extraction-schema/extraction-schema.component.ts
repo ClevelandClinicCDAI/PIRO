@@ -57,6 +57,11 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   loadingFromSearch = false;
   loadedSearchName: string | null = null;
 
+  // Text source selection (which report sections feed the LLM)
+  textSourceOptions: { code: string; label: string }[] = [];
+  selectedTextSources: string[] = [];
+  private static readonly DEFAULT_TEXT_SOURCES = ['final', 'comment', 'addendum', 'microscopic'];
+
   private schemaChange$ = new Subject<void>();
   private previewSub?: Subscription;
   private subs: Subscription[] = [];
@@ -71,8 +76,18 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.sessionId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
+    this.loadTextSourceOptions();
     this.loadSession();
     this.setupPreviewDebounce();
+  }
+
+  async loadTextSourceOptions() {
+    try {
+      this.textSourceOptions = await this.extractionService.getTextSources();
+    } catch {
+      // Fall back to the built-in default set if the lookup fails
+      this.textSourceOptions = ExtractionSchemaComponent.DEFAULT_TEXT_SOURCES.map(code => ({ code, label: code }));
+    }
   }
 
   ngOnDestroy(): void {
@@ -87,6 +102,9 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
       if (this.session?.SchemaJson) {
         this.fields = this.schemaJsonToFields(JSON.parse(this.session.SchemaJson));
       }
+      this.selectedTextSources = (this.session?.TextSources && this.session.TextSources.length > 0)
+        ? [...this.session.TextSources]
+        : [...ExtractionSchemaComponent.DEFAULT_TEXT_SOURCES];
       this.queuedCases = await this.extractionService.getQueue(this.sessionId) ?? [];
 
       // Check if we were sent here from Review with specific low-confidence cases
@@ -225,6 +243,35 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
 
   // ── Save ─────────────────────────────────────────────────────────────────
 
+  isTextSourceSelected(code: string): boolean {
+    return this.selectedTextSources.includes(code);
+  }
+
+  toggleTextSource(code: string) {
+    const idx = this.selectedTextSources.indexOf(code);
+    if (idx >= 0) {
+      this.selectedTextSources.splice(idx, 1);
+    } else {
+      this.selectedTextSources.push(code);
+    }
+    this.onSchemaChanged();
+    this.saveTextSources();
+  }
+
+  async saveTextSources() {
+    if (this.selectedTextSources.length === 0) {
+      this.toastr.warning('Select at least one text source.');
+      return;
+    }
+    try {
+      await this.extractionService.saveTextSources(this.sessionId, this.selectedTextSources);
+      this.loadCaseText();
+      this.runPreview();
+    } catch (e) {
+      this.toastr.error('Failed to save text source selection.');
+    }
+  }
+
   async saveSchema() {
     const schema = this.fieldsToSchemaJson();
     if (Object.keys(schema).length === 0) {
@@ -233,7 +280,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     }
     this.saving = true;
     try {
-      await this.extractionService.saveSchema(this.sessionId, JSON.stringify(schema));
+      await this.extractionService.saveSchema(this.sessionId, JSON.stringify(schema), undefined, this.selectedTextSources);
       this.toastr.success('Schema saved.');
     } catch (e) {
       this.toastr.error('Failed to save schema.');
@@ -254,7 +301,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   async loadCaseText() {
     if (!this.selectedCaseId) return;
     try {
-      const data = await this.extractionService.getCaseText(this.selectedCaseId);
+      const data = await this.extractionService.getCaseText(this.selectedCaseId, this.sessionId);
       this.reportText = data.full_text;
       this.highlightedReportHtml = this.escapeHtml(this.reportText);
     } catch {

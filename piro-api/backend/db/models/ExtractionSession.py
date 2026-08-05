@@ -10,6 +10,7 @@ class ExtractionSession(Base):
     UserId = Column(Integer, ForeignKey("User.UserId"), nullable=False)
     Name = Column(String(255), nullable=False)
     SchemaJson = Column(UnicodeText, nullable=True)
+    TextSources = Column(String(500), nullable=True)
     Status = Column(String(50), nullable=False, default="draft")
     IsActive = Column(Boolean, nullable=False, default=True)
     CreateDate = Column(DateTime(timezone=True), default=func.now())

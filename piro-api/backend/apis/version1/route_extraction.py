@@ -16,6 +16,7 @@ from core.constants import Constants
 from core.llm_client import FieldExtraction, get_llm_client
 from core.security_user import get_current_user_id, get_current_user_nuid, get_current_user_role
 from db.repository.extraction import (
+    AVAILABLE_TEXT_SOURCES,
     add_cases_to_queue,
     bulk_approve_high_confidence,
     build_labelled_report_text,
@@ -34,6 +35,7 @@ from db.repository.extraction import (
     get_run,
     get_session,
     list_user_sessions,
+    parse_text_sources,
     remove_from_queue,
     reset_queue_statuses,
     update_queue_item_status,
@@ -42,6 +44,7 @@ from db.repository.extraction import (
     update_session_name,
     update_session_schema,
     update_session_status,
+    update_session_text_sources,
     upsert_result,
 )
 from db.models.Case import Case
@@ -73,6 +76,7 @@ from viewmodel.extraction import (
     ExtractionStatusVM,
     FieldSuggestionRequest,
     FieldSuggestionVM,
+    TextSourceOptionVM,
 )
 
 router = APIRouter()
@@ -115,11 +119,22 @@ async def create_extraction_session(
         user_id=current_user_id,
         user=current_user,
         db=db,
+        text_sources=payload.text_sources,
     )
     if payload.schema_definition:
         update_session_schema(sess.ExtractionSessionId, payload.schema_definition, current_user, db)
         db.refresh(sess)
     return sess
+
+
+@router.get(
+    "/text-sources",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+    response_model=List[TextSourceOptionVM],
+)
+async def list_text_sources():
+    """Return the available report sections that can be selected for extraction."""
+    return AVAILABLE_TEXT_SOURCES
 
 
 @router.get(
@@ -164,6 +179,8 @@ async def save_schema(
         update_session_name(session_id, payload.name, current_user, db)
     if payload.schema_definition is not None:
         update_session_schema(session_id, payload.schema_definition, current_user, db)
+    if payload.text_sources is not None:
+        update_session_text_sources(session_id, payload.text_sources, current_user, db)
     return get_session(session_id, db)
 
 
@@ -339,6 +356,8 @@ async def _run_extraction_job(
         queue = get_queue(session_id, db)
         run = get_run(run_id, db)
         schema = json.loads(run.SchemaJson)
+        sess = get_session(session_id, db)
+        comment_types = parse_text_sources(sess.TextSources if sess else None)
 
         # Determine which cases to process
         validation_set = set(case_ids) if case_ids is not None else None
@@ -357,7 +376,7 @@ async def _run_extraction_job(
             update_queue_item_status(queue_item.ExtractionQueueId, "running", db)
             try:
                 labelled_text, segments = get_case_text_for_extraction(
-                    queue_item.CaseId, db, role=role
+                    queue_item.CaseId, db, role=role, comment_types=comment_types
                 )
 
                 if not labelled_text.strip():
@@ -765,11 +784,12 @@ async def suggest_fields(
 
     # If no sample text provided, grab first case from the session queue
     if not sample_text and payload.session_id:
-        _require_session_ownership(payload.session_id, current_user_id, db)
+        sess = _require_session_ownership(payload.session_id, current_user_id, db)
         queue = get_queue(payload.session_id, db)
         if queue:
             labelled_text, _ = get_case_text_for_extraction(
-                queue[0].CaseId, db, role=current_role
+                queue[0].CaseId, db, role=current_role,
+                comment_types=parse_text_sources(sess.TextSources),
             )
             sample_text = labelled_text
 
@@ -799,7 +819,7 @@ async def preview_extraction(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_ownership(payload.session_id, current_user_id, db)
+    _sess = _require_session_ownership(payload.session_id, current_user_id, db)
 
     _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
     logger.info(
@@ -810,7 +830,8 @@ async def preview_extraction(
         raise HTTPException(status_code=400, detail="Schema cannot be empty")
 
     labelled_text, _ = get_case_text_for_extraction(
-        payload.case_id, db, role=current_role
+        payload.case_id, db, role=current_role,
+        comment_types=parse_text_sources(_sess.TextSources),
     )
 
     if not labelled_text.strip():
@@ -854,10 +875,19 @@ async def preview_extraction(
 )
 async def get_case_text(
     case_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
+    session_id: Optional[int] = Query(default=None),
 ):
-    labelled_text, segments = get_case_text_for_extraction(case_id, db, role=current_role)
+    comment_types = None
+    if session_id is not None:
+        sess = _require_session_ownership(session_id, current_user_id, db)
+        comment_types = parse_text_sources(sess.TextSources)
+
+    labelled_text, segments = get_case_text_for_extraction(
+        case_id, db, role=current_role, comment_types=comment_types
+    )
     segment_vms = [
         CaseCommentSegmentVM(
             CaseCommentId=getattr(seg, "CaseCommentId", seg.Id),

@@ -13,11 +13,13 @@ from pydantic import BaseModel, validator
 class ExtractionSessionCreate(BaseModel):
     name: str
     schema_definition: Optional[str] = None
+    text_sources: Optional[List[str]] = None
 
 
 class ExtractionSessionUpdate(BaseModel):
     name: Optional[str] = None
     schema_definition: Optional[str] = None
+    text_sources: Optional[List[str]] = None
 
 
 class ExtractionSessionVM(BaseModel):
@@ -25,12 +27,24 @@ class ExtractionSessionVM(BaseModel):
     UserId: int
     Name: str
     SchemaJson: Optional[str] = None
+    TextSources: Optional[List[str]] = None
     Status: str
     IsActive: bool
     CreateDate: Optional[datetime] = None
 
+    @validator("TextSources", pre=True)
+    def _split_text_sources(cls, v):
+        if isinstance(v, str):
+            return [x for x in v.split(",") if x]
+        return v
+
     class Config:
         orm_mode = True
+
+
+class TextSourceOptionVM(BaseModel):
+    code: str
+    label: str
 
 
 # ──────────────────────────────────────────────────────────────────────────────

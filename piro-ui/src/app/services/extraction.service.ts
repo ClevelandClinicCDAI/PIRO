@@ -18,9 +18,12 @@ export class ExtractionService {
 
   // ── Sessions ──────────────────────────────────────────────────────────────
 
-  createSession(name: string, schemaJson?: string): Promise<any> {
-    return this.http.post<any>(this.BASE + 'session', { name, schema_definition: schemaJson ?? null })
-      .toPromise();
+  createSession(name: string, schemaJson?: string, textSources?: string[]): Promise<any> {
+    return this.http.post<any>(this.BASE + 'session', {
+      name,
+      schema_definition: schemaJson ?? null,
+      text_sources: textSources ?? null,
+    }).toPromise();
   }
 
   getSessions(): Promise<any[]> {
@@ -31,10 +34,19 @@ export class ExtractionService {
     return this.http.get<any>(`${this.BASE}session/${sessionId}`).toPromise();
   }
 
-  saveSchema(sessionId: number, schemaJson: string, name?: string): Promise<any> {
+  getTextSources(): Promise<any[]> {
+    return this.http.get<any[]>(this.BASE + 'text-sources').toPromise() as Promise<any[]>;
+  }
+
+  saveSchema(sessionId: number, schemaJson: string, name?: string, textSources?: string[]): Promise<any> {
     const body: any = { schema_definition: schemaJson };
     if (name) body.name = name;
+    if (textSources) body.text_sources = textSources;
     return this.http.put<any>(`${this.BASE}schema/${sessionId}`, body).toPromise();
+  }
+
+  saveTextSources(sessionId: number, textSources: string[]): Promise<any> {
+    return this.http.put<any>(`${this.BASE}schema/${sessionId}`, { text_sources: textSources }).toPromise();
   }
 
   deleteSession(sessionId: number): Promise<any> {
@@ -130,7 +142,9 @@ export class ExtractionService {
 
   // ── Case text ─────────────────────────────────────────────────────────────
 
-  getCaseText(caseId: number): Promise<any> {
-    return this.http.get<any>(`${this.BASE}case/${caseId}/text`).toPromise();
+  getCaseText(caseId: number, sessionId?: number): Promise<any> {
+    let url = `${this.BASE}case/${caseId}/text`;
+    if (sessionId) url += `?session_id=${sessionId}`;
+    return this.http.get<any>(url).toPromise();
   }
 }

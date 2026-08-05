@@ -17,10 +17,28 @@ from db.models.ExtractionSession import ExtractionSession
 from db.views.VCaseCommentText import VCaseCommentText
 from logger import logger
 
-# Comment types included in extraction, matched against V_CaseCommentText.CommentType
-# (the CommentType.ShortName already present in the view — no extra join needed).
-# Case-insensitive matching handles any capitalisation variants in the DB.
-_EXTRACTION_SHORT_NAMES = {"final", "comment", "addendum", "microscopic"}
+# All selectable text sources for the schema builder's checkbox UI, in the
+# order they should appear in the assembled report text. Codes are matched
+# case-insensitively against V_CaseCommentText.CommentType.
+AVAILABLE_TEXT_SOURCES: List[dict] = [
+    {"code": "final", "label": "Final Diagnosis"},
+    {"code": "comment", "label": "Diagnostic Comment"},
+    {"code": "addendum", "label": "Addendum"},
+    {"code": "microscopic", "label": "Microscopic Description"},
+    {"code": "gross", "label": "Gross Description"},
+    {"code": "intraop", "label": "IntraOp"},
+    {"code": "resident", "label": "Resident"},
+    {"code": "synoptic", "label": "Synoptic"},
+    {"code": "clinical", "label": "Clinical"},
+]
+_TEXT_SOURCE_ORDER = {src["code"]: i for i, src in enumerate(AVAILABLE_TEXT_SOURCES)}
+
+# Default set used when a session has no TextSources configured (backward
+# compatible with sessions created before this feature existed).
+DEFAULT_TEXT_SOURCES = {"final", "comment", "addendum", "microscopic"}
+
+# Retained for backward compatibility with any external references.
+_EXTRACTION_SHORT_NAMES = DEFAULT_TEXT_SOURCES
 
 # Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report text.
 # Uses flexible whitespace matching to handle formatting variations.
@@ -30,28 +48,48 @@ _LDT_DISCLAIMER_RE = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+def parse_text_sources(text_sources: Optional[str]) -> set:
+    """Parse a session's stored comma-separated TextSources into a lowercase set.
+
+    Falls back to DEFAULT_TEXT_SOURCES when unset/empty.
+    """
+    if not text_sources:
+        return set(DEFAULT_TEXT_SOURCES)
+    codes = {c.strip().lower() for c in text_sources.split(",") if c.strip()}
+    return codes or set(DEFAULT_TEXT_SOURCES)
+
+
+def serialize_text_sources(text_sources: Optional[List[str]]) -> Optional[str]:
+    """Normalize a list of text source codes into the stored comma-separated form."""
+    if text_sources is None:
+        return None
+    codes = [c.strip().lower() for c in text_sources if c and c.strip()]
+    return ",".join(codes) if codes else None
+
+
 def _segment_order(short_name: str) -> int:
     """Map a CommentType ShortName to a display-order index."""
     c = (short_name or "").lower()
-    if c == "final":
-        return 0
-    if c == "comment":
-        return 1
     if "addend" in c:   # matches Addendum, Addend, etc.
-        return 2
-    if c == "microscopic":
-        return 3
-    return 99
+        return _TEXT_SOURCE_ORDER.get("addendum", 99)
+    return _TEXT_SOURCE_ORDER.get(c, 99)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Session CRUD
 # ──────────────────────────────────────────────────────────────────────────────
 
-def create_session(name: str, user_id: int, user: str, db: Session) -> ExtractionSession:
+def create_session(
+    name: str,
+    user_id: int,
+    user: str,
+    db: Session,
+    text_sources: Optional[List[str]] = None,
+) -> ExtractionSession:
     session = ExtractionSession(
         UserId=user_id,
         Name=name,
+        TextSources=serialize_text_sources(text_sources),
         Status="draft",
         IsActive=True,
         CreateBy=user,
@@ -106,6 +144,19 @@ def update_session_name(
     if session is None:
         return None
     session.Name = name
+    session.UpdateBy = user
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_session_text_sources(
+    session_id: int, text_sources: List[str], user: str, db: Session
+) -> Optional[ExtractionSession]:
+    session = get_session(session_id, db)
+    if session is None:
+        return None
+    session.TextSources = serialize_text_sources(text_sources)
     session.UpdateBy = user
     db.commit()
     db.refresh(session)
@@ -474,21 +525,28 @@ def bulk_approve_high_confidence(
 # Case text helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-def get_case_text_segments(case_id: int, db: Session) -> List[VCaseCommentText]:
+def get_case_text_segments(
+    case_id: int, db: Session, comment_types: Optional[set] = None
+) -> List[VCaseCommentText]:
     """Fetch comment segments for extraction-relevant types in display order.
 
     Filters on V_CaseCommentText.CommentType (the ShortName already in the view)
     to avoid a redundant re-join to the CommentType table.
-    Prefers: Final, Comment, Addendum, Microscopic — case-insensitive.
+    ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES);
+    defaults to DEFAULT_TEXT_SOURCES (Final, Comment, Addendum, Microscopic)
+    when not provided.
     Falls back to all available comment types if none of those are present.
     """
+    types = comment_types if comment_types else DEFAULT_TEXT_SOURCES
+
+    filters = [func.lower(VCaseCommentText.CommentType).in_(types)]
+    if "addendum" in types:
+        filters.append(func.lower(VCaseCommentText.CommentType).like('%addend%'))
+
     rows = (
         db.query(VCaseCommentText)
         .filter(VCaseCommentText.CaseId == case_id)
-        .filter(or_(
-            func.lower(VCaseCommentText.CommentType).in_(_EXTRACTION_SHORT_NAMES),
-            func.lower(VCaseCommentText.CommentType).like('%addend%'),
-        ))
+        .filter(or_(*filters))
         .all()
     )
 
@@ -501,7 +559,7 @@ def get_case_text_segments(case_id: int, db: Session) -> List[VCaseCommentText]:
         )
         available = [r.CommentType for r in all_rows]
         logger.warning(
-            f"Case {case_id}: no segments matched preferred extraction types "
+            f"Case {case_id}: no segments matched selected extraction types "
             f"(available: {available}). Using all available comment text."
         )
         rows = all_rows
@@ -543,12 +601,13 @@ def get_case_text_for_extraction(
     case_id: int,
     db: Session,
     role: Optional[str] = None,
+    comment_types: Optional[set] = None,
 ) -> tuple[str, List[VCaseCommentText]]:
     """Return (labelled_text, segments) for LLM input.
 
     Applies DEMOADMIN masking if role == 'DEMOADMIN'.
     """
-    segments = get_case_text_segments(case_id, db)
+    segments = get_case_text_segments(case_id, db, comment_types=comment_types)
 
     # Apply PHI masking for demo mode (reuses existing SecurityUtil logic)
     if role and role.upper() == "DEMOADMIN":
