@@ -101,6 +101,7 @@ class SearchRequestDisplayVM(BaseModel):
     SearchRequestStatus: Optional[str] = Field(alias="searchRequestStatus")
     RequestedBy: Optional[str] = Field(alias="requestedBy")
     ApprovedBy: Optional[str] = Field(alias="approvedBy")
+    CaseCount: Optional[int] = Field(alias="caseCount")
 
     class Config:  # to convert non dict obj to json
         orm_mode = True

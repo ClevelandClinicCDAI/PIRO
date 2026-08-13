@@ -450,13 +450,26 @@ async def _run_extraction_job(
         final_status = "completed" if status["failed"] == 0 else "completed_with_errors"
         update_run_status(run_id, final_status, db)
         update_session_status(session_id, final_status, db)
+        _notify_extraction_run_completed(run_id, final_status, db)
 
     except Exception as e:
         logger.error(f"Extraction job failed for session {session_id}: {e}", exc_info=True)
         update_run_status(run_id, "failed", db, error=str(e)[:1000])
         update_session_status(session_id, "failed", db)
+        _notify_extraction_run_completed(run_id, "failed", db)
     finally:
         db.close()
+
+
+def _notify_extraction_run_completed(run_id: int, status: str, db: Session) -> None:
+    """Best-effort email notification; failures here must never break the run."""
+    try:
+        from db.repository.searchRequest import email_extraction_run_completed
+        email_extraction_run_completed(run_id=run_id, status=status, db=db)
+    except Exception as exc:
+        logger.error(
+            f"Extraction completion email error - run {run_id} <{str(exc)} : {exc.args}>"
+        )
 
 
 @router.post(

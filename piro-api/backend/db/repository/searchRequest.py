@@ -7,6 +7,7 @@ from db.models.Search import Search
 from db.models.SearchRequest import SearchRequest
 from db.models.SearchRequestReason import SearchRequestReason
 from db.models.SearchRequestStatus import SearchRequestStatus
+from db.models.ExtractionQueue import ExtractionQueue
 from db.models.User import User
 from db.repository.lookup import SearchRequestStatus_get_id
 from db.repository.searchRequestDataField import (
@@ -108,6 +109,60 @@ def email_searchRequest(searchRequestId: int, db: Session):
 
         email_obj = Email(subject=subject_transform, html_body=html_transform)
         email_obj.send(to=to_adress, cc=cc_adress, bcc=None)
+
+
+def email_extraction_run_completed(run_id: int, status: str, db: Session):
+    """Notify the user who approved and started an LLM-assisted extraction run
+    once it finishes (whether successfully or not).
+
+    Only fires for runs tied to a SearchRequest (i.e. started via the
+    Data Requests inbox's "Start Extraction" action) — not for ad-hoc
+    validation/preview runs triggered from the Schema Builder by whoever
+    designed the extraction schema.
+    """
+    if Settings.DATAREQUEST_EMAIL_ENABLE != "True":
+        return
+
+    searchRequest = (
+        db.query(SearchRequest)
+        .filter(SearchRequest.ExtractionRunId == run_id)
+        .filter(SearchRequest.IsActive == True)  # noqa
+        .first()
+    )
+    if searchRequest is None or searchRequest.ApprovedById is None:
+        return
+
+    approver = (
+        db.query(User).filter(User.UserId == searchRequest.ApprovedById).first()
+    )
+    if approver is None or not approver.NUID:
+        logger.warning(
+            "Extraction completion email skipped for run %s because the "
+            "approving user's NUID is missing.",
+            run_id,
+        )
+        return
+
+    recipient = f"{approver.NUID}@ccf.org"
+    status_label = {
+        "completed": "completed successfully",
+        "completed_with_errors": "completed with some errors",
+        "failed": "failed",
+    }.get(status, status)
+
+    subject = f"PIRO: Data extraction {status_label} - {searchRequest.RequestName}"
+    html_body = f"""
+    <html>
+      <body>
+        <p>The LLM-assisted extraction for your approved data request has {status_label}.</p>
+        <p><strong>Request Name:</strong> {searchRequest.RequestName}</p>
+        <p>You can review the results in the PIRO Data Requests inbox.</p>
+      </body>
+    </html>
+    """
+
+    email_obj = Email(subject=subject, html_body=html_body)
+    email_obj.send(to=recipient, cc=None, bcc=None)
 
 
 def update_approvalComment(
@@ -252,6 +307,13 @@ def list_searchRequest_display(
     )
 
     for searchRequest in data:
+        case_count = None
+        if searchRequest.IsLlmAssisted and searchRequest.ExtractionSessionId:
+            case_count = (
+                db.query(ExtractionQueue)
+                .filter(ExtractionQueue.ExtractionSessionId == searchRequest.ExtractionSessionId)
+                .count()
+            )
         item = dict2Class(
             {
                 "SearchRequestId": searchRequest.SearchRequestId,
@@ -281,6 +343,7 @@ def list_searchRequest_display(
                 "SearchRequestStatus": searchRequest.SearchRequestStatus,
                 "RequestedBy": searchRequest.RequestedBy,
                 "ApprovedBy": searchRequest.ApprovedBy,
+                "CaseCount": case_count,
             }
         )
         result.append(item)

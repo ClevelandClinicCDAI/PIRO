@@ -243,6 +243,10 @@
                 class="badge bg-light text-muted border ms-1 fw-normal">
             Random sample
           </span>
+          <button *ngIf="queuedCases.length > 0" class="btn btn-sm btn-outline-secondary ms-1" (click)="resamplePreviewAndReload()"
+                  title="Draw a new random sample of cases">
+            <i class="bi bi-shuffle me-1"></i>New sample
+          </button>
           <div *ngIf="queuedCases.length > 0" class="d-flex align-items-center gap-1">
             <button class="btn btn-sm btn-outline-secondary" (click)="stepCase(-1)" [disabled]="selectedCaseIndex <= 0" title="Previous case">
               <i class="bi bi-chevron-up"></i>

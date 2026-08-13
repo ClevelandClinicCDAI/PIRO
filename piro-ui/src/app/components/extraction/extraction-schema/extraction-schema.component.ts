@@ -462,16 +462,26 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Random sample of up to 100 cases used for the Live Preview
+  // Random sample of up to 25 cases used for the Live Preview
   previewSample: any[] = [];
   previewMode: 'random' | 'low-confidence' | 'incorrect' = 'random';
 
   private resamplePreview() {
-    if (this.queuedCases.length <= 100) {
+    const SAMPLE_SIZE = 25;
+    if (this.queuedCases.length <= SAMPLE_SIZE) {
       this.previewSample = [...this.queuedCases];
     } else {
       const shuffled = [...this.queuedCases].sort(() => Math.random() - 0.5);
-      this.previewSample = shuffled.slice(0, 100);
+      this.previewSample = shuffled.slice(0, SAMPLE_SIZE);
+    }
+  }
+
+  resamplePreviewAndReload() {
+    this.previewMode = 'random';
+    this.resamplePreview();
+    if (this.previewSample.length > 0) {
+      this.selectedCaseId = this.previewSample[0].CaseId;
+      this.onCaseChange();
     }
   }
 

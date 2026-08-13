@@ -26,8 +26,7 @@
                 <th>IRB#</th>
                 <th>Pediatric</th>
                 <th class="text-center">Notes</th>
-                <th>From Date</th>
-                <th>To Date</th>
+                <th class="text-center"># Cases</th>
                 <th>Submitted Date</th>
                 <th *ngIf="isApproved || isClosed">Approved Date</th>
                 <th *ngIf="isDenied">Denied Date</th>
@@ -67,11 +66,8 @@
                         href="javascript:void(0);" title="Click to view the notes"><i
                             class="fa fa-sticky-note"></i></a>
                 </td>
-                <td>
-                    <span class="badge-success">{{tcommon.formatDateTime(item.fromDate)}}</span>
-                </td>
-                <td>
-                    <span class="badge-success">{{tcommon.formatDateTime(item.toDate)}}</span>
+                <td class="text-center">
+                    <span *ngIf="item.isLlmAssisted">{{item.caseCount ?? '-'}}</span>
                 </td>
                 <td>
                     <span class="badge-success">{{tcommon.formatDateTime(item.submitDate)}}</span>
