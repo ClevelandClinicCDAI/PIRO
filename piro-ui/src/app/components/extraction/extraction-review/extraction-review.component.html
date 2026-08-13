@@ -25,18 +25,6 @@
     </div>
 
     <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-success" (click)="runFullExtraction()"
-              [disabled]="runningFull || isRunning"
-              title="Run extraction over all cases in the queue">
-        <span *ngIf="runningFull" class="spinner-border spinner-border-sm me-1"></span>
-        <i *ngIf="!runningFull" class="bi bi-play-fill me-1"></i>
-        Run Full Extraction
-      </button>
-      <button class="btn btn-sm btn-outline-success" (click)="approveAll()" [disabled]="approving || rows.length === 0">
-        <span *ngIf="approving" class="spinner-border spinner-border-sm me-1"></span>
-        <i *ngIf="!approving" class="bi bi-check2-all me-1"></i>
-        Accept all high-confidence
-      </button>
       <button class="btn btn-sm btn-outline-warning" (click)="refineOnIncorrect()"
               [disabled]="refiningLowConf || rows.length === 0"
               title="Go back to schema builder focused on incorrect cases">
@@ -44,16 +32,6 @@
         <i *ngIf="!refiningLowConf" class="bi bi-arrow-left-circle me-1"></i>
         Refine Schema on Incorrect Cases
       </button>
-      <div class="dropdown">
-        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-          <i class="bi bi-download me-1"></i> Export
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="#" (click)="$event.preventDefault(); exportCsv()"><i class="bi bi-filetype-csv me-1"></i>CSV</a></li>
-          <li><a class="dropdown-item" href="#" (click)="$event.preventDefault(); exportExcel()"><i class="bi bi-file-earmark-excel me-1"></i>Excel (.xlsx)</a></li>
-          <li><a class="dropdown-item" href="#" (click)="$event.preventDefault(); exportJson()"><i class="bi bi-filetype-json me-1"></i>JSON</a></li>
-        </ul>
-      </div>
     </div>
   </div>
 
@@ -98,14 +76,9 @@
                 <span *ngIf="row.cells[f]?.displayValue === null || row.cells[f]?.displayValue === undefined" class="text-muted fst-italic small">—</span>
                 <div class="cell-actions">
                   <button
-                    class="verdict-btn correct-btn"
-                    [class.active]="row.cells[f]?.isReviewed && !row.cells[f]?.isIncorrect"
-                    (click)="markPrediction(row.cells[f], true, $event)"
-                    title="Mark correct">✓</button>
-                  <button
                     class="verdict-btn incorrect-btn"
                     [class.active]="row.cells[f]?.isReviewed && row.cells[f]?.isIncorrect"
-                    (click)="markPrediction(row.cells[f], false, $event)"
+                    (click)="markPrediction(row.cells[f], $event)"
                     title="Mark incorrect">✗</button>
                 </div>
               </div>
@@ -134,14 +107,9 @@
           </div>
           <div class="d-flex gap-1">
             <button
-              class="verdict-btn correct-btn lg"
-              [class.active]="selectedCell.isReviewed && !selectedCell.isIncorrect"
-              (click)="markPrediction(selectedCell, true, $event)"
-              title="Mark correct">✓</button>
-            <button
               class="verdict-btn incorrect-btn lg"
               [class.active]="selectedCell.isReviewed && selectedCell.isIncorrect"
-              (click)="markPrediction(selectedCell, false, $event)"
+              (click)="markPrediction(selectedCell, $event)"
               title="Mark incorrect">✗</button>
           </div>
         </div>

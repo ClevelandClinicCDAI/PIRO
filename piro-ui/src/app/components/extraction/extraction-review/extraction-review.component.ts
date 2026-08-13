@@ -54,8 +54,6 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   private pollInterval: any = null;
 
   loading = true;
-  approving = false;
-  runningFull = false;
   refiningLowConf = false;
 
   constructor(
@@ -125,13 +123,6 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     this.rows = this.caseOrder.map(id => this.caseRowMap.get(id)!);
   }
 
-  private resetResultState() {
-    this.caseOrder = [];
-    this.caseRowMap.clear();
-    this.rows = [];
-    this.fields = [];
-  }
-
   parseJsonValue(jsonStr: string | null): any {
     if (jsonStr === null || jsonStr === undefined) return null;
     try {
@@ -143,12 +134,12 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   // ── Correct / Incorrect marking ───────────────────────────────────────────
 
-  async markPrediction(cell: GridCell, correct: boolean, event: Event) {
+  async markPrediction(cell: GridCell, event: Event) {
     event.stopPropagation();
-    // Toggle off if clicking the already-active verdict; otherwise apply new verdict
-    const isTogglingOff = cell.isReviewed && (correct ? !cell.isIncorrect : cell.isIncorrect);
+    // Toggle: clicking again on an already-marked-incorrect cell reverts it back to default (assumed correct)
+    const isTogglingOff = cell.isReviewed && cell.isIncorrect;
     const nextReviewed = !isTogglingOff;
-    const nextIncorrect = !isTogglingOff ? !correct : false;
+    const nextIncorrect = !isTogglingOff;
 
     try {
       await this.extractionService.patchResult(cell.resultId, undefined, nextReviewed, nextIncorrect);
@@ -225,21 +216,6 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     this.reportText = '';
   }
 
-  // ── Bulk approve ──────────────────────────────────────────────────────────
-
-  async approveAll() {
-    this.approving = true;
-    try {
-      const res = await this.extractionService.approveAllHighConfidence(this.sessionId, 0.8);
-      this.toastr.success(`${res.approved_count} high-confidence results approved.`);
-      await this.loadResults();
-    } catch {
-      this.toastr.error('Failed to bulk approve.');
-    } finally {
-      this.approving = false;
-    }
-  }
-
   // ── Refine on low-confidence ──────────────────────────────────────────────
 
   async refineOnIncorrect() {
@@ -258,20 +234,6 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
       this.toastr.error('Failed to load incorrect cases.');
     } finally {
       this.refiningLowConf = false;
-    }
-  }
-
-  async runFullExtraction() {
-    this.runningFull = true;
-    try {
-      await this.extractionService.startExtraction(this.sessionId, 'full');
-      this.toastr.success('Full extraction started. Progress will appear below.');
-      this.resetResultState();
-      this.startStatusPoll();
-    } catch (e: any) {
-      this.toastr.error(e?.error?.detail || 'Failed to start full extraction.');
-    } finally {
-      this.runningFull = false;
     }
   }
 
