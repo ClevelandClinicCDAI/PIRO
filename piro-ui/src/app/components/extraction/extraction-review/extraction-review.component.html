@@ -25,6 +25,11 @@
     </div>
 
     <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" [routerLink]="['/extraction/schema', sessionId]"
+              title="Return to the schema builder">
+        <i class="bi bi-arrow-left me-1"></i>
+        Back to Schema Builder
+      </button>
       <button class="btn btn-sm btn-outline-warning" (click)="refineOnIncorrect()"
               [disabled]="refiningLowConf || rows.length === 0"
               title="Go back to schema builder focused on incorrect cases">

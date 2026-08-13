@@ -175,7 +175,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     if (this.reportText === '' || previousCaseId !== caseId) {
       this.sidePanelLoading = true;
       try {
-        const data = await this.extractionService.getCaseText(caseId);
+        const data = await this.extractionService.getCaseText(caseId, this.sessionId);
         this.reportText = data.full_text ?? '';
         this.reportSegments = (data.segments ?? []).map((s: any) => ({
           CommentType: s.CommentType,
