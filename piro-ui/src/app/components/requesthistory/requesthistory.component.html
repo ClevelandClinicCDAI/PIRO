@@ -107,6 +107,11 @@
                     <span *ngIf="item.isLlmAssisted" class="d-block small text-muted">
                         Status: {{item.extractionStatus || 'not_started'}}
                     </span>
+                    <a *ngIf="item.isLlmAssisted && item.extractionStatus === 'running' && item.extractionSessionId"
+                       class="d-block small" [routerLink]="['/extraction/review', item.extractionSessionId]"
+                       title="View live extraction progress">
+                        <i class="fa fa-line-chart"></i> View Progress
+                    </a>
                     <span *ngIf="!item.isLlmAssisted">Saved Search</span>
                 </td>
                 <td class="text-center">

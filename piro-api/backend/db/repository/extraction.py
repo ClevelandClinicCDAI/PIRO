@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from sqlalchemy import or_, func
@@ -223,6 +223,54 @@ def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
     )
 
 
+# A run stuck in "pending"/"running" this long with no queue-item activity is
+# almost certainly orphaned (e.g. the API process was restarted/crashed mid-run),
+# not a genuinely slow job — Azure OpenAI calls normally finish in seconds.
+STALE_RUN_THRESHOLD_MINUTES = 30
+
+
+def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
+    """Auto-fail the session's latest run if it's stuck in pending/running with
+    no recent progress, so it stops blocking new runs from being started.
+
+    Without this, a run orphaned by a server crash/restart would permanently
+    block the "a run is already running" concurrency guard, even after the
+    originating SearchRequest is deleted (deleting a request only soft-deletes
+    it — it never touches the underlying ExtractionRun).
+    """
+    run = get_latest_run(session_id, db)
+    if run is None or run.Status not in ("pending", "running"):
+        return run
+
+    last_activity = (
+        db.query(func.max(ExtractionQueue.UpdateDate))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .scalar()
+    )
+    reference = last_activity or run.StartedAt or run.CreateDate
+    if reference is None:
+        return run
+
+    now = datetime.now(timezone.utc) if reference.tzinfo else datetime.utcnow()
+    if now - reference <= timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES):
+        return run
+
+    logger.warning(
+        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "
+        f"stale (no activity since {reference}); auto-marking as failed so a "
+        f"new run can be started."
+    )
+    run.Status = "failed"
+    run.CompletedAt = datetime.now(timezone.utc)
+    note = "[Auto-recovered] Run had no progress for over " \
+           f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a " \
+           "server restart or crash; marked failed to unblock new runs."
+    run.ErrorMessage = f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
+    db.commit()
+    db.refresh(run)
+    return run
+
+
 def update_run_status(
     run_id: int,
     status: str,
@@ -249,27 +297,45 @@ def update_run_status(
 def add_cases_to_queue(
     session_id: int, case_ids: List[int], user: str, db: Session
 ) -> List[ExtractionQueue]:
-    added = []
-    for case_id in case_ids:
-        existing = (
-            db.query(ExtractionQueue)
+    """Bulk-add cases to a session's extraction queue.
+
+    Fetches already-queued CaseIds in batches (avoids the SQL Server ~2100
+    bound-parameter limit on IN clauses) instead of issuing one existence
+    check query per case, which was the main bottleneck when loading large
+    saved searches into the queue.
+    """
+    if not case_ids:
+        return []
+
+    unique_case_ids = list(dict.fromkeys(case_ids))  # de-dupe, preserve order
+    existing_ids: set = set()
+    CHUNK_SIZE = 1000
+    for i in range(0, len(unique_case_ids), CHUNK_SIZE):
+        chunk = unique_case_ids[i:i + CHUNK_SIZE]
+        rows = (
+            db.query(ExtractionQueue.CaseId)
             .filter(
                 ExtractionQueue.ExtractionSessionId == session_id,
-                ExtractionQueue.CaseId == case_id,
+                ExtractionQueue.CaseId.in_(chunk),
             )
-            .first()
+            .all()
         )
-        if existing is None:
-            item = ExtractionQueue(
-                ExtractionSessionId=session_id,
-                CaseId=case_id,
-                Status="pending",
-                AttemptCount=0,
-                CreateBy=user,
-                UpdateBy=user,
-            )
-            db.add(item)
-            added.append(item)
+        existing_ids.update(row.CaseId for row in rows)
+
+    added = []
+    for case_id in unique_case_ids:
+        if case_id in existing_ids:
+            continue
+        item = ExtractionQueue(
+            ExtractionSessionId=session_id,
+            CaseId=case_id,
+            Status="pending",
+            AttemptCount=0,
+            CreateBy=user,
+            UpdateBy=user,
+        )
+        db.add(item)
+        added.append(item)
     db.commit()
     return added
 
@@ -642,7 +708,20 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             "total": total,
             "completed": 0,
             "failed": 0,
+            "pending": total,
+            "running": 0,
+            "started_at": None,
+            "completed_at": None,
+            "last_updated_at": None,
         }
+
+    # Most recent queue-item activity, used as a "still alive" heartbeat for
+    # long-running jobs (a stalled/crashed run will stop advancing this).
+    last_updated_at = (
+        db.query(func.max(ExtractionQueue.UpdateDate))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .scalar()
+    )
 
     # For validation runs, scope progress to the run itself so the counter
     # reflects the validation set size, not the full queue.
@@ -659,6 +738,15 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             .filter(
                 ExtractionQueue.ExtractionSessionId == session_id,
                 ExtractionQueue.Status == "failed",
+            )
+            .count()
+        )
+        pending = max(0, total - completed - failed)
+        running = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "running",
             )
             .count()
         )
@@ -684,6 +772,15 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             )
             .count()
         )
+        running = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "running",
+            )
+            .count()
+        )
+        pending = max(0, total - completed - failed - running)
 
     return {
         "session_id": session_id,
@@ -692,4 +789,9 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
         "total": total,
         "completed": completed,
         "failed": failed,
+        "pending": pending,
+        "running": running,
+        "started_at": latest_run.StartedAt,
+        "completed_at": latest_run.CompletedAt,
+        "last_updated_at": last_updated_at,
     }

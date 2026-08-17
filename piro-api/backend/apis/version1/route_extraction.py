@@ -27,9 +27,9 @@ from db.repository.extraction import (
     get_case_text_segments,
     get_extraction_status,
     get_incorrect_case_ids,
-    get_latest_run,
     get_low_confidence_case_ids,
     get_queue,
+    reclaim_stale_run,
     get_result_by_id,
     get_results_for_session,
     get_run,
@@ -494,8 +494,9 @@ async def start_extraction(
     if not queue:
         raise HTTPException(status_code=400, detail="Queue is empty")
 
-    # Concurrency guard: reject if a run is already active
-    latest = get_latest_run(payload.session_id, db)
+    # Concurrency guard: reject if a run is already active. First reclaim the
+    # slot if the prior run is stale (e.g. orphaned by a server crash/restart).
+    latest = reclaim_stale_run(payload.session_id, db)
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,

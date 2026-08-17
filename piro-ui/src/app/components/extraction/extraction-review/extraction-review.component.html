@@ -16,11 +16,51 @@
       </nav>
 
       <!-- Progress bar when running -->
-      <div *ngIf="isRunning" class="d-flex align-items-center gap-2" style="width: 250px;">
-        <div class="progress flex-grow-1" style="height: 8px;">
-          <div class="progress-bar progress-bar-striped progress-bar-animated" [style.width.%]="progressPercent"></div>
+      <div *ngIf="isRunning" class="d-flex align-items-center gap-2">
+        <div style="width: 250px;">
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 [class.bg-danger]="isStalled"
+                 [style.width.%]="progressPercent"></div>
+          </div>
         </div>
-        <small class="text-muted text-nowrap">{{ statusInfo?.completed }}/{{ statusInfo?.total }}</small>
+        <small class="text-muted text-nowrap">
+          {{ statusInfo?.completed }}/{{ statusInfo?.total }}
+          <span *ngIf="statusInfo?.failed">({{ statusInfo?.failed }} failed)</span>
+        </small>
+        <small *ngIf="elapsedText" class="text-muted text-nowrap" title="Elapsed time since the run started">
+          <i class="bi bi-clock-history me-1"></i>{{ elapsedText }}
+        </small>
+        <small *ngIf="etaText" class="text-muted text-nowrap" title="Estimated time remaining">
+          &middot; ETA {{ etaText }}
+        </small>
+        <span *ngIf="isStalled" class="badge bg-danger-subtle text-danger border border-danger-subtle text-nowrap"
+              [title]="'No progress in the last ' + lastUpdatedAgoText + ' — the run may have stalled or crashed.'">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>Possibly stalled
+        </span>
+      </div>
+
+      <!-- Summary once a run has finished -->
+      <div *ngIf="!isRunning && statusInfo?.run_id && statusInfo?.status !== 'pending'"
+           class="d-flex align-items-center gap-2">
+        <span class="badge text-nowrap"
+              [class.bg-success]="statusInfo?.status === 'completed'"
+              [class.bg-warning]="statusInfo?.status === 'completed_with_errors'"
+              [class.bg-danger]="statusInfo?.status === 'failed'"
+              [class.text-dark]="statusInfo?.status === 'completed_with_errors'">
+          <i class="bi me-1"
+             [class.bi-check-circle-fill]="statusInfo?.status === 'completed'"
+             [class.bi-exclamation-triangle-fill]="statusInfo?.status === 'completed_with_errors'"
+             [class.bi-x-circle-fill]="statusInfo?.status === 'failed'"></i>
+          {{ statusInfo?.status === 'completed' ? 'Completed' : statusInfo?.status === 'completed_with_errors' ? 'Completed with errors' : 'Failed' }}
+        </span>
+        <small class="text-muted text-nowrap">
+          {{ statusInfo?.completed }}/{{ statusInfo?.total }}
+          <span *ngIf="statusInfo?.failed">({{ statusInfo?.failed }} failed)</span>
+        </small>
+        <small *ngIf="elapsedText" class="text-muted text-nowrap" title="Total run time">
+          <i class="bi bi-clock-history me-1"></i>{{ elapsedText }}
+        </small>
       </div>
     </div>
 

@@ -67,10 +67,12 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     this.sessionId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
     this.loadData();
     this.startStatusPoll();
+    this.startTicker();
   }
 
   ngOnDestroy(): void {
     this.stopStatusPoll();
+    this.stopTicker();
   }
 
   async loadData() {
@@ -275,7 +277,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
   // ── Status polling ────────────────────────────────────────────────────────
 
   startStatusPoll() {
-    this.pollInterval = setInterval(async () => {
+    const poll = async () => {
       try {
         this.statusInfo = await this.extractionService.getStatus(this.sessionId);
         if (this.statusInfo?.status === 'running') {
@@ -284,7 +286,9 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
           this.stopStatusPoll();
         }
       } catch { }
-    }, 4000);
+    };
+    poll();
+    this.pollInterval = setInterval(poll, 4000);
   }
 
   stopStatusPoll() {
@@ -301,5 +305,82 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   get isRunning(): boolean {
     return this.statusInfo?.status === 'running';
+  }
+
+  // ── Progress monitoring (elapsed time / ETA / stall detection) ───────────
+
+  private tickInterval: any = null;
+  now = Date.now();
+
+  private startTicker() {
+    if (this.tickInterval) return;
+    this.tickInterval = setInterval(() => { this.now = Date.now(); }, 1000);
+  }
+
+  private stopTicker() {
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.tickInterval = null;
+    }
+  }
+
+  private formatDuration(ms: number): string {
+    if (ms < 0) ms = 0;
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  get elapsedText(): string | null {
+    const startedAt = this.statusInfo?.started_at;
+    if (!startedAt) return null;
+    const end = this.statusInfo?.completed_at ? new Date(this.statusInfo.completed_at).getTime() : this.now;
+    return this.formatDuration(end - new Date(startedAt).getTime());
+  }
+
+  get etaText(): string | null {
+    if (!this.isRunning || !this.statusInfo?.started_at) return null;
+    const completed = this.statusInfo.completed ?? 0;
+    const total = this.statusInfo.total ?? 0;
+    if (completed <= 0 || total <= completed) return null;
+    const elapsedMs = this.now - new Date(this.statusInfo.started_at).getTime();
+    const msPerCase = elapsedMs / completed;
+    const remainingMs = msPerCase * (total - completed);
+    return this.formatDuration(remainingMs);
+  }
+
+  get lastUpdatedAgoText(): string | null {
+    const lastUpdated = this.statusInfo?.last_updated_at;
+    if (!lastUpdated) return null;
+    return this.formatDuration(this.now - new Date(lastUpdated).getTime());
+  }
+
+  // Flag a run as possibly stalled if no case has progressed in far longer
+  // than cases have actually been taking so far in this run. The LLM backend
+  // here is Azure OpenAI (GPT-5.4) — a fast hosted API where each case
+  // normally finishes in well under the client's 120s per-call timeout — so
+  // a real stall (crashed job, hung request, rate-limit backoff) should be
+  // caught quickly rather than waiting a long time to flag it.
+  get isStalled(): boolean {
+    if (!this.isRunning) return false;
+    const lastUpdated = this.statusInfo?.last_updated_at ?? this.statusInfo?.started_at;
+    if (!lastUpdated) return false;
+    const sinceLastUpdateMs = this.now - new Date(lastUpdated).getTime();
+
+    const FLOOR_MS = 5 * 60 * 1000; // never flag before 5 minutes of silence
+    let threshold = FLOOR_MS;
+
+    const completed = this.statusInfo?.completed ?? 0;
+    const startedAt = this.statusInfo?.started_at ? new Date(this.statusInfo.started_at).getTime() : null;
+    if (completed > 0 && startedAt) {
+      const avgMsPerCase = (this.now - startedAt) / completed;
+      threshold = Math.max(FLOOR_MS, avgMsPerCase * 6);
+    }
+
+    return sinceLastUpdateMs > threshold;
   }
 }

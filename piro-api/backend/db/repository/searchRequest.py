@@ -373,7 +373,7 @@ def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Sess
     caller (route layer) can schedule the actual background extraction job.
     Raises DataException on invalid state.
     """
-    from db.repository.extraction import create_run, get_latest_run, get_queue
+    from db.repository.extraction import create_run, get_queue, reclaim_stale_run
     from db.models.ExtractionSession import ExtractionSession
 
     searchRequest = (
@@ -405,7 +405,7 @@ def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Sess
     if not queue:
         raise DataException("Extraction schema has no queued cases")
 
-    latest = get_latest_run(searchRequest.ExtractionSessionId, db)
+    latest = reclaim_stale_run(searchRequest.ExtractionSessionId, db)
     if latest and latest.Status in ("pending", "running"):
         raise DataException(
             f"A run is already {latest.Status}. Wait for it to finish before starting another."

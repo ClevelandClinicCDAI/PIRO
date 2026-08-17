@@ -120,6 +120,11 @@ class ExtractionStatusVM(BaseModel):
     total: int
     completed: int
     failed: int
+    pending: int = 0
+    running: int = 0
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    last_updated_at: Optional[datetime] = None
 
 
 # ──────────────────────────────────────────────────────────────────────────────

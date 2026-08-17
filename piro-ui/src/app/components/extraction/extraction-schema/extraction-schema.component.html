@@ -19,11 +19,11 @@
     </div>
     <div class="col-auto d-flex gap-2">
       <!-- Show loaded search info, or the load button if nothing loaded yet -->
-      <ng-container *ngIf="loadedSearchName; else loadSearchBtn">
+      <ng-container *ngIf="queuedCases.length > 0; else loadSearchBtn">
         <span class="d-flex align-items-center gap-1 border rounded px-2 py-1 bg-light small">
           <i class="bi bi-search text-muted"></i>
-          <span class="fw-semibold">{{ loadedSearchName }}</span>
-          <span class="text-muted">&mdash; {{ queuedCases.length }} cases</span>
+          <span *ngIf="loadedSearchName" class="fw-semibold">{{ loadedSearchName }}</span>
+          <span class="text-muted">&mdash; {{ queuedCases.length }} case{{ queuedCases.length === 1 ? '' : 's' }}</span>
           <button class="btn btn-link btn-sm p-0 ms-1 text-muted" (click)="openSearchPicker()" title="Change saved search">
             <i class="bi bi-pencil-square"></i>
           </button>
