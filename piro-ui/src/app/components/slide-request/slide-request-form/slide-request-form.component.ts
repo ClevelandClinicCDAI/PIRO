@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { SlideRequest, SlideRequestFormPayload, SlideRequestReason, SlideRequestUrgency } from 'src/app/models/slide-request';
+import { SlideRequest, SlideRequestDeliveryLocation, SlideRequestFormPayload, SlideRequestReason, SlideRequestUrgency } from 'src/app/models/slide-request';
 import { SlideRequestService } from 'src/app/services/slide-request.service';
 import { ToastService } from 'src/app/services/toast.service';
 
@@ -26,11 +26,17 @@ export class SlideRequestFormComponent implements OnInit {
     { value: 'Sign Out', label: 'Sign Out' },
     { value: 'Additional Testing', label: 'Additional Testing' },
     { value: 'Cap Inspection', label: 'Cap Inspection' },
+    { value: 'Comparison', label: 'Comparison' },
     { value: 'Conference', label: 'Conference' },
     { value: 'QA', label: 'QA' },
+    { value: 'Re-review', label: 'Re-review' },
     { value: 'Send Outs', label: 'Send Outs' },
     { value: 'Tumor Board', label: 'Tumor Board' },
     { value: 'Validation', label: 'Validation' }
+  ];
+  deliveryLocationOptions: { value: SlideRequestDeliveryLocation; label: string }[] = [
+    { value: 'Deliver to Mailbox', label: 'Deliver to Mailbox' },
+    { value: 'L25 Window Pickup', label: 'L25 Window Pickup' }
   ];
 
   constructor(
@@ -45,7 +51,8 @@ export class SlideRequestFormComponent implements OnInit {
       requesterNotes: ['', [Validators.maxLength(2000)]],
       ePath: [false],
       urgencyStatus: ['Routine', [Validators.required]],
-      reason: ['', [Validators.required]]
+      reason: ['', [Validators.required]],
+      deliveryLocation: ['', [Validators.required]]
     });
     await this.loadMyRequests();
   }
@@ -94,6 +101,7 @@ export class SlideRequestFormComponent implements OnInit {
       accessionNumber: '',
       urgencyStatus: 'Routine',
       reason: '',
+      deliveryLocation: '',
       requesterNotes: '',
       ePath: false
     });
@@ -107,6 +115,7 @@ export class SlideRequestFormComponent implements OnInit {
       .filter((item) => item.length > 0);
     const urgencyStatus = this.requestForm.value.urgencyStatus as SlideRequestUrgency;
     const reason = this.requestForm.value.reason as SlideRequestReason;
+    const deliveryLocation = this.requestForm.value.deliveryLocation as SlideRequestDeliveryLocation;
     const requesterNotes = (this.requestForm.value.requesterNotes as string)?.trim();
     const ePath = Boolean(this.requestForm.value.ePath);
 
@@ -114,6 +123,7 @@ export class SlideRequestFormComponent implements OnInit {
       accessionNumber,
       urgencyStatus,
       reason,
+      deliveryLocation,
       requesterNotes,
       ePath
     }));
@@ -178,11 +188,20 @@ export class SlideRequestFormComponent implements OnInit {
   }
 
   private splitRequests() {
+    this.myRequests = this.sortByMostRecent(this.myRequests);
     this.pendingMyRequests = this.myRequests.filter((item) => this.isPendingStatus(item.status));
     this.completedMyRequests = this.myRequests.filter((item) => !this.isPendingStatus(item.status));
   }
 
   private isPendingStatus(status: string | undefined | null) {
     return status === 'PENDING' || status === 'IN_PROCESS' || status === 'HOLDING';
+  }
+
+  private sortByMostRecent(requests: SlideRequest[]) {
+    return requests.slice().sort((a, b) => {
+      const aDate = new Date(a.requestedAt || 0).getTime();
+      const bDate = new Date(b.requestedAt || 0).getTime();
+      return bDate - aDate;
+    });
   }
 }

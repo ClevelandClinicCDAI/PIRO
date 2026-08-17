@@ -33,8 +33,10 @@ class Constants:
         SIGN_OUT = "Sign Out"
         ADDITIONAL_TESTING = "Additional Testing"
         CAP_INSPECTION = "Cap Inspection"
+        COMPARISON = "Comparison"
         CONFERENCE = "Conference"
         QA = "QA"
+        RE_REVIEW = "Re-review"
         SEND_OUTS = "Send Outs"
         TUMOR_BOARD = "Tumor Board"
         VALIDATION = "Validation"
@@ -42,6 +44,10 @@ class Constants:
     class SlideRequestCaseType(str, Enum):
         SURGICAL = "Surgical"
         CYTOLOGY = "Cytology"
+
+    class SlideRequestDeliveryLocation(str, Enum):
+        MAILBOX = "Deliver to Mailbox"
+        L25_WINDOW_PICKUP = "L25 Window Pickup"
 
     class StatusCode(Enum):
         S = 1

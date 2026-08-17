@@ -58,6 +58,7 @@ def create_slide_request(
         EPath=bool(input.ePath),
         UrgencyStatus=input.urgencyStatus,
         Reason=input.reason,
+        DeliveryLocation=input.deliveryLocation,
         RequesterId=user_id,
         Status=Constants.SlideRequestStatus.PENDING.value,
         CreateBy=user,
