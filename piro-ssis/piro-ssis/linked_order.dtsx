@@ -46,43 +46,40 @@
       DTS:Namespace="User"
       DTS:ObjectName="log_query">
       <DTS:VariableValue
-        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'linked_order', '',
-        '', 'query', 'SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE,
-        OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
-        RS.REQUISITION_ID,
-        LCI.CASE_NUM,
-        STR.SPEC_TST_ORDER_ID,
-        OLLO.ORDER_ID,
-        OR2.ORDER_PROC_ID,
-        CC.COMPONENT_ID,
-        CC.NAME COMP_NAME,
-        CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
-        CC.DFLT_UNITS,
-        OP.PROC_ID,
-        OP.DESCRIPTION PROC_DESC,
-        STR.SPEC_NUMBER_RLTD,
-        RS.LINE SPEC_LINE,
-        STR.LINE SPEC_TEST_LINE,
-        OLLO.LINE LINKED_ORD_LINE,
-        OR2.ORD_VALUE,
-        OR2.ORD_NUM_VALUE,
-        OR2.REFERENCE_LOW,
-        OR2.REFERENCE_HIGH,
-        OR2.REFERENCE_UNIT,
-        OR2.ORD_RAW_VALUE,
-        OR2.RAW_LOW,
-        OR2.RAW_HIGH,
-        STR.REPORTABLE_YN
-        FROM LAB_CASE_INFO LCI
-        JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
-        JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
-        JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
-        JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
-        JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
-        JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
-        where RS.LINE = 1
-        AND (OR2.RESULT_DATE &gt; TO_DATE(''2025-01-31'',''yyyy-mm-dd'') OR OP.REVIEW_TIME &gt;
-        TO_DATE(''2025-01-31'',''yyyy-mm-dd''))', getdate())</DTS:VariableValue>
+        DTS:DataType="8">Insert into SSIS_LogCustom Values ('[computer name]' , 'linked_order', '', '', 'query', 'SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
+  RS.REQUISITION_ID,
+  LCI.CASE_NUM,
+  STR.SPEC_TST_ORDER_ID,
+  OLLO.ORDER_ID,
+  OR2.ORDER_PROC_ID,
+  CC.COMPONENT_ID,
+  CC.NAME COMP_NAME,
+  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+  CC.DFLT_UNITS,
+  OP.PROC_ID,
+  OP.DESCRIPTION PROC_DESC,
+  STR.SPEC_NUMBER_RLTD,
+  RS.LINE SPEC_LINE,
+  STR.LINE SPEC_TEST_LINE,
+  OLLO.LINE LINKED_ORD_LINE,
+  OR2.ORD_VALUE,
+  OR2.ORD_NUM_VALUE,
+  OR2.REFERENCE_LOW,
+  OR2.REFERENCE_HIGH,
+  OR2.REFERENCE_UNIT,
+  OR2.ORD_RAW_VALUE,
+  OR2.RAW_LOW,
+  OR2.RAW_HIGH,
+  STR.REPORTABLE_YN
+FROM LAB_CASE_INFO LCI
+JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+where RS.LINE = 1 
+ AND  (OR2.RESULT_DATE &gt;= TO_DATE(''2025-01-31'',''yyyy-mm-dd'') OR OP.REVIEW_TIME &gt;= TO_DATE(''2025-01-31'',''yyyy-mm-dd''))', getdate())</DTS:VariableValue>
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
@@ -100,47 +97,45 @@
       DTS:CreationName=""
       DTS:DTSID="{ED182292-9E98-4AE2-B967-7693D1CB084A}"
       DTS:EvaluateAsExpression="True"
-      DTS:Expression="&quot;SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,&#xA;  RS.REQUISITION_ID,&#xA;  LCI.CASE_NUM,&#xA;  STR.SPEC_TST_ORDER_ID,&#xA;  OLLO.ORDER_ID,&#xA;  OR2.ORDER_PROC_ID,&#xA;  CC.COMPONENT_ID,&#xA;  CC.NAME COMP_NAME,&#xA;  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,&#xA;  CC.DFLT_UNITS,&#xA;  OP.PROC_ID,&#xA;  OP.DESCRIPTION PROC_DESC,&#xA;  STR.SPEC_NUMBER_RLTD,&#xA;  RS.LINE SPEC_LINE,&#xA;  STR.LINE SPEC_TEST_LINE,&#xA;  OLLO.LINE LINKED_ORD_LINE,&#xA;  OR2.ORD_VALUE,&#xA;  OR2.ORD_NUM_VALUE,&#xA;  OR2.REFERENCE_LOW,&#xA;  OR2.REFERENCE_HIGH,&#xA;  OR2.REFERENCE_UNIT,&#xA;  OR2.ORD_RAW_VALUE,&#xA;  OR2.RAW_LOW,&#xA;  OR2.RAW_HIGH,&#xA;  STR.REPORTABLE_YN&#xA;FROM LAB_CASE_INFO LCI&#xA;JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID&#xA;JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID&#xA;JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID&#xA;JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID&#xA;JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID&#xA;JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID&#xA;where RS.LINE = 1 &#xA;&quot; + (@[User::start_date] == &quot;&quot; ?  &quot;&quot; : &quot; AND  (OR2.RESULT_DATE &gt; TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd') OR OP.REVIEW_TIME &gt; TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd'))&quot;)"
+      DTS:Expression="&quot;SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,&#xA;  RS.REQUISITION_ID,&#xA;  LCI.CASE_NUM,&#xA;  STR.SPEC_TST_ORDER_ID,&#xA;  OLLO.ORDER_ID,&#xA;  OR2.ORDER_PROC_ID,&#xA;  CC.COMPONENT_ID,&#xA;  CC.NAME COMP_NAME,&#xA;  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,&#xA;  CC.DFLT_UNITS,&#xA;  OP.PROC_ID,&#xA;  OP.DESCRIPTION PROC_DESC,&#xA;  STR.SPEC_NUMBER_RLTD,&#xA;  RS.LINE SPEC_LINE,&#xA;  STR.LINE SPEC_TEST_LINE,&#xA;  OLLO.LINE LINKED_ORD_LINE,&#xA;  OR2.ORD_VALUE,&#xA;  OR2.ORD_NUM_VALUE,&#xA;  OR2.REFERENCE_LOW,&#xA;  OR2.REFERENCE_HIGH,&#xA;  OR2.REFERENCE_UNIT,&#xA;  OR2.ORD_RAW_VALUE,&#xA;  OR2.RAW_LOW,&#xA;  OR2.RAW_HIGH,&#xA;  STR.REPORTABLE_YN&#xA;FROM LAB_CASE_INFO LCI&#xA;JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID&#xA;JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID&#xA;JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID&#xA;JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID&#xA;JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID&#xA;JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID&#xA;where RS.LINE = 1 &#xA;&quot; + (@[User::start_date] == &quot;&quot; ?  &quot;&quot; : &quot; AND  (OR2.RESULT_DATE &gt;= TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd') OR OP.REVIEW_TIME &gt;= TO_DATE('&quot; + @[User::start_date] + &quot;','yyyy-mm-dd'))&quot;)"
       DTS:IncludeInDebugDump="2345"
       DTS:Namespace="User"
       DTS:ObjectName="query">
       <DTS:VariableValue
-        DTS:DataType="8">SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE,
-        OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
-        RS.REQUISITION_ID,
-        LCI.CASE_NUM,
-        STR.SPEC_TST_ORDER_ID,
-        OLLO.ORDER_ID,
-        OR2.ORDER_PROC_ID,
-        CC.COMPONENT_ID,
-        CC.NAME COMP_NAME,
-        CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
-        CC.DFLT_UNITS,
-        OP.PROC_ID,
-        OP.DESCRIPTION PROC_DESC,
-        STR.SPEC_NUMBER_RLTD,
-        RS.LINE SPEC_LINE,
-        STR.LINE SPEC_TEST_LINE,
-        OLLO.LINE LINKED_ORD_LINE,
-        OR2.ORD_VALUE,
-        OR2.ORD_NUM_VALUE,
-        OR2.REFERENCE_LOW,
-        OR2.REFERENCE_HIGH,
-        OR2.REFERENCE_UNIT,
-        OR2.ORD_RAW_VALUE,
-        OR2.RAW_LOW,
-        OR2.RAW_HIGH,
-        STR.REPORTABLE_YN
-        FROM LAB_CASE_INFO LCI
-        JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
-        JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
-        JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
-        JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
-        JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
-        JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
-        where RS.LINE = 1
-        AND (OR2.RESULT_DATE &gt; TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME &gt;
-        TO_DATE('2025-01-31','yyyy-mm-dd'))</DTS:VariableValue>
+        DTS:DataType="8">SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
+  RS.REQUISITION_ID,
+  LCI.CASE_NUM,
+  STR.SPEC_TST_ORDER_ID,
+  OLLO.ORDER_ID,
+  OR2.ORDER_PROC_ID,
+  CC.COMPONENT_ID,
+  CC.NAME COMP_NAME,
+  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+  CC.DFLT_UNITS,
+  OP.PROC_ID,
+  OP.DESCRIPTION PROC_DESC,
+  STR.SPEC_NUMBER_RLTD,
+  RS.LINE SPEC_LINE,
+  STR.LINE SPEC_TEST_LINE,
+  OLLO.LINE LINKED_ORD_LINE,
+  OR2.ORD_VALUE,
+  OR2.ORD_NUM_VALUE,
+  OR2.REFERENCE_LOW,
+  OR2.REFERENCE_HIGH,
+  OR2.REFERENCE_UNIT,
+  OR2.ORD_RAW_VALUE,
+  OR2.RAW_LOW,
+  OR2.RAW_HIGH,
+  STR.REPORTABLE_YN
+FROM LAB_CASE_INFO LCI
+JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+where RS.LINE = 1 
+ AND  (OR2.RESULT_DATE &gt;= TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME &gt;= TO_DATE('2025-01-31','yyyy-mm-dd'))</DTS:VariableValue>
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
@@ -213,8 +208,7 @@
                   description="The Destination database table name."
                   expressionType="Notify"
                   name="TableOrViewName"
-                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">
-                  "dbo"."SSIS_LinkedOrder"</property>
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">"dbo"."SSIS_LinkedOrder"</property>
                 <property
                   dataType="System.Int32"
                   description="Specify the number of rows per batch. The default is 0 which uses the same size as SSIS internal buffer. "
@@ -641,43 +635,40 @@
                   description="Specifies the SQL statement used by the component to extract data."
                   expressionType="Notify"
                   name="SqlCommand"
-                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT
-                  NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE,
-                  OP.ORDER_INST, OP.REVIEW_TIME ,
-                  RS.REQUISITION_ID,
-                  LCI.CASE_NUM,
-                  STR.SPEC_TST_ORDER_ID,
-                  OLLO.ORDER_ID,
-                  OR2.ORDER_PROC_ID,
-                  CC.COMPONENT_ID,
-                  CC.NAME COMP_NAME,
-                  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
-                  CC.DFLT_UNITS,
-                  OP.PROC_ID,
-                  OP.DESCRIPTION PROC_DESC,
-                  STR.SPEC_NUMBER_RLTD,
-                  RS.LINE SPEC_LINE,
-                  STR.LINE SPEC_TEST_LINE,
-                  OLLO.LINE LINKED_ORD_LINE,
-                  OR2.ORD_VALUE,
-                  OR2.ORD_NUM_VALUE,
-                  OR2.REFERENCE_LOW,
-                  OR2.REFERENCE_HIGH,
-                  OR2.REFERENCE_UNIT,
-                  OR2.ORD_RAW_VALUE,
-                  OR2.RAW_LOW,
-                  OR2.RAW_HIGH,
-                  STR.REPORTABLE_YN
-                  FROM LAB_CASE_INFO LCI
-                  JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
-                  JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
-                  JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
-                  JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
-                  JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
-                  JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
-                  where RS.LINE = 1
-                  AND (OR2.RESULT_DATE &gt; TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME
-                  &gt; TO_DATE('2025-01-31','yyyy-mm-dd'))</property>
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor">SELECT NULL AS CASE_ID, STR.LAST_RECV_UTC_DTTM, OR2.RESULT_DATE, OP.UPDATE_DATE, OP.ORDER_INST, OP.REVIEW_TIME ,
+  RS.REQUISITION_ID,
+  LCI.CASE_NUM,
+  STR.SPEC_TST_ORDER_ID,
+  OLLO.ORDER_ID,
+  OR2.ORDER_PROC_ID,
+  CC.COMPONENT_ID,
+  CC.NAME COMP_NAME,
+  CC.EXTERNAL_NAME COMP_EXTERNAL_NAME,
+  CC.DFLT_UNITS,
+  OP.PROC_ID,
+  OP.DESCRIPTION PROC_DESC,
+  STR.SPEC_NUMBER_RLTD,
+  RS.LINE SPEC_LINE,
+  STR.LINE SPEC_TEST_LINE,
+  OLLO.LINE LINKED_ORD_LINE,
+  OR2.ORD_VALUE,
+  OR2.ORD_NUM_VALUE,
+  OR2.REFERENCE_LOW,
+  OR2.REFERENCE_HIGH,
+  OR2.REFERENCE_UNIT,
+  OR2.ORD_RAW_VALUE,
+  OR2.RAW_LOW,
+  OR2.RAW_HIGH,
+  STR.REPORTABLE_YN
+FROM LAB_CASE_INFO LCI
+JOIN REQ_SPECIMEN RS ON RS.REQUISITION_ID = LCI.REQUISITION_ID
+JOIN SPEC_TEST_REL STR ON STR.SPECIMEN_ID = RS.REQ_SPECIMEN_ID
+JOIN ORD_LAB_LINKED_ORD OLLO ON OLLO.ORDER_ID = STR.SPEC_TST_ORDER_ID
+JOIN CLARITY.ORDER_RESULTS OR2 ON OR2.ORDER_PROC_ID = OLLO.LAB_LINKED_ORD_ID
+JOIN CLARITY.CLARITY_COMPONENT CC ON CC.COMPONENT_ID = OR2.COMPONENT_ID
+JOIN CLARITY.ORDER_PROC OP ON OP.ORDER_PROC_ID = OR2.ORDER_PROC_ID
+where RS.LINE = 1 
+ AND  (OR2.RESULT_DATE &gt;= TO_DATE('2025-01-31','yyyy-mm-dd') OR OP.REVIEW_TIME &gt;= TO_DATE('2025-01-31','yyyy-mm-dd'))</property>
                 <property
                   dataType="System.Int32"
                   description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
@@ -696,8 +687,7 @@
                   dataType="System.Int32"
                   description="Specify the mode to retrieve external column information"
                   name="AccessMode"
-                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">
-                  2</property>
+                  typeConverter="Microsoft.SqlServer.Dts.Pipeline.DataReaderSourceAdapter+EnumToStringConverter">2</property>
                 <property
                   dataType="System.String"
                   name="UserComponentTypeName">Microsoft.DataReaderSourceAdapter</property>
@@ -1382,8 +1372,7 @@
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
-          SQLTask:SqlStatementSource="EXEC dbo.p_ssis_load_LinkedOrder"
-          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="EXEC dbo.p_ssis_load_LinkedOrder" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
@@ -1401,8 +1390,7 @@
         <SQLTask:SqlTaskData
           SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
           SQLTask:SqlStmtSourceType="Variable"
-          SQLTask:SqlStatementSource="User::log_end"
-          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="User::log_end" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
@@ -1420,8 +1408,7 @@
         <SQLTask:SqlTaskData
           SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
           SQLTask:SqlStmtSourceType="Variable"
-          SQLTask:SqlStatementSource="User::log_query"
-          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="User::log_query" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
@@ -1439,8 +1426,7 @@
         <SQLTask:SqlTaskData
           SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
           SQLTask:SqlStmtSourceType="Variable"
-          SQLTask:SqlStatementSource="User::log_start"
-          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="User::log_start" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
@@ -1457,8 +1443,7 @@
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{C80770AC-9444-4E72-B547-4298EDF08473}"
-          SQLTask:SqlStatementSource="dbo.[P_SSIS_TruncateTable_LinkedOrder]"
-          xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="dbo.[P_SSIS_TruncateTable_LinkedOrder]" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
     <DTS:Executable
