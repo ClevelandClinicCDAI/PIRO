@@ -75,6 +75,24 @@
                 </div>
 
                 <div class="form-group mb-3">
+                  <label for="deliveryLocation">Delivery Location <span class="text-danger">*</span></label>
+                  <select
+                    id="deliveryLocation"
+                    class="form-control"
+                    formControlName="deliveryLocation"
+                    [ngClass]="{ 'is-invalid': submitting && f['deliveryLocation'].errors }"
+                  >
+                    <option value="">Select a delivery location</option>
+                    <option *ngFor="let option of deliveryLocationOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="submitting && f['deliveryLocation'].errors" class="invalid-feedback">
+                    <div *ngIf="f['deliveryLocation'].errors?.['required']">Delivery location is required</div>
+                  </div>
+                </div>
+
+                <div class="form-group mb-3">
                   <label for="requesterNotes">Requester Notes (optional)</label>
                   <textarea
                     class="form-control"
@@ -127,6 +145,7 @@
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
                     <th scope="col">Reason</th>
+                    <th scope="col">Delivery Location</th>
                     <th scope="col">Requester Notes</th>
                     <th scope="col">Slide Room Notes</th>
                     <th scope="col">Requested</th>
@@ -142,6 +161,7 @@
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.reason || '-' }}</td>
+                    <td>{{ request.deliveryLocation || '-' }}</td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ request.requestedAt | date: 'short' }}</td>
@@ -169,6 +189,7 @@
                     <th scope="col">Accession</th>
                     <th scope="col">Urgency</th>
                     <th scope="col">Reason</th>
+                    <th scope="col">Delivery Location</th>
                     <th scope="col">Requester Notes</th>
                     <th scope="col">Slide Room Notes</th>
                     <th scope="col">Status</th>
@@ -184,6 +205,7 @@
                     </td>
                     <td><span [ngClass]="getUrgencyBadgeClasses(request.urgencyStatus)">{{ getUrgencyLabel(request.urgencyStatus) }}</span></td>
                     <td>{{ request.reason || '-' }}</td>
+                    <td>{{ request.deliveryLocation || '-' }}</td>
                     <td>{{ request.requesterNotes || '-' }}</td>
                     <td>{{ request.slideRoomNotes || '-' }}</td>
                     <td>{{ getStatusLabel(request.status) }}</td>
