@@ -48,6 +48,7 @@ class Constants:
     class SlideRequestDeliveryLocation(str, Enum):
         MAILBOX = "Deliver to Mailbox"
         L25_WINDOW_PICKUP = "L25 Window Pickup"
+        CYTOLOGY_L2_320 = "Cytology L2-320"
 
     class StatusCode(Enum):
         S = 1

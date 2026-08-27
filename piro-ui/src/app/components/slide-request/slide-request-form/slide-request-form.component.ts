@@ -36,7 +36,8 @@ export class SlideRequestFormComponent implements OnInit {
   ];
   deliveryLocationOptions: { value: SlideRequestDeliveryLocation; label: string }[] = [
     { value: 'Deliver to Mailbox', label: 'Deliver to Mailbox' },
-    { value: 'L25 Window Pickup', label: 'L25 Window Pickup' }
+    { value: 'L25 Window Pickup', label: 'L25 Window Pickup' },
+    { value: 'Cytology L2-320', label: 'Cytology L2-320' }
   ];
 
   constructor(

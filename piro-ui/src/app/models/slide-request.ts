@@ -1,7 +1,7 @@
 export type SlideRequestUrgency = 'Priority' | 'Routine';
 export type SlideRequestReason = 'Sign Out' | 'Additional Testing' | 'Cap Inspection' | 'Comparison' | 'Conference' | 'QA' | 'Re-review' | 'Send Outs' | 'Tumor Board' | 'Validation';
 export type SlideRequestCaseType = 'Surgical' | 'Cytology';
-export type SlideRequestDeliveryLocation = 'Deliver to Mailbox' | 'L25 Window Pickup';
+export type SlideRequestDeliveryLocation = 'Deliver to Mailbox' | 'L25 Window Pickup' | 'Cytology L2-320';
 
 export interface SlideRequest {
   id: number;
