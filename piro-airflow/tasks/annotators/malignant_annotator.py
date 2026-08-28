@@ -89,6 +89,7 @@ Interpret this pathology report:
         source_data_batches = self._get_batches(source_records)
 
         counter: int = 0
+        failed_batches: int = 0
         for source_data_batch in source_data_batches:
 
             try:
@@ -120,17 +121,29 @@ Interpret this pathology report:
                 )
                 counter += batch_record_count
             except Exception as e:
+                failed_batches += 1
                 logger.error(f"Error processing a batch: {e}")
                 logger.error(traceback.format_exc())
                 if "Error in API call: 503" in str(e):
                     # if the LLM API is down abort
                     break
 
+        if failed_batches == 0:
+            run_status = "succeeded"
+        elif counter:
+            run_status = "partial"
+        else:
+            run_status = "failed"
+
         audit.run(
-            status="succeeded",
+            status=run_status,
             run_id=run_id,
             event_name="malignant_annotation_run",
-            attributes={"records_processed": counter, "model": _model},
+            model_name=_model,
+            attributes={
+                "records_processed": counter,
+                "failed_batches": failed_batches,
+            },
         )
         return {"total_records_processed": counter}
 
@@ -296,6 +309,7 @@ Interpret this pathology report:
             )
             response.raise_for_status()
             data = response.json()
+            raw_response = data["choices"][0]["message"]["content"]
             usage = token_usage_from_response(data)
             audit.inference(
                 status="succeeded",
@@ -307,7 +321,7 @@ Interpret this pathology report:
                 provider_request_id=response.headers.get("x-request-id"),
                 **usage,
             )
-            return data["choices"][0]["message"]["content"]
+            return raw_response
         except Exception as exc:
             audit.inference(
                 status="failed",

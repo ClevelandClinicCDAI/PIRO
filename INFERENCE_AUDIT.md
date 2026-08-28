@@ -1,6 +1,6 @@
 # Inference audit configuration
 
-This application writes privacy-safe model and work-item events to a local SQLite outbox before delivering them to the CDAI Inference Observatory.
+This application uses `ccf-inference-audit==1.0.2` from the CDAI Azure Artifacts feed. The package writes privacy-safe model and work-item events to a local SQLite outbox before delivering them to the CDAI Inference Observatory. Package installation environments must authenticate to the CDAI feed before installing `piro-airflow/requirements.txt`.
 
 Required deployment secrets and settings:
 
@@ -15,6 +15,7 @@ Optional:
 
 - `INFERENCE_AUDIT_BATCH_SIZE` (default `100`, maximum `500`)
 - `INFERENCE_AUDIT_TIMEOUT_SECONDS` (default `2`)
+- `INFERENCE_AUDIT_CA_BUNDLE` (path to a trusted collector CA bundle)
 
 The audit client is deliberately fail-open for application work. Delivery failure leaves events queued locally with exponential backoff. Monitor `AuditClient.pending_count()` and alert on a growing backlog.
 
