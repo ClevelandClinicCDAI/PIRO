@@ -55,6 +55,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
 
   loading = true;
   refiningLowConf = false;
+  cancelling = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -236,6 +237,24 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
       this.toastr.error('Failed to load incorrect cases.');
     } finally {
       this.refiningLowConf = false;
+    }
+  }
+
+  // ── Cancel run ─────────────────────────────────────────────────────────────
+
+  async cancelRun() {
+    if (!this.isRunning || this.cancelling) return;
+    if (!confirm('Cancel the extraction run? Cases already completed will be kept; remaining cases will stay queued so you can resume later.')) {
+      return;
+    }
+    this.cancelling = true;
+    try {
+      await this.extractionService.cancelExtraction(this.sessionId);
+      this.toastr.info('Cancellation requested — the run will stop after the case currently in progress.');
+    } catch (e: any) {
+      this.toastr.error(e?.error?.detail || 'Failed to cancel the run.');
+    } finally {
+      this.cancelling = false;
     }
   }
 

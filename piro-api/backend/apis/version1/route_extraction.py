@@ -30,6 +30,8 @@ from db.repository.extraction import (
     get_low_confidence_case_ids,
     get_queue,
     reclaim_stale_run,
+    request_run_cancellation,
+    is_run_cancellation_requested,
     get_result_by_id,
     get_results_for_session,
     get_run,
@@ -367,11 +369,19 @@ async def _run_extraction_job(
         if validation_set is None:
             reset_queue_statuses(session_id, db)
 
+        cancelled = False
         for queue_item in queue:
             if validation_set is not None and queue_item.CaseId not in validation_set:
                 continue  # validation run: skip non-sampled cases
             if validation_set is None and queue_item.Status == "completed":
                 continue  # full run: skip already done (shouldn't exist after reset)
+
+            # Cooperative cancellation: checked between cases, not mid-LLM-call,
+            # so at most the case currently in flight finishes. Anything not
+            # yet started is left as "pending" so the run can be resumed later.
+            if is_run_cancellation_requested(run_id, db):
+                cancelled = True
+                break
 
             update_queue_item_status(queue_item.ExtractionQueueId, "running", db)
             try:
@@ -446,8 +456,11 @@ async def _run_extraction_job(
                 )
 
         # Update run/session status
-        status = get_extraction_status(session_id, db)
-        final_status = "completed" if status["failed"] == 0 else "completed_with_errors"
+        if cancelled:
+            final_status = "cancelled"
+        else:
+            status = get_extraction_status(session_id, db)
+            final_status = "completed" if status["failed"] == 0 else "completed_with_errors"
         update_run_status(run_id, final_status, db)
         update_session_status(session_id, final_status, db)
         _notify_extraction_run_completed(run_id, final_status, db)
@@ -539,6 +552,32 @@ async def start_extraction(
     )
 
     return run
+
+
+@router.post(
+    "/cancel/{session_id}",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+    response_model=ExtractionRunVM,
+)
+async def cancel_extraction(
+    session_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    """Request cooperative cancellation of the session's active run.
+
+    The background job checks this flag between cases and stops before
+    starting the next one, so at most the case already in flight finishes.
+    Already-completed results are kept and remain exportable; unprocessed
+    cases stay queued so the run can be resumed later.
+    """
+    _require_session_ownership(session_id, current_user_id, db)
+    run = reclaim_stale_run(session_id, db)
+    if run is None or run.Status not in ("pending", "running"):
+        raise HTTPException(
+            status_code=409, detail="No active run to cancel for this session"
+        )
+    return request_run_cancellation(run.ExtractionRunId, db)
 
 
 @router.get(

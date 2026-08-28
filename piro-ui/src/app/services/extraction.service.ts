@@ -85,6 +85,10 @@ export class ExtractionService {
     return this.http.get<any>(`${this.BASE}status/${sessionId}`).toPromise();
   }
 
+  cancelExtraction(sessionId: number): Promise<any> {
+    return this.http.post<any>(`${this.BASE}cancel/${sessionId}`, {}).toPromise();
+  }
+
   // ── Results ───────────────────────────────────────────────────────────────
 
   getResults(sessionId: number): Promise<any[]> {

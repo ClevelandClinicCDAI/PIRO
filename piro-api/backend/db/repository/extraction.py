@@ -283,11 +283,41 @@ def update_run_status(
     run.Status = status
     if status == "running":
         run.StartedAt = datetime.now(timezone.utc)
-    elif status in ("completed", "failed", "completed_with_errors"):
+    elif status in ("completed", "failed", "completed_with_errors", "cancelled"):
         run.CompletedAt = datetime.now(timezone.utc)
     if error:
         run.ErrorMessage = error
     db.commit()
+
+
+def request_run_cancellation(run_id: int, db: Session) -> Optional[ExtractionRun]:
+    """Flag an in-progress run for cooperative cancellation.
+
+    The background job checks ``is_run_cancellation_requested`` between
+    cases and stops before starting the next one — it can't interrupt an
+    in-flight LLM call, so at most one case finishes after this is called.
+    Cases already completed keep their results; the rest stay queued so the
+    run can be resumed later.
+    """
+    run = get_run(run_id, db)
+    if run is None or run.Status not in ("pending", "running"):
+        return run
+    run.CancellationRequested = True
+    db.commit()
+    db.refresh(run)
+    return run
+
+
+def is_run_cancellation_requested(run_id: int, db: Session) -> bool:
+    # Query a fresh row (bypassing the session identity-map cache) so the
+    # background job's long-lived ORM objects see cancellation requests
+    # made from a different request/DB session.
+    flag = (
+        db.query(ExtractionRun.CancellationRequested)
+        .filter(ExtractionRun.ExtractionRunId == run_id)
+        .scalar()
+    )
+    return bool(flag)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -382,6 +412,16 @@ def update_queue_item_status(
         item.ErrorMessage = error[:1000]
     if status == "running":
         item.AttemptCount = (item.AttemptCount or 0) + 1
+    # Set explicitly in Python (UTC-aware) rather than relying on the
+    # column's onupdate=func.now(), which on MSSQL compiles to
+    # CURRENT_TIMESTAMP — the DB server's naive local clock. That naive
+    # value serializes over the API without a timezone suffix, so the
+    # browser parses it as local browser time, not UTC. This can skew the
+    # "last activity" heartbeat by hours and made actively-running jobs
+    # falsely show as "Possibly stalled" in the UI. Using the same
+    # datetime.now(timezone.utc) convention as StartedAt/CompletedAt keeps
+    # all run/queue timestamps consistently UTC-aware.
+    item.UpdateDate = datetime.now(timezone.utc)
     db.commit()
 
 

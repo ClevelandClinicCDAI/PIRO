@@ -1,5 +1,5 @@
 from db.base_class import Base
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UnicodeText
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UnicodeText
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -16,6 +16,7 @@ class ExtractionRun(Base):
     Status = Column(String(50), nullable=False, default="pending")
     RunType = Column(String(50), nullable=False, default="full")
     ValidationSize = Column(Integer, nullable=True)
+    CancellationRequested = Column(Boolean, nullable=False, default=False)
     StartedAt = Column(DateTime(timezone=True), nullable=True)
     CompletedAt = Column(DateTime(timezone=True), nullable=True)
     ErrorMessage = Column(UnicodeText, nullable=True)

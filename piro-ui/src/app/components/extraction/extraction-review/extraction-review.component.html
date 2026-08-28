@@ -38,6 +38,12 @@
               [title]="'No progress in the last ' + lastUpdatedAgoText + ' — the run may have stalled or crashed.'">
           <i class="bi bi-exclamation-triangle-fill me-1"></i>Possibly stalled
         </span>
+        <button class="btn btn-sm btn-outline-danger text-nowrap" (click)="cancelRun()" [disabled]="cancelling"
+                title="Stop the run after the current case finishes; completed cases are kept.">
+          <span *ngIf="cancelling" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!cancelling" class="bi bi-stop-circle me-1"></i>
+          Cancel Run
+        </button>
       </div>
 
       <!-- Summary once a run has finished -->
@@ -47,12 +53,17 @@
               [class.bg-success]="statusInfo?.status === 'completed'"
               [class.bg-warning]="statusInfo?.status === 'completed_with_errors'"
               [class.bg-danger]="statusInfo?.status === 'failed'"
+              [class.bg-secondary]="statusInfo?.status === 'cancelled'"
               [class.text-dark]="statusInfo?.status === 'completed_with_errors'">
           <i class="bi me-1"
              [class.bi-check-circle-fill]="statusInfo?.status === 'completed'"
              [class.bi-exclamation-triangle-fill]="statusInfo?.status === 'completed_with_errors'"
-             [class.bi-x-circle-fill]="statusInfo?.status === 'failed'"></i>
-          {{ statusInfo?.status === 'completed' ? 'Completed' : statusInfo?.status === 'completed_with_errors' ? 'Completed with errors' : 'Failed' }}
+             [class.bi-x-circle-fill]="statusInfo?.status === 'failed'"
+             [class.bi-stop-circle-fill]="statusInfo?.status === 'cancelled'"></i>
+          {{ statusInfo?.status === 'completed' ? 'Completed'
+            : statusInfo?.status === 'completed_with_errors' ? 'Completed with errors'
+            : statusInfo?.status === 'cancelled' ? 'Cancelled'
+            : 'Failed' }}
         </span>
         <small class="text-muted text-nowrap">
           {{ statusInfo?.completed }}/{{ statusInfo?.total }}
@@ -65,6 +76,21 @@
     </div>
 
     <div class="d-flex gap-2">
+      <div class="dropdown" *ngIf="!isRunning && rows.length > 0">
+        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false" title="Download extraction results">
+          <i class="bi bi-download me-1"></i>
+          Export
+        </button>
+        <ul class="dropdown-menu">
+          <li><button class="dropdown-item" (click)="exportExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i>Excel (.xlsx)</button></li>
+          <li><button class="dropdown-item" (click)="exportCsv()">
+            <i class="bi bi-file-earmark-text me-1"></i>CSV</button></li>
+          <li><button class="dropdown-item" (click)="exportJson()">
+            <i class="bi bi-filetype-json me-1"></i>JSON</button></li>
+        </ul>
+      </div>
       <button class="btn btn-sm btn-outline-secondary" [routerLink]="['/extraction/schema', sessionId]"
               title="Return to the schema builder">
         <i class="bi bi-arrow-left me-1"></i>
