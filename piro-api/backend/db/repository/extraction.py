@@ -396,6 +396,21 @@ def remove_from_queue(session_id: int, case_id: int, db: Session) -> bool:
     return True
 
 
+def clear_queue(session_id: int, db: Session) -> int:
+    """Remove every queued case for a session so a new case set can be loaded.
+
+    Returns the number of items removed. Does not touch prior run results —
+    those stay associated with the session's run history for export.
+    """
+    deleted = (
+        db.query(ExtractionQueue)
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return deleted
+
+
 def update_queue_item_status(
     queue_item_id: int,
     status: str,

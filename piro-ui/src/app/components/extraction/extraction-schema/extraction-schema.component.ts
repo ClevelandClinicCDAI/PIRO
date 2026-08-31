@@ -55,6 +55,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
   selectedSearchId: number | null = null;
   showSearchPicker = false;
   loadingFromSearch = false;
+  clearingQueue = false;
   loadedSearchName: string | null = null;
 
   // Text source selection (which report sections feed the LLM)
@@ -459,6 +460,29 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
       this.toastr.error(e?.error?.detail || 'Failed to load cases from saved search.');
     } finally {
       this.loadingFromSearch = false;
+    }
+  }
+
+  async clearCaseSet() {
+    if (this.queuedCases.length === 0 || this.clearingQueue) return;
+    if (!confirm(`Remove all ${this.queuedCases.length} case(s) from the queue? This lets you load a different case set. Prior run results are kept.`)) {
+      return;
+    }
+    this.clearingQueue = true;
+    try {
+      await this.extractionService.clearQueue(this.sessionId);
+      this.queuedCases = [];
+      this.previewSample = [];
+      this.loadedSearchName = null;
+      this.selectedCaseId = null;
+      this.previewResult = null;
+      this.reportText = '';
+      this.highlightedReportHtml = '';
+      this.toastr.success('Case set cleared. Load a new one to continue.');
+    } catch (e: any) {
+      this.toastr.error(e?.error?.detail || 'Failed to clear the case set.');
+    } finally {
+      this.clearingQueue = false;
     }
   }
 

@@ -20,6 +20,7 @@ from db.repository.extraction import (
     add_cases_to_queue,
     bulk_approve_high_confidence,
     build_labelled_report_text,
+    clear_queue,
     create_run,
     create_session,
     delete_session,
@@ -328,6 +329,30 @@ async def remove_queue_item(
     if not remove_from_queue(session_id, case_id, db):
         raise HTTPException(status_code=404, detail="Queue item not found")
     return {"detail": "Removed"}
+
+
+@router.delete(
+    "/queue/{session_id}",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+)
+async def clear_queue_endpoint(
+    session_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    """Empty a session's case queue so a different case set can be loaded."""
+    _require_session_ownership(session_id, current_user_id, db)
+
+    # Guard against clearing out from under an active run.
+    latest = reclaim_stale_run(session_id, db)
+    if latest and latest.Status in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot clear the case set while a run is in progress. Cancel or wait for it to finish first.",
+        )
+
+    removed = clear_queue(session_id, db)
+    return {"detail": "Case set cleared", "removed": removed}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -757,17 +782,32 @@ async def export_results(
         return JSONResponse(content=rows)
 
     if format == "excel":
+        import re
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill, Alignment
         from openpyxl.utils import get_column_letter
 
+        # openpyxl rejects raw XML-illegal control characters (form feeds,
+        # null bytes, etc.) that sometimes end up in pathology report text /
+        # LLM-extracted values, raising IllegalCharacterError and aborting
+        # the whole export. Strip them from any string cell value so a
+        # single bad case doesn't take down exports of large result sets.
+        illegal_chars_re = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
+
+        def _excel_safe(value):
+            if isinstance(value, str):
+                return illegal_chars_re.sub('', value)
+            return value
+
         wb = Workbook()
         ws = wb.active
-        ws.title = (sess.Name or "Results")[:31]
+        # Sheet titles also disallow []:*?/\ and are capped at 31 chars
+        safe_title = re.sub(r'[\[\]:*?/\\]', '_', sess.Name or "Results")[:31] or "Results"
+        ws.title = safe_title
 
         # Header row
         headers = ["Case Number"] + fields
-        ws.append(headers)
+        ws.append([_excel_safe(h) for h in headers])
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(fill_type="solid", fgColor="1F4E79")
         for col_idx, _ in enumerate(headers, start=1):
@@ -780,7 +820,7 @@ async def export_results(
         for case_number in case_order:
             field_vals = case_fields[case_number]
             row = [case_number] + [field_vals.get(f) for f in fields]
-            ws.append(row)
+            ws.append([_excel_safe(v) for v in row])
 
         # Auto-fit column widths (cap at 60)
         for col_idx, col_cells in enumerate(ws.columns, start=1):

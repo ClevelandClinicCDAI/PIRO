@@ -73,6 +73,10 @@ export class ExtractionService {
     return this.http.delete<any>(`${this.BASE}queue/${sessionId}/${caseId}`).toPromise();
   }
 
+  clearQueue(sessionId: number): Promise<any> {
+    return this.http.delete<any>(`${this.BASE}queue/${sessionId}`).toPromise();
+  }
+
   // ── Extraction run ────────────────────────────────────────────────────────
 
   startExtraction(sessionId: number, runType: 'validation' | 'full' = 'full', validationSize?: number): Promise<any> {
