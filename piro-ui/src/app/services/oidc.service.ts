@@ -34,6 +34,7 @@ export class OidcService {
         const verifier = this.randomUrlSafe(64);
         const challenge = await this.pkceChallenge(verifier);
         const state = this.randomUrlSafe(24);
+        const authorizationEndpoint = await this.authorizationEndpoint();
 
         sessionStorage.setItem(OidcService.VERIFIER_KEY, verifier);
         sessionStorage.setItem(OidcService.STATE_KEY, state);
@@ -49,9 +50,7 @@ export class OidcService {
             code_challenge_method: 'S256',
         });
 
-        window.location.assign(
-            `${this.trimSlash(this.appConfig.oidcIssuer)}/authorize?${params.toString()}`,
-        );
+        window.location.assign(`${authorizationEndpoint}?${params.toString()}`);
     }
 
     /**
@@ -108,13 +107,25 @@ export class OidcService {
     }
 
     private async tokenEndpoint(): Promise<string> {
-        const url =
-            `${this.trimSlash(this.appConfig.oidcIssuer)}/.well-known/openid-configuration`;
-        const discovery: any = await firstValueFrom(this.http.get(url));
+        const discovery = await this.discoveryDocument();
         if (!discovery?.token_endpoint) {
             throw new Error('OIDC discovery document missing token_endpoint');
         }
         return discovery.token_endpoint;
+    }
+
+    private async authorizationEndpoint(): Promise<string> {
+        const discovery = await this.discoveryDocument();
+        if (!discovery?.authorization_endpoint) {
+            throw new Error('OIDC discovery document missing authorization_endpoint');
+        }
+        return discovery.authorization_endpoint;
+    }
+
+    private async discoveryDocument(): Promise<any> {
+        const url =
+            `${this.trimSlash(this.appConfig.oidcIssuer)}/.well-known/openid-configuration`;
+        return firstValueFrom(this.http.get(url));
     }
 
     private trimSlash(url: string): string {
