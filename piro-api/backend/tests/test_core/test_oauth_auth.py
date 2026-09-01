@@ -242,6 +242,16 @@ def test_extract_identity_honors_custom_nuid_claim(monkeypatch):
     assert result["nuid"] == "jdoe@corp.example"
 
 
+def test_extract_identity_normalizes_email_style_nuid(monkeypatch):
+    """Entra often returns email-style preferred_username values."""
+
+    monkeypatch.setattr(settings, "OIDC_NUID_CLAIM", "preferred_username")
+    result = oauth_auth.extract_identity(
+        {"preferred_username": "CUMBOJ@ccf.org", "name": "Cumbo, Jeremy"}
+    )
+    assert result["nuid"] == "cumboj"
+
+
 def test_extract_identity_single_word_name_leaves_last_empty(monkeypatch):
     """Mononym in the `name` claim: firstName set, lastName stays empty."""
 

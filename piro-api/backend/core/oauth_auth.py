@@ -202,7 +202,7 @@ def extract_identity(claims: dict[str, Any]) -> dict[str, str]:
     in :class:`db.models.User.User`.
     """
 
-    nuid = str(claims.get(settings.OIDC_NUID_CLAIM) or "")
+    nuid = normalize_nuid(claims.get(settings.OIDC_NUID_CLAIM))
     first_name = str(claims.get(settings.OIDC_GIVEN_NAME_CLAIM) or "")
     last_name = str(claims.get(settings.OIDC_FAMILY_NAME_CLAIM) or "")
 
@@ -220,6 +220,20 @@ def extract_identity(claims: dict[str, Any]) -> dict[str, str]:
         "firstName": first_name,
         "lastName": last_name,
     }
+
+
+def normalize_nuid(raw_nuid: Any) -> str:
+    """Normalize Entra-style usernames to PIRO's stored NUID format.
+
+    PIRO stores NUIDs as lowercase local parts (for example,
+    ``CUMBOJ@ccf.org`` -> ``cumboj``). Values that do not look like email
+    addresses are preserved after trimming and lowercasing.
+    """
+
+    nuid = str(raw_nuid or "").strip().lower()
+    if "@" in nuid:
+        nuid = nuid.split("@", 1)[0]
+    return nuid
 
 
 def user_group(
