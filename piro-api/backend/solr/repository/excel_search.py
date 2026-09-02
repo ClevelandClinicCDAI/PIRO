@@ -85,14 +85,27 @@ def get_case_data_by_ids(
     if not case_ids:
         return []
 
-    ids_query = " OR ".join(str(c) for c in case_ids)
-    query = f"caseid:({ids_query})"
-    solr_query_params = {"start": 0, "rows": len(case_ids)}
-    results = solr.search(query, fl=fields, **solr_query_params)
+    # Solr's default maxClauseCount is 1024 boolean clauses. "caseid" is a
+    # `pint` field with docValues=true (managed-schema), so each equality
+    # term in a large OR is rewritten by Lucene into an IndexOrDocValuesQuery,
+    # which counts as ~2 clauses against maxClauseCount. That halves the
+    # effective limit to ~512 ids per query (confirmed: 512 ids succeeds,
+    # 513 fails) rather than the nominal 1024. A single query built from a
+    # large extraction session's case list (thousands of cases) therefore
+    # exceeds the limit well before 1024 ids and Solr rejects the whole
+    # query with a 500 error. Chunk the id list into batches safely under
+    # that effective limit and merge the results instead.
+    _MAX_IDS_PER_QUERY = 400
 
     docs: List[document] = []
-    for result in results:
-        docs.append(read_result(result, db=db))
+    for i in range(0, len(case_ids), _MAX_IDS_PER_QUERY):
+        batch = case_ids[i : i + _MAX_IDS_PER_QUERY]
+        ids_query = " OR ".join(str(c) for c in batch)
+        query = f"caseid:({ids_query})"
+        solr_query_params = {"start": 0, "rows": len(batch)}
+        results = solr.search(query, fl=fields, **solr_query_params)
+        for result in results:
+            docs.append(read_result(result, db=db))
     return docs
 
 
