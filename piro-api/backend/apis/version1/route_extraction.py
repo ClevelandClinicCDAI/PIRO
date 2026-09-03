@@ -27,6 +27,7 @@ from db.repository.extraction import (
     get_case_text_for_extraction,
     get_case_text_segments,
     get_extraction_status,
+    get_failed_case_ids,
     get_incorrect_case_ids,
     get_low_confidence_case_ids,
     get_queue,
@@ -71,6 +72,7 @@ from viewmodel.extraction import (
     ExtractionQueueItemVM,
     ExtractionResultPatch,
     ExtractionResultVM,
+    ExtractionRetryFailedRequest,
     ExtractionRunRequest,
     ExtractionRunVM,
     ExtractionSessionCreate,
@@ -580,6 +582,68 @@ async def start_extraction(
 
 
 @router.post(
+    "/retry-failed",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+    response_model=ExtractionRunVM,
+)
+async def retry_failed_cases(
+    payload: ExtractionRetryFailedRequest,
+    background_tasks: BackgroundTasks,
+    current_user: Annotated[str, Depends(get_current_user_nuid)],
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
+    db: Session = Depends(get_db),
+):
+    """Resubmit only the cases currently sitting at 'failed' in the queue
+    (e.g. after a transient LLM provider error) without reprocessing the
+    rest of an already-completed run."""
+    sess = _require_session_ownership(payload.session_id, current_user_id, db)
+
+    if not sess.SchemaJson:
+        raise HTTPException(status_code=400, detail="Schema is not defined for this session")
+
+    failed_case_ids = get_failed_case_ids(payload.session_id, db)
+    if not failed_case_ids:
+        raise HTTPException(status_code=400, detail="No failed cases to retry")
+
+    # Concurrency guard: reject if a run is already active. First reclaim the
+    # slot if the prior run is stale (e.g. orphaned by a server crash/restart).
+    latest = reclaim_stale_run(payload.session_id, db)
+    if latest and latest.Status in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",
+        )
+
+    from core.config import settings
+
+    llm_provider = settings.LLM_PROVIDER or "ollama"
+    llm_model = settings.LLM_MODEL or "llama3.2"
+
+    run = create_run(
+        session_id=payload.session_id,
+        schema_json=sess.SchemaJson,
+        llm_provider=llm_provider,
+        llm_model=llm_model,
+        user=current_user,
+        db=db,
+        run_type="retry",
+        validation_size=len(failed_case_ids),
+    )
+
+    background_tasks.add_task(
+        _run_extraction_job,
+        session_id=payload.session_id,
+        run_id=run.ExtractionRunId,
+        user=current_user,
+        role=current_role,
+        case_ids=failed_case_ids,
+    )
+
+    return run
+
+
+@router.post(
     "/cancel/{session_id}",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
     response_model=ExtractionRunVM,
@@ -718,6 +782,23 @@ async def get_incorrect_cases(
     """Return distinct case IDs from the latest run that have any field marked incorrect."""
     _require_session_ownership(session_id, current_user_id, db)
     case_ids = get_incorrect_case_ids(session_id, db)
+    return {"case_ids": case_ids, "count": len(case_ids)}
+
+
+@router.get(
+    "/queue/{session_id}/failed-cases",
+    dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
+)
+async def get_failed_cases(
+    session_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    db: Session = Depends(get_db),
+):
+    """Return case IDs currently sitting at 'failed' in the queue (e.g. a
+    transient LLM provider error), so the UI can offer to retry just those
+    cases instead of re-running the whole session."""
+    _require_session_ownership(session_id, current_user_id, db)
+    case_ids = get_failed_case_ids(session_id, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
 
 

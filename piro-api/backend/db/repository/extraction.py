@@ -551,6 +551,21 @@ def get_incorrect_case_ids(session_id: int, db: Session) -> List[int]:
     return [r.CaseId for r in rows]
 
 
+def get_failed_case_ids(session_id: int, db: Session) -> List[int]:
+    """Return case IDs whose most recent queue attempt ended in 'failed'
+    (e.g. a transient LLM provider error) so they can be resubmitted
+    without reprocessing the rest of the session's queue."""
+    rows = (
+        db.query(ExtractionQueue.CaseId)
+        .filter(
+            ExtractionQueue.ExtractionSessionId == session_id,
+            ExtractionQueue.Status == "failed",
+        )
+        .all()
+    )
+    return [r.CaseId for r in rows]
+
+
 def get_low_confidence_case_ids(
     session_id: int, threshold: float, db: Session
 ) -> List[int]:

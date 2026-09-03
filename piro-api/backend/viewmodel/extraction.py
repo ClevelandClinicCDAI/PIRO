@@ -113,6 +113,10 @@ class ExtractionRunRequest(BaseModel):
         return v
 
 
+class ExtractionRetryFailedRequest(BaseModel):
+    session_id: int
+
+
 class ExtractionStatusVM(BaseModel):
     session_id: int
     run_id: Optional[int] = None

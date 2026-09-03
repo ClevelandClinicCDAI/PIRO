@@ -72,6 +72,13 @@
         <small *ngIf="elapsedText" class="text-muted text-nowrap" title="Total run time">
           <i class="bi bi-clock-history me-1"></i>{{ elapsedText }}
         </small>
+        <button *ngIf="hasFailedCases" class="btn btn-sm btn-outline-warning text-nowrap"
+                (click)="retryFailedCases()" [disabled]="retryingFailed"
+                title="Resubmit only the cases that failed (e.g. a transient LLM error) without reprocessing completed cases.">
+          <span *ngIf="retryingFailed" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!retryingFailed" class="bi bi-arrow-clockwise me-1"></i>
+          Retry Failed ({{ statusInfo?.failed }})
+        </button>
       </div>
     </div>
 

@@ -93,6 +93,14 @@ export class ExtractionService {
     return this.http.post<any>(`${this.BASE}cancel/${sessionId}`, {}).toPromise();
   }
 
+  getFailedCases(sessionId: number): Promise<{case_ids: number[], count: number}> {
+    return this.http.get<any>(`${this.BASE}queue/${sessionId}/failed-cases`).toPromise();
+  }
+
+  retryFailedCases(sessionId: number): Promise<any> {
+    return this.http.post<any>(this.BASE + 'retry-failed', { session_id: sessionId }).toPromise();
+  }
+
   // ── Results ───────────────────────────────────────────────────────────────
 
   getResults(sessionId: number): Promise<any[]> {

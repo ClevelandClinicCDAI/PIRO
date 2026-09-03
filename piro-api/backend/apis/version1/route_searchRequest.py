@@ -640,7 +640,14 @@ async def export(
     extraction_data: dict = {}
 
     if search_request.IsLlmAssisted:
-        if search_request.ExtractionRunId is None or search_request.ExtractionStatus != "completed":
+        # Allow export once the run has finished, even if some cases
+        # permanently failed (e.g. a case has no report text, or an upstream
+        # LLM provider error that retries won't fix). Those cases simply show
+        # blank extraction columns in the export rather than blocking the
+        # whole data request. Only block while a run hasn't produced a final
+        # result yet (pending/running) or never ran/failed outright.
+        _EXPORTABLE_STATUSES = ("completed", "completed_with_errors")
+        if search_request.ExtractionRunId is None or search_request.ExtractionStatus not in _EXPORTABLE_STATUSES:
             raise HTTPException(
                 status_code=400,
                 detail="LLM extraction has not completed for this data request yet",

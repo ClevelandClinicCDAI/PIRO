@@ -258,6 +258,32 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ── Retry failed cases ──────────────────────────────────────────────────
+
+  retryingFailed = false;
+
+  get hasFailedCases(): boolean {
+    return !this.isRunning && (this.statusInfo?.failed ?? 0) > 0;
+  }
+
+  async retryFailedCases() {
+    if (this.retryingFailed || this.isRunning) return;
+    const failedCount = this.statusInfo?.failed ?? 0;
+    if (!confirm(`Retry the ${failedCount} failed case(s)? Already-completed cases will not be reprocessed.`)) {
+      return;
+    }
+    this.retryingFailed = true;
+    try {
+      await this.extractionService.retryFailedCases(this.sessionId);
+      this.toastr.info(`Retrying ${failedCount} failed case(s)...`);
+      this.startStatusPoll();
+    } catch (e: any) {
+      this.toastr.error(e?.error?.detail || 'Failed to retry failed cases.');
+    } finally {
+      this.retryingFailed = false;
+    }
+  }
+
   // ── Export ────────────────────────────────────────────────────────────────
 
   exportCsv() {

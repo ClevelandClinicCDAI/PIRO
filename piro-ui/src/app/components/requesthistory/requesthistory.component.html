@@ -117,10 +117,10 @@
                 <td class="text-center">
                     <table width="100%" style="margin-top:0px">
                         <tr>
-                            <td *ngIf="(isApproved || isClosed) && (!item.isLlmAssisted || item.extractionStatus === 'completed')">
+                            <td *ngIf="(isApproved || isClosed) && (!item.isLlmAssisted || item.extractionStatus === 'completed' || item.extractionStatus === 'completed_with_errors')">
                                 <a class="btn btn-success"
                                     (click)="onexcel(item.searchRequestId)" href="javascript:void(0);"
-                                    title="Click to export the data request"><i class="fa fa-file-excel-o"></i></a>
+                                    [title]="item.extractionStatus === 'completed_with_errors' ? 'Export the data request (some cases had extraction errors and will be blank)' : 'Click to export the data request'"><i class="fa fa-file-excel-o"></i></a>
                             </td>
                             <td *ngIf="isApproved && item.isLlmAssisted && (!item.extractionStatus || item.extractionStatus === 'not_started' || item.extractionStatus === 'failed')">
                                 <a class="btn btn-info" (click)="onStartExtraction(item.searchRequestId)"
