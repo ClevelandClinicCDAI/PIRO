@@ -48,10 +48,12 @@ export class AuthCallbackComponent implements OnInit {
 
         if (oauthError) {
             this.error = `${oauthError}: ${params.get('error_description') || ''}`;
+            this.returnToLoginWithError(this.error);
             return;
         }
         if (!code || !state) {
             this.error = 'Missing code or state in callback.';
+            this.returnToLoginWithError(this.error);
             return;
         }
 
@@ -60,7 +62,7 @@ export class AuthCallbackComponent implements OnInit {
             const result = await this.authService.loginWithIdToken(idToken, true);
             if (!result.status) {
                 this.error = result.message || 'PIRO rejected the id_token.';
-                this.toast.showErrorToast('Error', this.error, []);
+                this.returnToLoginWithError(this.error);
                 return;
             }
             this.filterService.setLogin(true, result.role, true);
@@ -68,7 +70,15 @@ export class AuthCallbackComponent implements OnInit {
             this.router.navigateByUrl(returnUrl);
         } catch (err: any) {
             this.error = err?.message || String(err);
-            this.toast.showErrorToast('Error', this.error!, []);
+            this.returnToLoginWithError(this.error);
         }
+    }
+
+    private returnToLoginWithError(message: string): void {
+        this.toast.showErrorToast('Error', message, []);
+        this.router.navigate(['/login'], {
+            queryParams: { oauthError: '1' },
+            replaceUrl: true,
+        });
     }
 }

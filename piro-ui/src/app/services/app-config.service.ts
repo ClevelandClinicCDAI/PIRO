@@ -16,6 +16,12 @@ export interface AppConfig {
     oidcClientId?: string;
     oidcRedirectUri?: string;
     oidcScopes?: string;
+    /**
+     * OAuth login UX mode.
+     * - "button": show "Sign in with SSO" on /login
+     * - "auto": immediately start OIDC flow on /login
+     */
+    oauthLoginUx?: string;
 }
 
 @Injectable({
@@ -31,6 +37,7 @@ export class AppConfigService {
         oidcClientId: '',
         oidcRedirectUri: '',
         oidcScopes: 'openid profile email',
+        oauthLoginUx: 'button',
     };
 
     constructor(private http: HttpClient) { }
@@ -73,5 +80,15 @@ export class AppConfigService {
 
     get oidcScopes(): string {
         return this.config.oidcScopes || 'openid profile email';
+    }
+
+    get oauthLoginUx(): 'button' | 'auto' {
+        return (this.config.oauthLoginUx || 'button').toLowerCase() === 'auto'
+            ? 'auto'
+            : 'button';
+    }
+
+    get oauthAutoStartOnLogin(): boolean {
+        return this.oauthLoginUx === 'auto';
     }
 }

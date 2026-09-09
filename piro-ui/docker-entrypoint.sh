@@ -9,7 +9,8 @@ cat > /usr/share/nginx/html/assets/config.json <<EOF
     "oidcIssuer": "${OIDC_ISSUER_PUBLIC:-}",
     "oidcClientId": "${OIDC_CLIENT_ID:-}",
     "oidcRedirectUri": "${OIDC_REDIRECT_URI:-}",
-    "oidcScopes": "${OIDC_SCOPES:-openid profile email}"
+    "oidcScopes": "${OIDC_SCOPES:-openid profile email}",
+    "oauthLoginUx": "${OAUTH_LOGIN_UX:-button}"
 }
 EOF
 

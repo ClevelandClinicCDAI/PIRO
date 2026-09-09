@@ -35,11 +35,17 @@ The Angular SPA loads `assets/config.json` at startup via
 | `oidcClientId`      | *(required if OAUTH)* | OIDC client id registered with the IdP.                                                                              |
 | `oidcRedirectUri`   | *(required if OAUTH)* | Redirect URI. Must be `<your-ui-origin>/auth/callback` and be registered with the IdP. `/auth/callback` is a public route (no `AuthGuard`). |
 | `oidcScopes`        | `"openid profile email"` | Space-separated scopes requested during authorization.                                                          |
+| `oauthLoginUx`      | `"button"`          | OAuth login UX mode. `"button"` shows Sign in with SSO on `/login`; `"auto"` immediately starts SSO when visiting `/login`. |
 
 Under Docker Compose, `docker-entrypoint.sh` writes `config.json` at
 container start from the `AUTH_MODE`, `OIDC_ISSUER_PUBLIC`,
-`OIDC_CLIENT_ID`, `OIDC_REDIRECT_URI`, and `OIDC_SCOPES` environment
+`OIDC_CLIENT_ID`, `OIDC_REDIRECT_URI`, `OIDC_SCOPES`, and
+`OAUTH_LOGIN_UX` environment
 variables — no rebuild is needed to switch modes.
+
+When `oauthLoginUx` is `"auto"`, callback or provider errors route back
+to `/login?oauthError=1` to prevent redirect loops, and logout lands on
+`/signed-out` rather than immediately re-triggering login.
 
 ### Local OAuth Testing
 

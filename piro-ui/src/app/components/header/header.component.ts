@@ -7,6 +7,7 @@ import { LocalStorageService } from '../../services/localStorage.service';
 import { FilterService } from '../../services/filter.service';
 import { AivoteService } from '../../services/aivote.service';
 import { ToastrService } from 'ngx-toastr';
+import { OidcService } from '../../services/oidc.service';
 @Component({
   standalone: false,
   selector: 'app-header',
@@ -36,7 +37,8 @@ export class HeaderComponent {
     private toastService: ToastService,
     private filterService: FilterService,
     private toastr: ToastrService,
-    private localStorageService: LocalStorageService) {
+    private localStorageService: LocalStorageService,
+    private oidcService: OidcService) {
 
   }
 
@@ -50,7 +52,9 @@ export class HeaderComponent {
 
     this.setIntervalId = setInterval(async () => {
       var auth: any = await this.authService.getIsAuth();
-      if (!auth?.isauth) {
+      // Only force a logout redirect when a previously-authenticated
+      // session becomes invalid; do not disrupt already signed-out pages.
+      if (this.isAuthenticated && !auth?.isauth) {
         this.logout();
       }
     }, 60000);
@@ -94,7 +98,7 @@ export class HeaderComponent {
     const resp = this.authService.logout();
     if (resp.status == true) {
       this.isAuthenticated = false;
-      this.router.navigate(['/login']);
+      this.router.navigate(['/signed-out']);
     }
   }
 
@@ -110,13 +114,13 @@ export class HeaderComponent {
       const { endSessionUrl } = await this.authService.logoutRemote();
       this.isAuthenticated = false;
       if (endSessionUrl) {
-        window.location.assign(endSessionUrl);
+        window.location.assign(this.oidcService.buildEndSessionUrl(endSessionUrl));
         return;
       }
     } catch (_err) {
       // AuthService.logoutRemote() already clears local state on error.
     }
-    this.router.navigate(['/login']);
+    this.router.navigate(['/signed-out']);
   }
   ngOnDestroy() {
     this.authListenerSubs.unsubscribe();

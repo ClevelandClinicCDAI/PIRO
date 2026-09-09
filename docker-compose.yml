@@ -196,6 +196,7 @@ services:
       OIDC_CLIENT_ID: ${OIDC_UI_CLIENT_ID:-piro-ui}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
       OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
+      OAUTH_LOGIN_UX: ${OAUTH_LOGIN_UX:-button}
     ports:
       - "8080:80"
     depends_on:

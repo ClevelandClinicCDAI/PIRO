@@ -21,7 +21,10 @@ export class LoginComponent implements OnInit {
 	loginForm: any = FormGroup;
 	submitted = false;
 	isOAuthMode = false;
+	oauthLoginUx: 'button' | 'auto' = 'button';
 	ssoInFlight = false;
+	showSsoButton = false;
+	autoSsoSuppressed = false;
 	constructor(private formBuilder: FormBuilder,
 		private authService: AuthService,
 		private toastService: ToastService,
@@ -79,12 +82,22 @@ export class LoginComponent implements OnInit {
 			await this.oidcService.login(returnUrl);
 		} catch (err: any) {
 			this.ssoInFlight = false;
+			this.showSsoButton = true;
 			this.toastService.showErrorToast('Error', err?.message || 'Failed to start SSO.', []);
 		}
 	}
 
-	ngOnInit(): void {
+	async ngOnInit(): Promise<void> {
 		this.isOAuthMode = this.appConfig.isOAuthMode;
+		this.oauthLoginUx = this.appConfig.oauthLoginUx;
+		const params = this.route.snapshot.queryParamMap;
+		const isManual = params.get('manual') === '1';
+		const isSignedOut = params.get('signedOut') === '1';
+		const hasOauthError = params.get('oauthError') === '1';
+		this.autoSsoSuppressed = isManual || isSignedOut || hasOauthError;
+		this.showSsoButton = this.isOAuthMode && (
+			this.oauthLoginUx === 'button' || this.autoSsoSuppressed
+		);
 		//Add User form validations
 		this.loginForm = this.formBuilder.group({
 			username: ['', [Validators.required]],
@@ -93,6 +106,15 @@ export class LoginComponent implements OnInit {
 		// if(localStorage.getItem('api-token')){
 		if (this.localStorageService.getApiToken()) {
 			this.router.navigate(['/home']);
+			return;
+		}
+
+		if (
+			this.isOAuthMode &&
+			this.oauthLoginUx === 'auto' &&
+			!this.autoSsoSuppressed
+		) {
+			await this.ssoLogin();
 		}
 	}
 

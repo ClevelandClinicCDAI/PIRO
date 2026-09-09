@@ -106,6 +106,26 @@ export class OidcService {
         return url;
     }
 
+    /**
+     * Build a best-effort RP-initiated logout URL that returns users to
+     * `/signed-out` after IdP logout, avoiding immediate auto-login loops.
+     */
+    buildEndSessionUrl(endSessionEndpoint: string): string {
+        try {
+            const url = new URL(endSessionEndpoint);
+            const postLogoutRedirectUri = `${window.location.origin}/signed-out`;
+            if (!url.searchParams.get('post_logout_redirect_uri')) {
+                url.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+            }
+            if (!url.searchParams.get('client_id') && this.appConfig.oidcClientId) {
+                url.searchParams.set('client_id', this.appConfig.oidcClientId);
+            }
+            return url.toString();
+        } catch (_err) {
+            return endSessionEndpoint;
+        }
+    }
+
     private async tokenEndpoint(): Promise<string> {
         const discovery = await this.discoveryDocument();
         if (!discovery?.token_endpoint) {

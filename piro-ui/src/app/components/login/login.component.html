@@ -8,7 +8,7 @@
           <p class="text-success text-center"><img src="/assets/images/cc-logo.png" alt="logo"></p>
 
           <!-- OAuth / SSO mode: single button, no local form. -->
-          <ng-container *ngIf="isOAuthMode">
+          <ng-container *ngIf="isOAuthMode && showSsoButton">
             <p class="text-muted text-center small mb-3">
               Sign in with your organization account.
             </p>
