@@ -105,7 +105,7 @@ export class LoginComponent implements OnInit {
 		});
 		// if(localStorage.getItem('api-token')){
 		if (this.localStorageService.getApiToken()) {
-			this.router.navigate(['/home']);
+			this.router.navigate(['/search']);
 			return;
 		}
 
