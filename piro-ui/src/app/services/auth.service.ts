@@ -72,9 +72,52 @@ export class AuthService {
   //   }
   // }
 
+  private parseJwtPayload(token: string): any {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) {
+        return null;
+      }
+      const base64Url = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64Url.padEnd(base64Url.length + ((4 - (base64Url.length % 4)) % 4), '=');
+      const decoded = atob(padded);
+      return JSON.parse(decoded);
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  isTokenExpired(token: string | null): boolean {
+    if (!token) {
+      return true;
+    }
+
+    const payload = this.parseJwtPayload(token);
+    if (!payload || typeof payload.exp !== 'number') {
+      return true;
+    }
+
+    return payload.exp * 1000 <= Date.now();
+  }
+
+  clearExpiredSessionIfNeeded(): boolean {
+    const token = this.localStorageService.getApiToken();
+    if (!token || !this.isTokenExpired(token)) {
+      return false;
+    }
+
+    this.logout();
+    return true;
+  }
+
   getIsAuth() {
 
     let promise = new Promise((resolve, reject) => {
+      if (this.clearExpiredSessionIfNeeded()) {
+        resolve({ isauth: false, role: '' });
+        return;
+      }
+
       if (this.localStorageService.getApiToken() == '') {
         resolve({ isauth: false, role: '' })
       } else {
@@ -85,6 +128,7 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
+              this.clearExpiredSessionIfNeeded();
               resolve({ isauth: false, role: '' })
             },
             complete: () => {
@@ -118,6 +162,11 @@ export class AuthService {
   getUser() {
 
     let promise = new Promise((resolve, reject) => {
+      if (this.clearExpiredSessionIfNeeded()) {
+        resolve({ isauth: false, name: '', nuid: '', role: '' });
+        return;
+      }
+
       if (this.localStorageService.getApiToken() == '') {
         resolve({ isauth: false, role: '' })
       } else {
@@ -128,6 +177,7 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
+              this.clearExpiredSessionIfNeeded();
               resolve({ isauth: false, name: '', nuid: '' })
             },
             complete: () => {

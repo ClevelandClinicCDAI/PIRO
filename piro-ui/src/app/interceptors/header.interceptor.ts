@@ -79,11 +79,12 @@ export class HeaderInterceptor implements HttpInterceptor {
                 // }
 
                 if (urlRequest.indexOf("/token") > 0) {
-                  localStorage.removeItem('api-token')
+                  this.localStorageService.clearItem('api-token');
                   this.router.navigate(['login']);
                 } else if (err.status == 403 || err.status == 401) {
                   var re = new RegExp("^Signature.*(failed|expired)+.*$");
                   if (re.test(err.error)) {
+                    this.localStorageService.clearItem('api-token');
                     this.router.navigate(['login']);
                     return;
                   }

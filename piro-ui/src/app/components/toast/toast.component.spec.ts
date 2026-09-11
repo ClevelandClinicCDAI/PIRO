@@ -23,8 +23,8 @@ describe('ToastComponent', () => {
   it('should create an error toast that does not disappear', () => {
     // given
     component.type = EventTypes.Error;
-    component.title = false;
-    component.message = false;
+    component.title = 'Error';
+    component.message = 'Something went wrong';
 
     // when
     fixture.detectChanges();

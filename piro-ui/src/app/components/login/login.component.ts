@@ -103,6 +103,12 @@ export class LoginComponent implements OnInit {
 			username: ['', [Validators.required]],
 			password: ['', [Validators.required]]
 		});
+		if (this.authService.clearExpiredSessionIfNeeded()) {
+			this.showSsoButton = this.isOAuthMode && (
+				this.oauthLoginUx === 'button' || this.autoSsoSuppressed
+			);
+		}
+
 		// if(localStorage.getItem('api-token')){
 		if (this.localStorageService.getApiToken()) {
 			this.router.navigate(['/search']);
