@@ -9,7 +9,7 @@ from core.config import Settings
 from db.repository.search import get_search
 from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE, Cell
-from pytest import Session
+from sqlalchemy.orm import Session
 from solr.models.document import document
 from solr.repository.piro import read_result, search_Q
 from viewmodel.solr.search import SearchFilterVM
