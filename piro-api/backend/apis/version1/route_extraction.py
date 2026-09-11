@@ -456,7 +456,7 @@ async def _run_extraction_job(
                     label_prefix = f"{seg.CommentType}:\n"
                     content_start = running_offset + len(label_prefix)
                     content_end = content_start + len(seg.CommentText)
-                    offset_map[seg.Id] = (content_start, content_end, seg.CaseCommentId if hasattr(seg, 'CaseCommentId') else None)
+                    offset_map[seg.Id] = (content_start, content_end, seg.Id)
                     running_offset = content_end + 2  # +2 for "\n\n"
 
                 for field_name, fe in extraction.items():
@@ -469,7 +469,7 @@ async def _run_extraction_job(
                         for seg in segments:
                             idx = seg.CommentText.find(fe.provenance)
                             if idx != -1:
-                                source_comment_id = getattr(seg, 'CaseCommentId', None)
+                                source_comment_id = seg.Id
                                 if seg.Id in offset_map:
                                     base = offset_map[seg.Id][0]
                                     prov_start = base + idx
