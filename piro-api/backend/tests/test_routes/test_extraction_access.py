@@ -8,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from apis.version1.route_extraction import _require_session_read_access
-from core.constants import Constants
 from db.base_class import Base
 from db.models.ExtractionSession import ExtractionSession
 from db.models.SearchRequest import SearchRequest
@@ -93,7 +92,6 @@ def test_require_session_read_access_allows_linked_approver(db):
     result = _require_session_read_access(
         session.ExtractionSessionId,
         approver.UserId,
-        Constants.RoleAnalyst,
         db,
     )
 
@@ -111,7 +109,6 @@ def test_require_session_read_access_denies_unrelated_user(db):
         _require_session_read_access(
             session.ExtractionSessionId,
             outsider.UserId,
-            Constants.RoleAnalyst,
             db,
         )
 
@@ -127,7 +124,6 @@ def test_require_session_read_access_denies_admin_without_linked_request(db):
         _require_session_read_access(
             session.ExtractionSessionId,
             admin.UserId,
-            Constants.RoleAdmin,
             db,
         )
 

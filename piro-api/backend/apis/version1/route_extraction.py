@@ -61,7 +61,6 @@ from db.session import SessionLocal, get_db, get_solr
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from logger import logger
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from viewmodel.extraction import (
     CaseTextVM,
@@ -106,9 +105,7 @@ def _require_session_ownership(session_id: int, user_id: int, db: Session):
     return sess
 
 
-def _require_session_read_access(
-    session_id: int, user_id: int, current_role: str, db: Session
-):
+def _require_session_read_access(session_id: int, user_id: int, db: Session):
     """Allow owners or request-scoped readers to inspect/review a session."""
     sess = get_session(session_id, db)
     if sess is None:
@@ -120,18 +117,11 @@ def _require_session_read_access(
         db.query(SearchRequest)
         .filter(SearchRequest.ExtractionSessionId == session_id)
         .filter(SearchRequest.IsActive == True)  # noqa
-    )
-
-    if (current_role or "").upper() not in {
-        Constants.RoleAdmin,
-        Constants.RoleDemoAdmin,
-    }:
-        request_query = request_query.filter(
-            or_(
-                SearchRequest.RequesterId == user_id,
-                SearchRequest.ApprovedById == user_id,
-            )
+        .filter(
+            (SearchRequest.RequesterId == user_id)
+            | (SearchRequest.ApprovedById == user_id)
         )
+    )
 
     if request_query.first() is None:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -196,10 +186,9 @@ async def list_sessions(
 async def get_extraction_session(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
-    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    return _require_session_read_access(session_id, current_user_id, current_role, db)
+    return _require_session_read_access(session_id, current_user_id, db)
 
 
 @router.put(
@@ -343,7 +332,7 @@ async def get_queue_items(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     items = get_queue(session_id, db)
     if current_role.upper() == "DEMOADMIN":
         for item in items:
@@ -712,10 +701,9 @@ async def cancel_extraction(
 async def get_status(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
-    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     status = get_extraction_status(session_id, db)
     return status
 
@@ -735,7 +723,7 @@ async def get_results(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     results = get_results_for_session(session_id, db)
     if current_role.upper() == "DEMOADMIN":
         for r in results:
@@ -754,16 +742,13 @@ async def patch_result(
     payload: ExtractionResultPatch,
     current_user: Annotated[str, Depends(get_current_user_nuid)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
-    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
     result = get_result_by_id(result_id, db)
     if result is None:
         raise HTTPException(status_code=404, detail="Result not found")
     # Verify session ownership
-    _require_session_read_access(
-        result.ExtractionSessionId, current_user_id, current_role, db
-    )
+    _require_session_read_access(result.ExtractionSessionId, current_user_id, db)
 
     updated = update_result_review(
         result_id=result_id,
@@ -785,10 +770,9 @@ async def approve_all_high_confidence(
     threshold: float = Query(default=0.8, ge=0.0, le=1.0),
     current_user: Annotated[str, Depends(get_current_user_nuid)] = None,
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
-    current_role: Annotated[str, Depends(get_current_user_role)] = None,
     db: Session = Depends(get_db),
 ):
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     count = bulk_approve_high_confidence(session_id, threshold, current_user, db)
     return {"approved_count": count}
 
@@ -801,12 +785,11 @@ async def get_low_confidence_cases(
     session_id: int,
     threshold: float = Query(default=0.8, ge=0.0, le=1.0),
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
-    current_role: Annotated[str, Depends(get_current_user_role)] = None,
     db: Session = Depends(get_db),
 ):
     """Return distinct case IDs from the latest run that have any field below
     the confidence threshold or that have not yet been reviewed."""
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     case_ids = get_low_confidence_case_ids(session_id, threshold, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
 
@@ -818,11 +801,10 @@ async def get_low_confidence_cases(
 async def get_incorrect_cases(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
-    current_role: Annotated[str, Depends(get_current_user_role)] = None,
     db: Session = Depends(get_db),
 ):
     """Return distinct case IDs from the latest run that have any field marked incorrect."""
-    _require_session_read_access(session_id, current_user_id, current_role, db)
+    _require_session_read_access(session_id, current_user_id, db)
     case_ids = get_incorrect_case_ids(session_id, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
 
@@ -856,10 +838,9 @@ async def export_results(
     session_id: int,
     format: str = Query(default="csv", regex="^(csv|json|excel)$"),
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
-    current_role: Annotated[str, Depends(get_current_user_role)] = None,
     db: Session = Depends(get_db),
 ):
-    sess = _require_session_read_access(session_id, current_user_id, current_role, db)
+    sess = _require_session_read_access(session_id, current_user_id, db)
     results = get_results_for_session(session_id, db)
 
     # Determine field order from schema
@@ -1036,9 +1017,7 @@ async def preview_extraction(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _sess = _require_session_read_access(
-        payload.session_id, current_user_id, current_role, db
-    )
+    _sess = _require_session_read_access(payload.session_id, current_user_id, db)
 
     _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
     logger.info(
@@ -1101,7 +1080,7 @@ async def get_case_text(
 ):
     comment_types = None
     if session_id is not None:
-        sess = _require_session_read_access(session_id, current_user_id, current_role, db)
+        sess = _require_session_read_access(session_id, current_user_id, db)
         comment_types = parse_text_sources(sess.TextSources)
 
     labelled_text, segments = get_case_text_for_extraction(
