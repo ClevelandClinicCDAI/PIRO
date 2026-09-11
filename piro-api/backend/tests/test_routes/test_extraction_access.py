@@ -98,6 +98,21 @@ def test_require_session_read_access_allows_linked_approver(db):
     assert result.ExtractionSessionId == session.ExtractionSessionId
 
 
+def test_require_session_read_access_allows_linked_requester(db):
+    owner = _create_user(db, "extraction-requester@example.com")
+    other_user = _create_user(db, "extraction-other@example.com")
+    session = _create_session(db, other_user.UserId, "requester-readable-session")
+    _create_search_request(db, owner.UserId, session.ExtractionSessionId)
+
+    result = _require_session_read_access(
+        session.ExtractionSessionId,
+        owner.UserId,
+        db,
+    )
+
+    assert result.ExtractionSessionId == session.ExtractionSessionId
+
+
 def test_require_session_read_access_denies_unrelated_user(db):
     owner = _create_user(db, "extraction-owner-2@example.com")
     approver = _create_user(db, "extraction-approver-2@example.com")
