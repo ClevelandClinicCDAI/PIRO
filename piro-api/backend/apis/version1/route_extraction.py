@@ -343,7 +343,7 @@ async def get_queue_items(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_ownership(session_id, current_user_id, db)
+    _require_session_read_access(session_id, current_user_id, current_role, db)
     items = get_queue(session_id, db)
     if current_role.upper() == "DEMOADMIN":
         for item in items:
@@ -1036,7 +1036,9 @@ async def preview_extraction(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _sess = _require_session_ownership(payload.session_id, current_user_id, db)
+    _sess = _require_session_read_access(
+        payload.session_id, current_user_id, current_role, db
+    )
 
     _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
     logger.info(
