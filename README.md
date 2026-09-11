@@ -16,7 +16,7 @@ This application is a RESTful API serving up content from the MS SQL Server Data
 
 NGINX is used as a reverse proxy, enforcing HTTPS for all web requests. It proxies to a gunicorn instance, which in turn proxies to the uvicorn workers used by FastAPI.
 
-At launch this application is using LDAP authentication.  But the plan is to, eventually, switch to SSO authentication for a better user experience.
+The FastAPI application supports both LDAP and OAuth/OIDC authentication depending on configuration.
 
 ## MS SQL Server Database
 
@@ -40,14 +40,24 @@ We use an instance of the Apache Airflow application as a job scheduling tool fo
 
 ## Authentication
 
-Two authentication modes are available: LDAP authentication and Single Sign-On (SSO) via OAuth.  The following configuration flags determine which is used. For all flags the options are 'LDAP' or 'OAUTH':
+PIRO supports two authentication modes:
 
-- localhost development: `.env` file (project root) -> 'PIRO_AUTH_MODE' flag.
-- for server installations there are separate flags for the 'piro-api' and 'piro-ui' applications:
-  - piro-api: `piro-api\backend\.env` -> 'AUTH_MODE' flag.
-  - piro-ui: `piro-ui\src\assets\config.json` -> 'authMode' flag.
+- LDAP authentication for AD/LDAP username/password sign-in.
+- OAuth/OIDC single sign-on for browser-based SSO.
 
-Additionally, in 'OAUTH' mode, the 'oauthLoginUx' flag (in the `piro-ui\src\assets\config.json` file) can be used to control SSO login behavior, with options "button" or "auto".  In "button" mode, the PIRO login screen will display a "Sign in with SSO" button which the user must click in order to authenticate.  In "auto" mode, the user is automatically logged in without the need for any action.
+For localhost Docker development, the repository-root `.env` file is the primary source of truth. The important local settings are:
+
+- `PIRO_AUTH_MODE` - selects `LDAP` or `OAUTH` for the local stack.
+- `OAUTH_LOGIN_UX` - controls the UI behavior in OAuth mode. `button` shows a "Sign in with SSO" button; `auto` immediately triggers the SSO flow when the user visits `/login`.
+- `MOCK_OAUTH_AD_GROUP` - the mock IdP group claim value used during local OAuth testing.
+- `OIDC_ALLOWED_GROUPS` - the API-side allow-list used for group enforcement.
+
+For server-side deployments, additional configuration is still used in the app-specific config files:
+
+- API: `piro-api\backend\.env` -> `AUTH_MODE` and related OIDC/environment values.
+- UI: `piro-ui\src\assets\config.json` -> `authMode`, `oidcIssuer`, `oidcClientId`, `oidcRedirectUri`, and `oauthLoginUx`.
+
+In OAuth mode, `MOCK_OAUTH_AD_GROUP` and `OIDC_ALLOWED_GROUPS` should overlap (typically be identical). If they do not, the user can authenticate with the IdP but still be rejected during authorization because the group membership check fails.
 
 ## Localhost Development
 
@@ -109,8 +119,12 @@ You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the 
 
 ### Docker Configuration Options
 
-The following values can be used to control localhost PIRO development via Docker.  These values can be configured manually per-run, or persisted in the root `.env` file in the project.
+The following values can be used to control localhost PIRO development via Docker. These values can be configured manually per-run, or persisted in the root `.env` file in the project.
 
+- `PIRO_AUTH_MODE` - auth backend for the local stack, either `LDAP` or `OAUTH`.
+- `OAUTH_LOGIN_UX` - OAuth UX mode for the UI; `button` requires the user to click SSO, `auto` immediately launches SSO when visiting `/login`.
+- `MOCK_OAUTH_AD_GROUP` - group claim value emitted by the local mock OAuth provider; should match `OIDC_ALLOWED_GROUPS` in OAuth mode.
+- `OIDC_ALLOWED_GROUPS` - comma-separated group names accepted by the API during OAuth authorization checks.
 - `PIRO_ACCESS_TOKEN_SECRET` - JWT signing secret for FastAPI (defaults to `change-me`).
 - `PIRO_MSSQL_SA_PASSWORD` - SQL `sa` password used by SQL Server and every dependent container (defaults to `P1ro!LocalDev`).
 - `PIRO_BOOTSTRAP_DB` - `false` keeps existing MDF/LDF files and skips schema reapply on the next `docker compose up`.
