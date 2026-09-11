@@ -38,116 +38,104 @@ The SSIS jobs are triggered via our Airflow server (DAG names: 'ssis_delta_load_
 
 We use an instance of the Apache Airflow application as a job scheduling tool for PIRO.  It is used primarily to load data: from the Clarity database into PIRO's SQL Server instance, and from PIRO's SQL Server instance into Solr, along with other duties.
 
-## Docker Compose Quickstart
+## Authentication
 
-You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the Angular UI) with Docker Compose. Everything lives at the repository root now: the Compose file is `docker-compose.yml`, the sample-data container is built from `./piro-sample-data`, Solr builds from `./piro-solr`, and the UI reverse proxy ships with `./piro-ui/nginx.conf`.
+Two authentication modes are available: LDAP authentication and Single Sign-On (SSO) via OAuth.  The following configuration flags determine which is used. For all flags the options are 'LDAP' or 'OAUTH':
+
+- localhost development: `.env` file (project root) -> 'PIRO_AUTH_MODE' flag.
+- for server installations there are separate flags for the 'piro-api' and 'piro-ui' applications:
+  - piro-api: `piro-api\backend\.env` -> 'AUTH_MODE' flag.
+  - piro-ui: `piro-ui\src\assets\config.json` -> 'authMode' flag.
+
+Additionally, in 'OAUTH' mode, the 'oauthLoginUx' flag (in the `piro-ui\src\assets\config.json` file) can be used to control SSO login behavior, with options "button" or "auto".  In "button" mode, the PIRO login screen will display a "Sign in with SSO" button which the user must click in order to authenticate.  In "auto" mode, the user is automatically logged in without the need for any action.
+
+## Localhost Development
+
+You can run the complete PIRO stack locally (SQL Server, Solr, FastAPI, and the Angular UI) with Docker Compose.  Alternatively, you can run just the FastAPI and Angular UI applications via Docker and utilize an external database and Solr instance. The docker configuration files live in the project root: the Compose file is `docker-compose.yml`, the sample-data container is built from `./piro-sample-data`, Solr builds from `./piro-solr`, and the UI reverse proxy ships with `./piro-ui/nginx.conf`.
 
 ### Repository layout for Compose assets
 
-- `docker-compose.yml` – defines the five core services (SQL Server, Solr, sample-data bootstrapper, FastAPI, Angular UI).
-- `piro-sample-data/` – Dockerfile, entrypoint script, SQL/Solr fixtures, and helpers (pulls schema scripts from `piro-sql/`).
-- `piro-solr/` – Solr Dockerfile, `create-cores.sh`, and versioned config sets under `V8/` and `V9/`.
-- `piro-ui/nginx.conf` – the nginx site definition used by the UI container to proxy `/api` to FastAPI.
+- `.env` - primary configuration file for localhost development.
+  - See `.env.template` for reference values.
+- `docker-compose.yml` - defines the five core services (SQL Server, Solr, sample-data bootstrapper, FastAPI, Angular UI).
+- `piro-sample-data/` - Dockerfile, entrypoint script, SQL/Solr fixtures, and helpers (pulls schema scripts from `piro-sql/`).
+- `piro-solr/` - Solr Dockerfile, `create-cores.sh`, and versioned config sets under `V8/` and `V9/`.
+- `piro-ui/nginx.conf` - the nginx site definition used by the UI container to proxy `/api` to FastAPI.
 
 ### Prerequisites
 
 - Docker Desktop **or** the Docker Engine CLI plus the Compose plugin (`docker compose`).
 - ~8 GB of free RAM (SQL Server + Solr are memory hungry).
 
-### Quick copy/paste setup (recommended first run)
+### Initial Setup (first run)
 
-Windows (PowerShell):
+1. Create Configuration Files
 
-```powershell
-Copy-Item .env.template .env
-Copy-Item piro-ui\src\assets\config.example.json piro-ui\src\assets\config.json
-docker compose up --build
-```
+    Windows (PowerShell):
 
-macOS / Linux:
-
-```bash
-cp .env.template .env
-cp piro-ui/src/assets/config.example.json piro-ui/src/assets/config.json
-docker compose up --build
-```
-
-If you need OAuth group-based login locally, set both `MOCK_OAUTH_AD_GROUP` and `OIDC_ALLOWED_GROUPS` to the same group value in `.env`.
-
-### UI configuration file
-
-Before building the `ui` image you must create `piro-ui/src/assets/config.json`. The Angular app fetches this file at runtime to discover the API base URL and other environment-specific values, and the UI Dockerfile bakes it into the compiled bundle via `COPY piro-ui/ .` — if the file is missing, the built image will 404 on `assets/config.json` and the UI will fail to load.
-
-A template lives at `piro-ui/src/assets/config.example.json`. Copy it and edit the values:
-
-macOS / Linux:
-
-```bash
-cp piro-ui/src/assets/config.example.json piro-ui/src/assets/config.json
-```
-
-Windows (PowerShell):
-
-```powershell
-Copy-Item piro-ui\src\assets\config.example.json piro-ui\src\assets\config.json
-```
-
-Then open `piro-ui/src/assets/config.json` and set:
-
-- `apiBaseUrl` – URL the browser uses to reach the FastAPI backend. For the local Compose stack use `/api/` (nginx in the `ui` container proxies `/api/` to the `api` service). For a direct-to-API setup use `http://localhost:8001/`.
-- `irbDisclaimerText` – the disclaimer string shown in the UI. Substitute your institution's wording.
-
-> **Note:** `piro-ui/src/assets/config.json` is gitignored (`piro-ui/.gitignore`) so environment-specific values never end up in version control. Recreate the file on every clean checkout, and rebuild the `ui` image (`docker compose build ui`) after any change to it.
-
-### Local OAuth/SSO testing
-
-#### `hosts` file entry
-
-The Compose stack includes a `mock-oauth` service (based on `ghcr.io/navikt/mock-oauth2-server`) that stands in for the organization's SSO provider so you can exercise the OAuth login flow entirely on your workstation, with no VPN or corporate network access required.
-
-For this to work, the mock IdP must be reachable at the **same hostname** from both your browser (during the redirect to the login page) and the `api` container (during token exchange and JWKS lookup). Otherwise the `iss` claim on the issued JWT will not match what the API expects and token validation will fail.
-
-The Compose file uses `piro-auth` as that shared hostname. You must map it to `127.0.0.1` in your OS `hosts` file **before** running `docker compose up`:
-
-- **Windows:** open `C:\Windows\System32\drivers\etc\hosts` in an editor running as Administrator and add:
-
-    ```text
-    127.0.0.1  piro-auth
+    ```powershell
+    Copy-Item .env.template .env
+    Copy-Item piro-ui\src\assets\config.example.json piro-ui\src\assets\config.json
     ```
 
-- **macOS / Linux:** append the same line to `/etc/hosts` (needs `sudo`):
+    macOS / Linux:
 
     ```bash
-    echo "127.0.0.1  piro-auth" | sudo tee -a /etc/hosts
+    cp .env.template .env
+    cp piro-ui/src/assets/config.example.json piro-ui/src/assets/config.json
     ```
 
-Inside the `api` container the same name resolves via the `extra_hosts: - "piro-auth:host-gateway"` entry already defined in `docker-compose.yml`, so no additional configuration is needed there.
+1. Populate the values in the configuration files as appropriate.  In 'OAUTH' mode, if you configure groups for authorization checking, set both `MOCK_OAUTH_AD_GROUP` and `OIDC_ALLOWED_GROUPS` to the same group value in the `.env` file.
 
-Once the entry is in place, the mock login page is reachable at <http://piro-auth:8888/piro> and the UI's OAuth redirect flow will complete against it. To skip OAuth entirely and use the legacy LDAP bypass instead, set `ACCESS_TOKEN_TEST_USER` as described below.
+1. If using SSO/OAuth: configure your local `hosts` file (see '`hosts` file entry' below for more information):
 
-#### OAuth AD Group
+    - **Windows:** open `C:\Windows\System32\drivers\etc\hosts` in an editor running as Administrator and add:
 
-Docker Compose evaluates `${...}` variables at compose-time from your shell environment and the repo-root `.env` file. To keep local setup in one place, use `.env` for all localhost overrides:
+        ```text
+        127.0.0.1  piro-auth
+        ```
 
-```powershell
-Copy-Item .env.template .env
-```
+    - **macOS / Linux:** append the same line to `/etc/hosts` (needs `sudo`):
 
-Then edit `.env` with your local values. The repository no longer relies on `docker-compose.override.yml` for local auth/database overrides.
+        ```bash
+        echo "127.0.0.1  piro-auth" | sudo tee -a /etc/hosts
+        ```
 
-Important `.env` notes:
+1. Finally, build the containers:
 
-- `MOCK_OAUTH_AD_GROUP` controls the `groups` claim emitted by `mock-oauth`.
-- `OIDC_ALLOWED_GROUPS` controls the API authorization allow-list.
-- These two values must overlap (typically identical) or OAuth login will fail with a group mismatch.
-- If you are using the full local stack (`sqlserver` and `solr` containers), keep:
-  - `MSSQL_SERVER=sqlserver`
-  - `SOLR_URL=http://solr:8983/solr`
-  - `MSSQL_USER=sa`
-  and set `PIRO_MSSQL_SA_PASSWORD` to match the SQL Server password used by Compose.
-- `.env` is gitignored; do not commit local secrets or environment-specific credentials.
+    ```bash
+    docker compose up --build
+    ```
 
-### One-time bootstrap with sample data
+### Docker Configuration Options
+
+The following values can be used to control localhost PIRO development via Docker.  These values can be configured manually per-run, or persisted in the root `.env` file in the project.
+
+- `PIRO_ACCESS_TOKEN_SECRET` - JWT signing secret for FastAPI (defaults to `change-me`).
+- `PIRO_MSSQL_SA_PASSWORD` - SQL `sa` password used by SQL Server and every dependent container (defaults to `P1ro!LocalDev`).
+- `PIRO_BOOTSTRAP_DB` - `false` keeps existing MDF/LDF files and skips schema reapply on the next `docker compose up`.
+- `PIRO_FORCE_RESET` - `true` drops/recreates the PIRO database before schema deployment (defaults to `true`).
+- `PIRO_LOAD_SAMPLE_DATA` - `true` re-imports demo SQL + Solr docs, `false` leaves the schema empty.
+- `PIRO_SAMPLE_USER_*` - seeds a specific account into SQL + Solr for local testing (`NUID`, `FIRST_NAME`, `LAST_NAME`, `ROLE`).
+- `AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN` - plug real directory settings in when you want LDAP-backed auth inside the API container.
+- `ACCESS_TOKEN_TEST_USER` - comma-separated usernames allowed to bypass LDAP when running locally (unset by default; set explicitly, e.g., `ACCESS_TOKEN_TEST_USER=demo.user`, only when you need the bypass).
+- `AIRFLOW_DAG_COHORT_LOADER_URL` - full URL of the Airflow DAG-run endpoint the API posts to when a user creates a cohort (e.g. `https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns`). Required for cohort creation.
+- `AIRFLOW_USERNAME`, `AIRFLOW_PASSWORD` - credentials the API uses to obtain a JWT bearer token from the Airflow auth endpoint before triggering the DAG. Required for cohort creation.
+- `AIRFLOW_CERTIFICATE` - filename (not path) of the PEM file used to verify TLS against the Airflow host, e.g. `[certificate_name].pem`. The file must exist inside the API image at `/app/certificates/<filename>` (source: `piro-api/backend/certificates/`). Required for cohort creation.
+
+#### Explanation of Configuration on Localhost
+
+- `sqlserver` (official SQL Server 2022 image) exposes `localhost:1433` and persists data in the `sql_data` Docker volume.
+- `solr` builds from `piro-solr/Dockerfile`, copies the checked-in config sets, runs `create-cores.sh`, and listens on `http://localhost:8983`.
+- `sample-data` builds from `piro-sample-data/Dockerfile`, waits for SQL + Solr, redeploys every schema from `piro-sql`, and optionally loads curated demo data into both systems when `PIRO_LOAD_SAMPLE_DATA=true`.
+- `api` builds from `./piro-api` with ODBC Driver 18, exposes Swagger UI on `http://localhost:8001/docs`, and expects Solr + SQL hostnames from Compose networking.
+- `ui` builds `./piro-ui`, copies the compiled Angular build artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
+
+### Common Docker Compose launch recipes
+
+Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=Your-Security-Group,...`, etc.) with settings from your own environment before running the commands.
+
+**One-time bootstrap with sample data**:
 
 macOS / Linux:
 
@@ -167,80 +155,7 @@ $env:PIRO_MSSQL_SA_PASSWORD="ChooseA`$trongPassword"
 docker compose up --build
 ```
 
-Behind the scenes:
-
-- `sqlserver` (official SQL Server 2022 image) exposes `localhost:1433` and persists data in the `sql_data` Docker volume.
-- `solr` builds from `piro-solr/Dockerfile`, copies the checked-in config sets, runs `create-cores.sh`, and listens on `http://localhost:8983`.
-- `sample-data` builds from `piro-sample-data/Dockerfile`, waits for SQL + Solr, redeploys every schema from `piro-sql`, and optionally loads curated demo data into both systems when `PIRO_LOAD_SAMPLE_DATA=true`.
-- `api` builds from `./piro-api` with ODBC Driver 18, exposes Swagger UI on `http://localhost:8001/docs`, and expects Solr + SQL hostnames from Compose networking.
-- `ui` builds `./piro-ui`, copies the compiled Angular build artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
-
-### Useful configuration knobs
-
-- `PIRO_ACCESS_TOKEN_SECRET` – JWT signing secret for FastAPI (defaults to `change-me`).
-- `PIRO_MSSQL_SA_PASSWORD` – SQL `sa` password used by SQL Server and every dependent container (defaults to `P1ro!LocalDev`).
-- `PIRO_BOOTSTRAP_DB` – `false` keeps existing MDF/LDF files and skips schema reapply on the next `docker compose up`.
-- `PIRO_FORCE_RESET` – `true` drops/recreates the PIRO database before schema deployment (defaults to `true`).
-- `PIRO_LOAD_SAMPLE_DATA` – `true` re-imports demo SQL + Solr docs, `false` leaves the schema empty.
-- `PIRO_SAMPLE_USER_*` – seeds a specific account into SQL + Solr for local testing (`NUID`, `FIRST_NAME`, `LAST_NAME`, `ROLE`).
-- `AD_LDAP_PATH`, `AD_SECURITY_GROUP`, `AD_DOMAIN` – plug real directory settings in when you want LDAP-backed auth inside the API container.
-- `ACCESS_TOKEN_TEST_USER` – comma-separated usernames allowed to bypass LDAP when running locally (unset by default; set explicitly, e.g., `ACCESS_TOKEN_TEST_USER=demo.user`, only when you need the bypass).
-- `AIRFLOW_DAG_COHORT_LOADER_URL` – full URL of the Airflow DAG-run endpoint the API posts to when a user creates a cohort (e.g. `https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns`). Required for cohort creation.
-- `AIRFLOW_USERNAME`, `AIRFLOW_PASSWORD` – credentials the API uses to obtain a JWT bearer token from the Airflow auth endpoint before triggering the DAG. Required for cohort creation.
-- `AIRFLOW_CERTIFICATE` – filename (not path) of the PEM file used to verify TLS against the Airflow host, e.g. `[certificate_name].pem`. The file must exist inside the API image at `/app/certificates/<filename>` (source: `piro-api/backend/certificates/`). Required for cohort creation.
-
-### Enabling cohort creation (Airflow integration)
-
-The API's `POST /cohort/create` endpoint triggers an Airflow DAG that loads the new cohort into Solr. Two things must be in place:
-
-1. **Certificate file on disk.** Place the PEM used to verify TLS to your Airflow host in `piro-api/backend/certificates/` (see [Providing certificate files](#providing-certificate-files) below for how to obtain and copy the file). Files there are gitignored (`piro-api/.gitignore` ignores `*.pem`) but are still baked into the API image at build time via `COPY backend /app` — Docker builds do not honor `.gitignore`. Rebuild the API image (`docker compose build api`) after adding or replacing a cert.
-2. **Environment variables.** Set the four `AIRFLOW_*` variables listed above. If any of them are unset or empty, the API returns HTTP 500 with `FileNotFoundError: Certificates directory not found` — the message is misleading; the same error covers a missing cert *and* a missing `AIRFLOW_CERTIFICATE` value.
-
-#### Providing certificate files
-
-The `piro-api/backend/certificates/` directory is where the API expects to find any PEM files it needs to verify TLS connections to external services (currently just the Airflow host used by cohort creation). The directory itself is checked in but its `*.pem` contents are gitignored, so you must supply the file yourself before building the API image.
-
-Steps:
-
-1. **Obtain the PEM.** Ask an administrator for the certificate that matches the Airflow host you plan to talk to. If you already have the host's cert in another format, convert it to PEM (`openssl x509 -in cert.crt -out cert.pem -outform PEM`).
-2. **Copy it into the repo.** Drop the file into `piro-api/backend/certificates/`. The filename you use here is what you'll set `AIRFLOW_CERTIFICATE` to — no path, just the filename.
-3. **Rebuild the API image** so the new file is baked into `/app/certificates/` inside the container:
-
-    ```bash
-    docker compose build api
-    ```
-
-> **Note:** Never commit `*.pem` files to git. The `.gitignore` entry at `piro-api/.gitignore` (`*.pem`) already blocks them, but double-check `git status` before committing after touching this directory.
-
-Example (macOS / Linux):
-
-```bash
-AIRFLOW_CERTIFICATE=<certificate_file_name> \
-AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns" \
-AIRFLOW_USERNAME=<user> \
-AIRFLOW_PASSWORD=<password> \
-docker compose up --no-deps api ui
-```
-
-Example (Windows PowerShell):
-
-```powershell
-$env:AIRFLOW_CERTIFICATE="<certificate_file_name>"
-$env:AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns"
-$env:AIRFLOW_USERNAME="<user>"
-$env:AIRFLOW_PASSWORD="<password>"
-docker compose up --no-deps api ui
-```
-
-Only env changed? No rebuild needed — `docker compose up` picks up new values on container recreate.
-
-Default demo login: set `ACCESS_TOKEN_TEST_USER=demo.user` in your shell or `.env` file before running `docker compose up`, then sign in via the UI as `demo.user` with any password. Leave this variable unset in shared or production-like environments to avoid enabling the bypass.
-
-### Common Docker Compose launch recipes
-
-Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=Your-Security-Group,...`, etc.) with settings from your own environment before running the commands.
-
-**Offline demo (no LDAP required)** – loads curated data and enables the `demo.user` bypass account:
+**Offline demo (no LDAP/OAuth required)** - loads curated data and enables the `demo.user` bypass account:
 
 macOS / Linux:
 
@@ -266,7 +181,7 @@ $env:PIRO_SAMPLE_USER_ROLE="USER"
 docker compose up --build
 ```
 
-**First-time LDAP initialization with sample data** – run while connected to your corporate network so LDAP lookups succeed:
+**First-time LDAP initialization with sample data** - run while connected to your corporate network so LDAP lookups succeed:
 
 macOS / Linux:
 
@@ -296,7 +211,7 @@ $env:AD_DOMAIN="example.org"
 docker compose up --build
 ```
 
-**Production-like run (LDAP only, no sample data)** – skip demo content once you have real data restored locally:
+**Production-like run (LDAP only, no sample data)** - skip demo content once you have real data restored locally:
 
 macOS / Linux:
 
@@ -318,9 +233,7 @@ $env:AD_DOMAIN="example.org"
 docker compose up --build
 ```
 
-> **Tip (Windows):** `$env:` assignments are session-scoped and will not persist after you close the terminal. To unset a variable after use, run `Remove-Item Env:\VARIABLE_NAME` (e.g. `Remove-Item Env:\ACCESS_TOKEN_TEST_USER`).
-
-### Ports, health, and tear-down
+#### Ports, health, and tear-down
 
 - UI: <http://localhost:8080>
 - API (direct): <http://localhost:8001/docs>
@@ -341,3 +254,96 @@ If you need to inspect the schema/data bootstrap logs, run:
 ```bash
 docker compose logs sample-data
 ```
+
+### Additional Technical Documentation
+
+#### Enabling cohort creation (Airflow integration)
+
+The API's `POST /cohort/create` endpoint triggers an Airflow DAG that loads the new cohort into Solr. Two things must be in place:
+
+1. **Certificate file on disk.** Place the PEM used to verify TLS to your Airflow host in `piro-api/backend/certificates/` (see [Providing certificate files](#providing-certificate-files) below for how to obtain and copy the file). Files there are gitignored (`piro-api/.gitignore` ignores `*.pem`) but are still baked into the API image at build time via `COPY backend /app` - Docker builds do not honor `.gitignore`. Rebuild the API image (`docker compose build api`) after adding or replacing a cert.
+2. **Environment variables.** Set the four `AIRFLOW_*` variables listed above. If any of them are unset or empty, the API returns HTTP 500 with `FileNotFoundError: Certificates directory not found` - the message is misleading; the same error covers a missing cert *and* a missing `AIRFLOW_CERTIFICATE` value.
+
+##### Providing certificate files
+
+The `piro-api/backend/certificates/` directory is where the API expects to find any PEM files it needs to verify TLS connections to external services (currently just the Airflow host used by cohort creation). The directory itself is checked in but its `*.pem` contents are gitignored, so you must supply the file yourself before building the API image.
+
+Steps:
+
+1. **Obtain the PEM.** Ask an administrator for the certificate that matches the Airflow host you plan to talk to. If you already have the host's cert in another format, convert it to PEM (`openssl x509 -in cert.crt -out cert.pem -outform PEM`).
+2. **Copy it into the repo.** Drop the file into `piro-api/backend/certificates/`. The filename you use here is what you'll set `AIRFLOW_CERTIFICATE` to - no path, just the filename.
+3. **Rebuild the API image** so the new file is baked into `/app/certificates/` inside the container:
+
+    ```bash
+    docker compose build api
+    ```
+
+> **Note:** Never commit `*.pem` files to git. The `.gitignore` entry at `piro-api/.gitignore` (`*.pem`) already blocks them, but double-check `git status` before committing after touching this directory.
+
+Example (macOS / Linux):
+
+```bash
+AIRFLOW_CERTIFICATE=<certificate_file_name> \
+AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns" \
+AIRFLOW_USERNAME=<user> \
+AIRFLOW_PASSWORD=<password> \
+docker compose up --no-deps api ui
+```
+
+Example (Windows PowerShell):
+
+```powershell
+$env:AIRFLOW_CERTIFICATE="<certificate_file_name>"
+$env:AIRFLOW_DAG_COHORT_LOADER_URL="https://<airflow-host>/api/v2/dags/solr_cohort_load/dagRuns"
+$env:AIRFLOW_USERNAME="<user>"
+$env:AIRFLOW_PASSWORD="<password>"
+docker compose up --no-deps api ui
+```
+
+#### Details of Localhost OAuth/SSO Configuration
+
+##### `hosts` file entry
+
+The Compose stack includes a `mock-oauth` service (based on `ghcr.io/navikt/mock-oauth2-server`) that stands in for the organization's SSO provider so you can exercise the OAuth login flow entirely on your workstation, with no VPN or corporate network access required.
+
+For this to work, the mock IdP must be reachable at the **same hostname** from both your browser (during the redirect to the login page) and the `api` container (during token exchange and JWKS lookup). Otherwise the `iss` claim on the issued JWT will not match what the API expects and token validation will fail.
+
+The Compose file uses `piro-auth` as that shared hostname. You must map it to `127.0.0.1` in your OS `hosts` file **before** running `docker compose up`:
+
+- **Windows:** open `C:\Windows\System32\drivers\etc\hosts` in an editor running as Administrator and add:
+
+    ```text
+    127.0.0.1  piro-auth
+    ```
+
+- **macOS / Linux:** append the same line to `/etc/hosts` (needs `sudo`):
+
+    ```bash
+    echo "127.0.0.1  piro-auth" | sudo tee -a /etc/hosts
+    ```
+
+Inside the `api` container the same name resolves via the `extra_hosts: - "piro-auth:host-gateway"` entry already defined in `docker-compose.yml`, so no additional configuration is needed there.
+
+Once the entry is in place, the mock login page is reachable at <http://piro-auth:8888/piro> and the UI's OAuth redirect flow will complete against it. To skip OAuth entirely and use the legacy LDAP bypass instead, set `ACCESS_TOKEN_TEST_USER` as described below.
+
+##### OAuth AD Group
+
+Docker Compose evaluates `${...}` variables at compose-time from your shell environment and the repo-root `.env` file. To keep local setup in one place, use `.env` for all localhost overrides:
+
+```powershell
+Copy-Item .env.template .env
+```
+
+Then edit `.env` with your local values. The repository no longer relies on `docker-compose.override.yml` for local auth/database overrides.
+
+Important `.env` notes:
+
+- `MOCK_OAUTH_AD_GROUP` controls the `groups` claim emitted by `mock-oauth`.
+- `OIDC_ALLOWED_GROUPS` controls the API authorization allow-list.
+- These two values must overlap (typically identical) or OAuth login will fail with a group mismatch.
+- If you are using the full local stack (`sqlserver` and `solr` containers), keep:
+  - `MSSQL_SERVER=sqlserver`
+  - `SOLR_URL=http://solr:8983/solr`
+  - `MSSQL_USER=sa`
+  and set `PIRO_MSSQL_SA_PASSWORD` to match the SQL Server password used by Compose.
+- `.env` is gitignored; do not commit local secrets or environment-specific credentials.
