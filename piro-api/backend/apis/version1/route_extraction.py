@@ -856,9 +856,10 @@ async def export_results(
     session_id: int,
     format: str = Query(default="csv", regex="^(csv|json|excel)$"),
     current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_role: Annotated[str, Depends(get_current_user_role)] = None,
     db: Session = Depends(get_db),
 ):
-    sess = _require_session_ownership(session_id, current_user_id, db)
+    sess = _require_session_read_access(session_id, current_user_id, current_role, db)
     results = get_results_for_session(session_id, db)
 
     # Determine field order from schema
