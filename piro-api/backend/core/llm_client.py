@@ -21,10 +21,10 @@ from typing import Any, Dict, List, Optional
 import httpx
 from logger import logger
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Response dataclass
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class FieldExtraction:
     __slots__ = ("value", "confidence", "provenance")
@@ -113,7 +113,9 @@ def _parse_json_from_response(text: str) -> Any:
     return json.loads(text)
 
 
-def _normalize_extraction_response(raw: Any, schema: dict) -> ExtractionResponse:
+def _normalize_extraction_response(
+    raw: Any, schema: dict
+) -> ExtractionResponse:
     """Normalize raw LLM JSON into ExtractionResponse, handling partial/malformed output."""
     result: ExtractionResponse = {}
     if not isinstance(raw, dict):
@@ -148,6 +150,7 @@ def _normalize_extraction_response(raw: Any, schema: dict) -> ExtractionResponse
 # Abstract base class
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class LLMClient(ABC):
     """Abstract LLM client. All providers must implement these two methods."""
 
@@ -170,8 +173,11 @@ class LLMClient(ABC):
 # Ollama implementation
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class OllamaClient(LLMClient):
-    def __init__(self, base_url: str, model: str, timeout: float = 120.0) -> None:
+    def __init__(
+        self, base_url: str, model: str, timeout: float = 120.0
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
@@ -193,7 +199,9 @@ class OllamaClient(LLMClient):
         data = resp.json()
         return data["message"]["content"]
 
-    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+    async def extract(
+        self, report_text: str, schema: dict
+    ) -> ExtractionResponse:
         user_prompt = _build_extraction_user_prompt(report_text, schema)
         raw_text = await self._chat(_EXTRACTION_SYSTEM_PROMPT, user_prompt)
         raw = _parse_json_from_response(raw_text)
@@ -210,8 +218,11 @@ class OllamaClient(LLMClient):
 # OpenAI implementation
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class OpenAIClient(LLMClient):
-    def __init__(self, api_key: str, model: str, timeout: float = 120.0) -> None:
+    def __init__(
+        self, api_key: str, model: str, timeout: float = 120.0
+    ) -> None:
         try:
             import openai  # noqa: F401
         except ImportError:
@@ -222,7 +233,9 @@ class OpenAIClient(LLMClient):
         self.model = model
         self.timeout = timeout
 
-    async def _chat_json(self, system: str, user: str, response_schema: Optional[dict] = None) -> str:
+    async def _chat_json(
+        self, system: str, user: str, response_schema: Optional[dict] = None
+    ) -> str:
         import openai
 
         client = openai.AsyncOpenAI(api_key=self.api_key, timeout=self.timeout)
@@ -270,7 +283,9 @@ class OpenAIClient(LLMClient):
             "additionalProperties": False,
         }
 
-    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+    async def extract(
+        self, report_text: str, schema: dict
+    ) -> ExtractionResponse:
         user_prompt = _build_extraction_user_prompt(report_text, schema)
         response_schema = self._build_openai_response_schema(schema)
         raw_text = await self._chat_json(
@@ -290,8 +305,11 @@ class OpenAIClient(LLMClient):
 # Anthropic implementation
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class AnthropicClient(LLMClient):
-    def __init__(self, api_key: str, model: str, timeout: float = 120.0) -> None:
+    def __init__(
+        self, api_key: str, model: str, timeout: float = 120.0
+    ) -> None:
         try:
             import anthropic  # noqa: F401
         except ImportError:
@@ -326,7 +344,11 @@ class AnthropicClient(LLMClient):
                 "type": "object",
                 "properties": {
                     "value": prop,
-                    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+                    "confidence": {
+                        "type": ["number", "null"],
+                        "minimum": 0,
+                        "maximum": 1,
+                    },
                     "provenance": {"type": ["string", "null"]},
                 },
                 "required": ["value", "confidence", "provenance"],
@@ -342,10 +364,14 @@ class AnthropicClient(LLMClient):
             },
         }
 
-    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+    async def extract(
+        self, report_text: str, schema: dict
+    ) -> ExtractionResponse:
         import anthropic
 
-        client = anthropic.AsyncAnthropic(api_key=self.api_key, timeout=self.timeout)
+        client = anthropic.AsyncAnthropic(
+            api_key=self.api_key, timeout=self.timeout
+        )
         tool = self._build_extraction_tool(schema)
         user_prompt = _build_extraction_user_prompt(report_text, schema)
 
@@ -371,7 +397,9 @@ class AnthropicClient(LLMClient):
     async def suggest_fields(self, sample_text: str) -> List[dict]:
         import anthropic
 
-        client = anthropic.AsyncAnthropic(api_key=self.api_key, timeout=self.timeout)
+        client = anthropic.AsyncAnthropic(
+            api_key=self.api_key, timeout=self.timeout
+        )
         user_prompt = f"Suggest extraction fields for this pathology report:\n\n{sample_text}"
 
         resp = await client.messages.create(
@@ -389,6 +417,7 @@ class AnthropicClient(LLMClient):
 # Generic HTTP client (for LLaMA.cpp, vLLM, Qwen, etc. OpenAI-compatible APIs)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class GenericOpenAICompatibleClient(LLMClient):
     """For any OpenAI-compatible API endpoint (vLLM, LM Studio, LLaMA.cpp server, Qwen, etc.)"""
 
@@ -405,7 +434,10 @@ class GenericOpenAICompatibleClient(LLMClient):
         self.timeout = timeout
 
     async def _chat(self, system: str, user: str) -> str:
-        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
         payload = {
             "model": self.model,
             "messages": [
@@ -425,7 +457,9 @@ class GenericOpenAICompatibleClient(LLMClient):
         data = resp.json()
         return data["choices"][0]["message"]["content"]
 
-    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+    async def extract(
+        self, report_text: str, schema: dict
+    ) -> ExtractionResponse:
         user_prompt = _build_extraction_user_prompt(report_text, schema)
         raw_text = await self._chat(_EXTRACTION_SYSTEM_PROMPT, user_prompt)
         raw = _parse_json_from_response(raw_text)
@@ -482,7 +516,9 @@ class AzureOpenAIClient(LLMClient):
         data = resp.json()
         return data["choices"][0]["message"]["content"]
 
-    async def extract(self, report_text: str, schema: dict) -> ExtractionResponse:
+    async def extract(
+        self, report_text: str, schema: dict
+    ) -> ExtractionResponse:
         user_prompt = _build_extraction_user_prompt(report_text, schema)
         raw_text = await self._chat(_EXTRACTION_SYSTEM_PROMPT, user_prompt)
         raw = _parse_json_from_response(raw_text)
@@ -499,6 +535,7 @@ class AzureOpenAIClient(LLMClient):
 # Factory
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def get_llm_client() -> LLMClient:
     """Return the configured LLM client based on the LLM_PROVIDER environment variable.
 
@@ -507,7 +544,9 @@ def get_llm_client() -> LLMClient:
     from core.config import settings
 
     provider = (settings.LLM_PROVIDER or "ollama").lower()
-    logger.info(f"Initialising LLM client: provider={provider}, model={settings.LLM_MODEL}")
+    logger.info(
+        f"Initialising LLM client: provider={provider}, model={settings.LLM_MODEL}"
+    )
 
     if provider == "ollama":
         return OllamaClient(
@@ -546,5 +585,5 @@ def get_llm_client() -> LLMClient:
     else:
         raise ValueError(
             f"Unknown LLM_PROVIDER: '{provider}'. "
-            "Supported values: ollama, openai, anthropic, generic"
+            "Supported values: ollama, openai, anthropic, generic, azure"
         )

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -31,7 +30,9 @@ AVAILABLE_TEXT_SOURCES: List[dict] = [
     {"code": "synoptic", "label": "Synoptic"},
     {"code": "clinical", "label": "Clinical"},
 ]
-_TEXT_SOURCE_ORDER = {src["code"]: i for i, src in enumerate(AVAILABLE_TEXT_SOURCES)}
+_TEXT_SOURCE_ORDER = {
+    src["code"]: i for i, src in enumerate(AVAILABLE_TEXT_SOURCES)
+}
 
 # Default set used when a session has no TextSources configured (backward
 # compatible with sessions created before this feature existed).
@@ -47,6 +48,7 @@ _LDT_DISCLAIMER_RE = re.compile(
     r"Positive\s+and\s+negative\s+controls\s+stain\s+appropriately\s*\.",
     re.IGNORECASE | re.DOTALL,
 )
+
 
 def parse_text_sources(text_sources: Optional[str]) -> set:
     """Parse a session's stored comma-separated TextSources into a lowercase set.
@@ -70,7 +72,7 @@ def serialize_text_sources(text_sources: Optional[List[str]]) -> Optional[str]:
 def _segment_order(short_name: str) -> int:
     """Map a CommentType ShortName to a display-order index."""
     c = (short_name or "").lower()
-    if "addend" in c:   # matches Addendum, Addend, etc.
+    if "addend" in c:  # matches Addendum, Addend, etc.
         return _TEXT_SOURCE_ORDER.get("addendum", 99)
     return _TEXT_SOURCE_ORDER.get(c, 99)
 
@@ -78,6 +80,7 @@ def _segment_order(short_name: str) -> int:
 # ──────────────────────────────────────────────────────────────────────────────
 # Session CRUD
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def create_session(
     name: str,
@@ -184,6 +187,7 @@ def delete_session(session_id: int, user: str, db: Session) -> bool:
 # Run CRUD
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def create_run(
     session_id: int,
     schema_json: str,
@@ -211,7 +215,11 @@ def create_run(
 
 
 def get_run(run_id: int, db: Session) -> Optional[ExtractionRun]:
-    return db.query(ExtractionRun).filter(ExtractionRun.ExtractionRunId == run_id).first()
+    return (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.ExtractionRunId == run_id)
+        .first()
+    )
 
 
 def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
@@ -262,10 +270,14 @@ def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
     )
     run.Status = "failed"
     run.CompletedAt = datetime.now(timezone.utc)
-    note = "[Auto-recovered] Run had no progress for over " \
-           f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a " \
-           "server restart or crash; marked failed to unblock new runs."
-    run.ErrorMessage = f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
+    note = (
+        "[Auto-recovered] Run had no progress for over "
+        f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a "
+        "server restart or crash; marked failed to unblock new runs."
+    )
+    run.ErrorMessage = (
+        f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
+    )
     db.commit()
     db.refresh(run)
     return run
@@ -283,14 +295,21 @@ def update_run_status(
     run.Status = status
     if status == "running":
         run.StartedAt = datetime.now(timezone.utc)
-    elif status in ("completed", "failed", "completed_with_errors", "cancelled"):
+    elif status in (
+        "completed",
+        "failed",
+        "completed_with_errors",
+        "cancelled",
+    ):
         run.CompletedAt = datetime.now(timezone.utc)
     if error:
         run.ErrorMessage = error
     db.commit()
 
 
-def request_run_cancellation(run_id: int, db: Session) -> Optional[ExtractionRun]:
+def request_run_cancellation(
+    run_id: int, db: Session
+) -> Optional[ExtractionRun]:
     """Flag an in-progress run for cooperative cancellation.
 
     The background job checks ``is_run_cancellation_requested`` between
@@ -324,6 +343,7 @@ def is_run_cancellation_requested(run_id: int, db: Session) -> bool:
 # Queue CRUD
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def add_cases_to_queue(
     session_id: int, case_ids: List[int], user: str, db: Session
 ) -> List[ExtractionQueue]:
@@ -341,7 +361,7 @@ def add_cases_to_queue(
     existing_ids: set = set()
     CHUNK_SIZE = 1000
     for i in range(0, len(unique_case_ids), CHUNK_SIZE):
-        chunk = unique_case_ids[i:i + CHUNK_SIZE]
+        chunk = unique_case_ids[i : i + CHUNK_SIZE]
         rows = (
             db.query(ExtractionQueue.CaseId)
             .filter(
@@ -417,9 +437,11 @@ def update_queue_item_status(
     db: Session,
     error: Optional[str] = None,
 ) -> None:
-    item = db.query(ExtractionQueue).filter(
-        ExtractionQueue.ExtractionQueueId == queue_item_id
-    ).first()
+    item = (
+        db.query(ExtractionQueue)
+        .filter(ExtractionQueue.ExtractionQueueId == queue_item_id)
+        .first()
+    )
     if item is None:
         return
     item.Status = status
@@ -444,13 +466,16 @@ def reset_queue_statuses(session_id: int, db: Session) -> None:
     """Reset all queue items to 'pending' before a full run."""
     db.query(ExtractionQueue).filter(
         ExtractionQueue.ExtractionSessionId == session_id
-    ).update({"Status": "pending", "ErrorMessage": None}, synchronize_session=False)
+    ).update(
+        {"Status": "pending", "ErrorMessage": None}, synchronize_session=False
+    )
     db.commit()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Result CRUD
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def upsert_result(
     run_id: int,
@@ -508,7 +533,9 @@ def upsert_result(
     return result
 
 
-def get_results_for_session(session_id: int, db: Session) -> List[ExtractionResult]:
+def get_results_for_session(
+    session_id: int, db: Session
+) -> List[ExtractionResult]:
     """Return results from the latest run for a session."""
     latest_run = get_latest_run(session_id, db)
     if latest_run is None:
@@ -585,23 +612,16 @@ def get_low_confidence_case_ids(
         .all()
     )
     return [r.CaseId for r in rows]
-    """Return results from the latest run for a session."""
-    latest_run = get_latest_run(session_id, db)
-    if latest_run is None:
-        return []
+
+
+def get_result_by_id(
+    result_id: int, db: Session
+) -> Optional[ExtractionResult]:
     return (
         db.query(ExtractionResult)
-        .options(joinedload(ExtractionResult.Case))
-        .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
-        .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
-        .all()
+        .filter(ExtractionResult.ExtractionResultId == result_id)
+        .first()
     )
-
-
-def get_result_by_id(result_id: int, db: Session) -> Optional[ExtractionResult]:
-    return db.query(ExtractionResult).filter(
-        ExtractionResult.ExtractionResultId == result_id
-    ).first()
 
 
 def update_result_review(
@@ -661,6 +681,7 @@ def bulk_approve_high_confidence(
 # Case text helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def get_case_text_segments(
     case_id: int, db: Session, comment_types: Optional[set] = None
 ) -> List[VCaseCommentText]:
@@ -677,7 +698,9 @@ def get_case_text_segments(
 
     filters = [func.lower(VCaseCommentText.CommentType).in_(types)]
     if "addendum" in types:
-        filters.append(func.lower(VCaseCommentText.CommentType).like('%addend%'))
+        filters.append(
+            func.lower(VCaseCommentText.CommentType).like("%addend%")
+        )
 
     rows = (
         db.query(VCaseCommentText)
@@ -748,6 +771,7 @@ def get_case_text_for_extraction(
     # Apply PHI masking for demo mode (reuses existing SecurityUtil logic)
     if role and role.upper() == "DEMOADMIN":
         from core.security_util import SecurityUtil
+
         for seg in segments:
             seg.CommentText = SecurityUtil.mask_date(seg.CommentText)
             seg.CommentText = SecurityUtil.mask_case(seg.CommentText)
@@ -759,6 +783,7 @@ def get_case_text_for_extraction(
 # ──────────────────────────────────────────────────────────────────────────────
 # Progress / status helpers
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def get_extraction_status(session_id: int, db: Session) -> dict:
     """Return progress counts for the latest run of a session."""
@@ -799,17 +824,24 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
         total = latest_run.ValidationSize
         completed = (
             db.query(ExtractionResult.CaseId)
-            .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
+            .filter(
+                ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId
+            )
             .distinct()
             .count()
         )
-        failed = max(0, total - completed) if latest_run.Status in ("completed", "completed_with_errors", "failed") else (
-            db.query(ExtractionQueue)
-            .filter(
-                ExtractionQueue.ExtractionSessionId == session_id,
-                ExtractionQueue.Status == "failed",
+        failed = (
+            max(0, total - completed)
+            if latest_run.Status
+            in ("completed", "completed_with_errors", "failed")
+            else (
+                db.query(ExtractionQueue)
+                .filter(
+                    ExtractionQueue.ExtractionSessionId == session_id,
+                    ExtractionQueue.Status == "failed",
+                )
+                .count()
             )
-            .count()
         )
         pending = max(0, total - completed - failed)
         running = (
