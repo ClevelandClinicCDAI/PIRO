@@ -226,7 +226,10 @@ def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
     return (
         db.query(ExtractionRun)
         .filter(ExtractionRun.ExtractionSessionId == session_id)
-        .order_by(ExtractionRun.CreateDate.desc())
+        .order_by(
+            ExtractionRun.CreateDate.desc(),
+            ExtractionRun.ExtractionRunId.desc(),
+        )
         .first()
     )
 
@@ -490,7 +493,42 @@ def upsert_result(
     provenance_end: Optional[int],
     user: str,
     db: Session,
+    reviewed_value: Optional[str] = None,
+    is_reviewed: Optional[bool] = None,
+    is_incorrect: Optional[bool] = None,
+    reviewed_by: Optional[str] = None,
+    reviewed_date: Optional[datetime] = None,
+    related_run_ids: Optional[List[int]] = None,
 ) -> ExtractionResult:
+    """Insert or update an extraction result for a given run, session, and
+    case.
+
+    If a result already exists for the specified run, session, case, and field,
+    it will be updated with the provided values. Otherwise, a new result will
+    be created.
+    """
+
+    def _apply_result_values(result: ExtractionResult) -> ExtractionResult:
+        """Apply the provided result values to the given ExtractionResult
+        instance."""
+        result.ExtractedValue = extracted_value
+        result.Confidence = confidence
+        result.ProvenanceText = provenance_text
+        result.SourceCommentId = source_comment_id
+        result.ProvenanceStart = provenance_start
+        result.ProvenanceEnd = provenance_end
+        result.ReviewedValue = reviewed_value
+        if is_reviewed is not None:
+            result.IsReviewed = is_reviewed
+        if is_incorrect is not None:
+            result.IsIncorrect = is_incorrect
+        if reviewed_by is not None:
+            result.ReviewedBy = reviewed_by
+        if reviewed_date is not None:
+            result.ReviewedDate = reviewed_date
+        result.UpdateBy = user
+        return result
+
     existing = (
         db.query(ExtractionResult)
         .filter(
@@ -501,36 +539,124 @@ def upsert_result(
         .first()
     )
     if existing:
-        existing.ExtractedValue = extracted_value
-        existing.Confidence = confidence
-        existing.ProvenanceText = provenance_text
-        existing.SourceCommentId = source_comment_id
-        existing.ProvenanceStart = provenance_start
-        existing.ProvenanceEnd = provenance_end
-        existing.UpdateBy = user
+        _apply_result_values(existing)
         db.commit()
         db.refresh(existing)
-        return existing
+        result = existing
+    else:
+        result = ExtractionResult(
+            ExtractionRunId=run_id,
+            ExtractionSessionId=session_id,
+            CaseId=case_id,
+            FieldName=field_name,
+            ExtractedValue=extracted_value,
+            Confidence=confidence,
+            ProvenanceText=provenance_text,
+            SourceCommentId=source_comment_id,
+            ProvenanceStart=provenance_start,
+            ProvenanceEnd=provenance_end,
+            ReviewedValue=reviewed_value,
+            IsReviewed=is_reviewed if is_reviewed is not None else False,
+            IsIncorrect=is_incorrect if is_incorrect is not None else False,
+            ReviewedBy=reviewed_by,
+            ReviewedDate=reviewed_date,
+            CreateBy=user,
+            UpdateBy=user,
+        )
+        db.add(result)
+        db.commit()
+        db.refresh(result)
 
-    result = ExtractionResult(
-        ExtractionRunId=run_id,
-        ExtractionSessionId=session_id,
-        CaseId=case_id,
-        FieldName=field_name,
-        ExtractedValue=extracted_value,
-        Confidence=confidence,
-        ProvenanceText=provenance_text,
-        SourceCommentId=source_comment_id,
-        ProvenanceStart=provenance_start,
-        ProvenanceEnd=provenance_end,
-        IsReviewed=False,
-        CreateBy=user,
-        UpdateBy=user,
-    )
-    db.add(result)
-    db.commit()
-    db.refresh(result)
+    # de-duplicate run IDs
+    related_run_ids_to_update = []
+    if related_run_ids:
+        for run_id in related_run_ids:
+            if run_id not in related_run_ids_to_update:
+                related_run_ids_to_update.append(run_id)
+
+    # update related runs, ensuring that each related run has the same result
+    # as the current run
+    for related_run_id in related_run_ids_to_update:
+        if related_run_id == run_id:
+            continue
+        existing_result_from_another_run = (
+            db.query(ExtractionResult)
+            .filter(
+                ExtractionResult.ExtractionRunId == related_run_id,
+                ExtractionResult.CaseId == case_id,
+                ExtractionResult.FieldName == field_name,
+            )
+            .first()
+        )
+        if existing_result_from_another_run:
+            _apply_result_values(existing_result_from_another_run)
+            existing_result_from_another_run.ExtractionSessionId = session_id
+            db.commit()
+            db.refresh(existing_result_from_another_run)
+        else:
+            mirror_result = ExtractionResult(
+                ExtractionRunId=related_run_id,
+                ExtractionSessionId=session_id,
+                CaseId=case_id,
+                FieldName=field_name,
+                ExtractedValue=extracted_value,
+                Confidence=confidence,
+                ProvenanceText=provenance_text,
+                SourceCommentId=source_comment_id,
+                ProvenanceStart=provenance_start,
+                ProvenanceEnd=provenance_end,
+                ReviewedValue=reviewed_value,
+                IsReviewed=is_reviewed if is_reviewed is not None else False,
+                IsIncorrect=(
+                    is_incorrect if is_incorrect is not None else False
+                ),
+                ReviewedBy=reviewed_by,
+                ReviewedDate=reviewed_date,
+                CreateBy=user,
+                UpdateBy=user,
+            )
+            db.add(mirror_result)
+            db.commit()
+            db.refresh(mirror_result)
     return result
+
+
+def clone_results_for_run(
+    source_run_id: int,
+    destination_run_id: int,
+    user: str,
+    db: Session,
+) -> int:
+    """Copy every result row from one run into another run.
+
+    Retry runs use this to start with the successful rows from the preceding
+    run so the latest session export stays complete while the retry is only
+    filling in the previously failed cases.
+    """
+    results = get_results_for_run(source_run_id, db)
+    copied = 0
+    for result in results:
+        upsert_result(
+            run_id=destination_run_id,
+            session_id=result.ExtractionSessionId,
+            case_id=result.CaseId,
+            field_name=result.FieldName,
+            extracted_value=result.ExtractedValue,
+            confidence=result.Confidence,
+            provenance_text=result.ProvenanceText,
+            source_comment_id=result.SourceCommentId,
+            provenance_start=result.ProvenanceStart,
+            provenance_end=result.ProvenanceEnd,
+            reviewed_value=result.ReviewedValue,
+            is_reviewed=result.IsReviewed,
+            is_incorrect=result.IsIncorrect,
+            reviewed_by=result.ReviewedBy,
+            reviewed_date=result.ReviewedDate,
+            user=user,
+            db=db,
+        )
+        copied += 1
+    return copied
 
 
 def get_results_for_session(

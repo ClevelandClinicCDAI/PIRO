@@ -14,7 +14,11 @@ from typing import Annotated, Any, Dict, List, Optional
 from core.auth_bearer import JWTBearer
 from core.constants import Constants
 from core.llm_client import FieldExtraction, get_llm_client
-from core.security_user import get_current_user_id, get_current_user_nuid, get_current_user_role
+from core.security_user import (
+    get_current_user_id,
+    get_current_user_nuid,
+    get_current_user_role,
+)
 from db.repository.extraction import (
     AVAILABLE_TEXT_SOURCES,
     add_cases_to_queue,
@@ -23,6 +27,7 @@ from db.repository.extraction import (
     clear_queue,
     create_run,
     create_session,
+    clone_results_for_run,
     delete_session,
     get_case_text_for_extraction,
     get_case_text_segments,
@@ -99,7 +104,9 @@ def _require_session_ownership(session_id: int, user_id: int, db: Session):
     """Raise 404 if session doesn't exist, 403 if it belongs to a different user."""
     sess = get_session(session_id, db)
     if sess is None:
-        raise HTTPException(status_code=404, detail="Extraction session not found")
+        raise HTTPException(
+            status_code=404, detail="Extraction session not found"
+        )
     if sess.UserId != user_id:
         raise HTTPException(status_code=403, detail="Access denied")
     return sess
@@ -109,7 +116,9 @@ def _require_session_read_access(session_id: int, user_id: int, db: Session):
     """Allow owners or request-scoped readers to inspect/review a session."""
     sess = get_session(session_id, db)
     if sess is None:
-        raise HTTPException(status_code=404, detail="Extraction session not found")
+        raise HTTPException(
+            status_code=404, detail="Extraction session not found"
+        )
     if sess.UserId == user_id:
         return sess
 
@@ -132,6 +141,7 @@ def _require_session_read_access(session_id: int, user_id: int, db: Session):
 # Session endpoints
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @router.post(
     "/session",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
@@ -151,7 +161,12 @@ async def create_extraction_session(
         text_sources=payload.text_sources,
     )
     if payload.schema_definition:
-        update_session_schema(sess.ExtractionSessionId, payload.schema_definition, current_user, db)
+        update_session_schema(
+            sess.ExtractionSessionId,
+            payload.schema_definition,
+            current_user,
+            db,
+        )
         db.refresh(sess)
     return sess
 
@@ -207,9 +222,13 @@ async def save_schema(
     if payload.name is not None:
         update_session_name(session_id, payload.name, current_user, db)
     if payload.schema_definition is not None:
-        update_session_schema(session_id, payload.schema_definition, current_user, db)
+        update_session_schema(
+            session_id, payload.schema_definition, current_user, db
+        )
     if payload.text_sources is not None:
-        update_session_text_sources(session_id, payload.text_sources, current_user, db)
+        update_session_text_sources(
+            session_id, payload.text_sources, current_user, db
+        )
     return get_session(session_id, db)
 
 
@@ -231,6 +250,7 @@ async def archive_session(
 # ──────────────────────────────────────────────────────────────────────────────
 # Queue endpoints
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/queue",
@@ -309,7 +329,11 @@ async def add_saved_search_to_queue(
     case_ids = docs.get("caseIds", [])
     if not case_ids:
         total = docs.get("total", 0)
-        detail = "Saved search returned no cases" if total == 0 else f"Search matched {total} documents but none had a caseId field"
+        detail = (
+            "Saved search returned no cases"
+            if total == 0
+            else f"Search matched {total} documents but none had a caseId field"
+        )
         raise HTTPException(status_code=400, detail=detail)
 
     add_cases_to_queue(
@@ -385,12 +409,14 @@ async def clear_queue_endpoint(
 # Extraction run
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 async def _run_extraction_job(
     session_id: int,
     run_id: int,
     user: str,
     role: str,
     case_ids: Optional[List[int]] = None,
+    source_run_id: Optional[int] = None,
 ) -> None:
     """Background task: extract cases for a session.
 
@@ -422,7 +448,10 @@ async def _run_extraction_job(
 
         cancelled = False
         for queue_item in queue:
-            if validation_set is not None and queue_item.CaseId not in validation_set:
+            if (
+                validation_set is not None
+                and queue_item.CaseId not in validation_set
+            ):
                 continue  # validation run: skip non-sampled cases
             if validation_set is None and queue_item.Status == "completed":
                 continue  # full run: skip already done (shouldn't exist after reset)
@@ -434,16 +463,23 @@ async def _run_extraction_job(
                 cancelled = True
                 break
 
-            update_queue_item_status(queue_item.ExtractionQueueId, "running", db)
+            update_queue_item_status(
+                queue_item.ExtractionQueueId, "running", db
+            )
             try:
                 labelled_text, segments = get_case_text_for_extraction(
-                    queue_item.CaseId, db, role=role, comment_types=comment_types
+                    queue_item.CaseId,
+                    db,
+                    role=role,
+                    comment_types=comment_types,
                 )
 
                 if not labelled_text.strip():
                     update_queue_item_status(
-                        queue_item.ExtractionQueueId, "failed", db,
-                        error="No report text found for this case"
+                        queue_item.ExtractionQueueId,
+                        "failed",
+                        db,
+                        error="No report text found for this case",
                     )
                     continue
 
@@ -476,7 +512,9 @@ async def _run_extraction_job(
                                     prov_end = prov_start + len(fe.provenance)
                                 break
 
-                    extracted_json = json.dumps(fe.value) if fe.value is not None else None
+                    extracted_json = (
+                        json.dumps(fe.value) if fe.value is not None else None
+                    )
 
                     upsert_result(
                         run_id=run_id,
@@ -491,13 +529,19 @@ async def _run_extraction_job(
                         provenance_end=prov_end,
                         user=user,
                         db=db,
+                        related_run_ids=(
+                            [source_run_id] if source_run_id else None
+                        ),
                     )
 
-                update_queue_item_status(queue_item.ExtractionQueueId, "completed", db)
+                update_queue_item_status(
+                    queue_item.ExtractionQueueId, "completed", db
+                )
 
             except Exception as e:
                 logger.error(
-                    f"Extraction failed for case {queue_item.CaseId}: {e}", exc_info=True
+                    f"Extraction failed for case {queue_item.CaseId}: {e}",
+                    exc_info=True,
                 )
                 update_queue_item_status(
                     queue_item.ExtractionQueueId,
@@ -511,13 +555,20 @@ async def _run_extraction_job(
             final_status = "cancelled"
         else:
             status = get_extraction_status(session_id, db)
-            final_status = "completed" if status["failed"] == 0 else "completed_with_errors"
+            final_status = (
+                "completed"
+                if status["failed"] == 0
+                else "completed_with_errors"
+            )
         update_run_status(run_id, final_status, db)
         update_session_status(session_id, final_status, db)
         _notify_extraction_run_completed(run_id, final_status, db)
 
     except Exception as e:
-        logger.error(f"Extraction job failed for session {session_id}: {e}", exc_info=True)
+        logger.error(
+            f"Extraction job failed for session {session_id}: {e}",
+            exc_info=True,
+        )
         update_run_status(run_id, "failed", db, error=str(e)[:1000])
         update_session_status(session_id, "failed", db)
         _notify_extraction_run_completed(run_id, "failed", db)
@@ -525,10 +576,13 @@ async def _run_extraction_job(
         db.close()
 
 
-def _notify_extraction_run_completed(run_id: int, status: str, db: Session) -> None:
+def _notify_extraction_run_completed(
+    run_id: int, status: str, db: Session
+) -> None:
     """Best-effort email notification; failures here must never break the run."""
     try:
         from db.repository.searchRequest import email_extraction_run_completed
+
         email_extraction_run_completed(run_id=run_id, status=status, db=db)
     except Exception as exc:
         logger.error(
@@ -552,7 +606,9 @@ async def start_extraction(
     sess = _require_session_ownership(payload.session_id, current_user_id, db)
 
     if not sess.SchemaJson:
-        raise HTTPException(status_code=400, detail="Schema is not defined for this session")
+        raise HTTPException(
+            status_code=400, detail="Schema is not defined for this session"
+        )
 
     queue = get_queue(payload.session_id, db)
     if not queue:
@@ -577,6 +633,7 @@ async def start_extraction(
     actual_validation_size: Optional[int] = None
     if payload.run_type == "validation":
         import random as _random
+
         all_ids = [q.CaseId for q in queue]
         n = min(payload.validation_size, len(all_ids))
         sampled_case_ids = _random.sample(all_ids, n)
@@ -624,7 +681,9 @@ async def retry_failed_cases(
     sess = _require_session_ownership(payload.session_id, current_user_id, db)
 
     if not sess.SchemaJson:
-        raise HTTPException(status_code=400, detail="Schema is not defined for this session")
+        raise HTTPException(
+            status_code=400, detail="Schema is not defined for this session"
+        )
 
     failed_case_ids = get_failed_case_ids(payload.session_id, db)
     if not failed_case_ids:
@@ -655,6 +714,13 @@ async def retry_failed_cases(
         validation_size=len(failed_case_ids),
     )
 
+    clone_results_for_run(
+        source_run_id=latest.ExtractionRunId,
+        destination_run_id=run.ExtractionRunId,
+        user=current_user,
+        db=db,
+    )
+
     background_tasks.add_task(
         _run_extraction_job,
         session_id=payload.session_id,
@@ -662,6 +728,7 @@ async def retry_failed_cases(
         user=current_user,
         role=current_role,
         case_ids=failed_case_ids,
+        source_run_id=latest.ExtractionRunId,
     )
 
     return run
@@ -712,6 +779,7 @@ async def get_status(
 # Results endpoints
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @router.get(
     "/results/{session_id}",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
@@ -748,7 +816,9 @@ async def patch_result(
     if result is None:
         raise HTTPException(status_code=404, detail="Result not found")
     # Verify session ownership
-    _require_session_read_access(result.ExtractionSessionId, current_user_id, db)
+    _require_session_read_access(
+        result.ExtractionSessionId, current_user_id, db
+    )
 
     updated = update_result_review(
         result_id=result_id,
@@ -773,7 +843,9 @@ async def approve_all_high_confidence(
     db: Session = Depends(get_db),
 ):
     _require_session_read_access(session_id, current_user_id, db)
-    count = bulk_approve_high_confidence(session_id, threshold, current_user, db)
+    count = bulk_approve_high_confidence(
+        session_id, threshold, current_user, db
+    )
     return {"approved_count": count}
 
 
@@ -830,6 +902,7 @@ async def get_failed_cases(
 # Export
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @router.get(
     "/export/{session_id}",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
@@ -854,7 +927,7 @@ async def export_results(
 
     # Build case_number → field → value table
     case_fields: Dict[str, Dict[str, Any]] = {}
-    case_order: List[str] = []   # preserve first-seen order
+    case_order: List[str] = []  # preserve first-seen order
     all_fields: set = set()
     for r in results:
         case_key = r.CaseNumber or str(r.CaseId)
@@ -880,10 +953,7 @@ async def export_results(
         fields = sorted(all_fields)
 
     if format == "json":
-        rows = [
-            {"case_number": cn, **case_fields[cn]}
-            for cn in case_order
-        ]
+        rows = [{"case_number": cn, **case_fields[cn]} for cn in case_order]
         return JSONResponse(content=rows)
 
     if format == "excel":
@@ -897,17 +967,20 @@ async def export_results(
         # LLM-extracted values, raising IllegalCharacterError and aborting
         # the whole export. Strip them from any string cell value so a
         # single bad case doesn't take down exports of large result sets.
-        illegal_chars_re = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
+        illegal_chars_re = re.compile(r"[\000-\010]|[\013-\014]|[\016-\037]")
 
         def _excel_safe(value):
             if isinstance(value, str):
-                return illegal_chars_re.sub('', value)
+                return illegal_chars_re.sub("", value)
             return value
 
         wb = Workbook()
         ws = wb.active
         # Sheet titles also disallow []:*?/\ and are capped at 31 chars
-        safe_title = re.sub(r'[\[\]:*?/\\]', '_', sess.Name or "Results")[:31] or "Results"
+        safe_title = (
+            re.sub(r"[\[\]:*?/\\]", "_", sess.Name or "Results")[:31]
+            or "Results"
+        )
         ws.title = safe_title
 
         # Header row
@@ -929,8 +1002,12 @@ async def export_results(
 
         # Auto-fit column widths (cap at 60)
         for col_idx, col_cells in enumerate(ws.columns, start=1):
-            width = max((len(str(c.value or "")) for c in col_cells), default=10)
-            ws.column_dimensions[get_column_letter(col_idx)].width = min(width + 2, 60)
+            width = max(
+                (len(str(c.value or "")) for c in col_cells), default=10
+            )
+            ws.column_dimensions[get_column_letter(col_idx)].width = min(
+                width + 2, 60
+            )
 
         output = io.BytesIO()
         wb.save(output)
@@ -945,7 +1022,9 @@ async def export_results(
 
     # CSV
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["case_number"] + fields, extrasaction="ignore")
+    writer = csv.DictWriter(
+        output, fieldnames=["case_number"] + fields, extrasaction="ignore"
+    )
     writer.writeheader()
     for case_number in case_order:
         row = {"case_number": case_number}
@@ -967,6 +1046,7 @@ async def export_results(
 # AI field suggestion
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @router.post(
     "/suggest-fields",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
@@ -982,11 +1062,15 @@ async def suggest_fields(
 
     # If no sample text provided, grab first case from the session queue
     if not sample_text and payload.session_id:
-        sess = _require_session_ownership(payload.session_id, current_user_id, db)
+        sess = _require_session_ownership(
+            payload.session_id, current_user_id, db
+        )
         queue = get_queue(payload.session_id, db)
         if queue:
             labelled_text, _ = get_case_text_for_extraction(
-                queue[0].CaseId, db, role=current_role,
+                queue[0].CaseId,
+                db,
+                role=current_role,
                 comment_types=parse_text_sources(sess.TextSources),
             )
             sample_text = labelled_text
@@ -1006,6 +1090,7 @@ async def suggest_fields(
 # Schema builder live preview (single-doc sync extraction)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @router.post(
     "/preview",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
@@ -1017,7 +1102,9 @@ async def preview_extraction(
     current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _sess = _require_session_read_access(payload.session_id, current_user_id, db)
+    _sess = _require_session_read_access(
+        payload.session_id, current_user_id, db
+    )
 
     _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
     logger.info(
@@ -1028,18 +1115,26 @@ async def preview_extraction(
         raise HTTPException(status_code=400, detail="Schema cannot be empty")
 
     labelled_text, _ = get_case_text_for_extraction(
-        payload.case_id, db, role=current_role,
+        payload.case_id,
+        db,
+        role=current_role,
         comment_types=parse_text_sources(_sess.TextSources),
     )
 
     if not labelled_text.strip():
-        raise HTTPException(status_code=404, detail="No report text found for this case")
+        raise HTTPException(
+            status_code=404, detail="No report text found for this case"
+        )
 
     llm = get_llm_client()
     try:
-        extraction = await llm.extract(labelled_text, payload.extraction_schema)
+        extraction = await llm.extract(
+            labelled_text, payload.extraction_schema
+        )
     except Exception as exc:
-        logger.error(f"LLM extraction failed for case {payload.case_id}: {exc!r}")
+        logger.error(
+            f"LLM extraction failed for case {payload.case_id}: {exc!r}"
+        )
         raise HTTPException(
             status_code=503,
             detail=f"AI service error: {exc}",
@@ -1056,7 +1151,11 @@ async def preview_extraction(
 
     return ExtractionPreviewVM(
         case_id=payload.case_id,
-        case_number="-" if current_role.upper() == "DEMOADMIN" else (_case.CaseNumber if _case else None),
+        case_number=(
+            "-"
+            if current_role.upper() == "DEMOADMIN"
+            else (_case.CaseNumber if _case else None)
+        ),
         extracted_fields=fields,
         report_text=labelled_text,
     )
@@ -1065,6 +1164,7 @@ async def preview_extraction(
 # ──────────────────────────────────────────────────────────────────────────────
 # Case text
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @router.get(
     "/case/{case_id}/text",
@@ -1094,4 +1194,6 @@ async def get_case_text(
         )
         for seg in segments
     ]
-    return CaseTextVM(case_id=case_id, segments=segment_vms, full_text=labelled_text)
+    return CaseTextVM(
+        case_id=case_id, segments=segment_vms, full_text=labelled_text
+    )
