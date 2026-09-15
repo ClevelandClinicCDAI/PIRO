@@ -62,7 +62,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     private router: Router,
     private extractionService: ExtractionService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.sessionId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
@@ -200,7 +200,7 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     this.reportSegments = this.reportSegments.map(seg => {
       let text = this.escapeHtml(seg.CommentText).replace(/\|\|\|\|/g, '\n');
       if (escapedProv && text.includes(escapedProv)) {
-        text = text.replace(escapedProv, `<mark class="prov-highlight">${escapedProv}</mark>`);
+        text = text.replaceAll(escapedProv, `<mark class="prov-highlight">${escapedProv}</mark>`);
       }
       return { ...seg, html: text };
     });

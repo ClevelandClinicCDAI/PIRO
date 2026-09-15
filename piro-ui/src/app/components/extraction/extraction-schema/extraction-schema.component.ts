@@ -73,7 +73,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     private extractionService: ExtractionService,
     private savedSearchContentService: SavedSearchContentService,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.sessionId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
@@ -368,7 +368,7 @@ export class ExtractionSchemaComponent implements OnInit, OnDestroy {
     const sorted = [...new Set(snippets)].sort((a, b) => b.length - a.length);
     for (const snippet of sorted) {
       const escaped = this.escapeHtml(snippet);
-      html = html.replace(escaped, `<mark class="prov-highlight">${escaped}</mark>`);
+      html = html.replaceAll(escaped, `<mark class="prov-highlight">${escaped}</mark>`);
     }
     this.highlightedReportHtml = html;
   }
