@@ -17,7 +17,17 @@ class SearchRequest(Base):
     __tablename__ = "SearchRequest"
     SearchRequestId = Column(Integer, primary_key=True, index=True)
     RequesterId = Column(Integer, ForeignKey("User.UserId"), nullable=False)
-    SearchId = Column(Integer, ForeignKey("Search.SearchId"), nullable=False)
+    # Exactly one of SearchId / ExtractionSessionId is populated: a request is
+    # either sourced from a Saved Search, or from an LLM-assisted Structured
+    # Data Extraction schema (see IsLlmAssisted).
+    SearchId = Column(Integer, ForeignKey("Search.SearchId"), nullable=True)
+    ExtractionSessionId = Column(
+        Integer, ForeignKey("ExtractionSession.ExtractionSessionId"), nullable=True
+    )
+    ExtractionRunId = Column(
+        Integer, ForeignKey("ExtractionRun.ExtractionRunId"), nullable=True
+    )
+    IsLlmAssisted = Column(Boolean, nullable=False, default=False)
     SearchRequestStatusId = Column(
         Integer,
         ForeignKey("SearchRequestStatus.SearchRequestStatusId"),
@@ -48,6 +58,8 @@ class SearchRequest(Base):
     UpdateBy = Column(String, nullable=True)
     User = relationship("User", back_populates="SearchRequest")
     Search = relationship("Search", back_populates="SearchRequest")
+    ExtractionSession = relationship("ExtractionSession", foreign_keys=[ExtractionSessionId])
+    ExtractionRun = relationship("ExtractionRun", foreign_keys=[ExtractionRunId])
     SearchRequestStatus = relationship(
         "SearchRequestStatus", back_populates="SearchRequest"
     )

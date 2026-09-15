@@ -115,11 +115,18 @@ import { AireviewcasedetailComponent } from './components/modal/aireviewcasedeta
 import { UserattestComponent } from './components/modal/userattest/userattest.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
+
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
 
 export function initializeApp(appConfigService: AppConfigService) {
   return () => appConfigService.loadConfig();
 }
+
+
+import { ExtractionSessionsComponent } from './components/extraction/extraction-sessions/extraction-sessions.component';
+import { ExtractionSchemaComponent } from './components/extraction/extraction-schema/extraction-schema.component';
+import { ExtractionReviewComponent } from './components/extraction/extraction-review/extraction-review.component';
+import { SendToExtractionComponent } from './components/modal/send-to-extraction/send-to-extraction.component';
 
 @NgModule({
   declarations: [
@@ -237,7 +244,11 @@ export function initializeApp(appConfigService: AppConfigService) {
     }),
     !environment.production ? StoreDevtoolsModule.instrument() : [],
     NgxSliderModule,
-    NgxSkeletonLoaderModule
+    NgxSkeletonLoaderModule,
+    ExtractionSessionsComponent,
+    ExtractionSchemaComponent,
+    ExtractionReviewComponent,
+    SendToExtractionComponent
   ],
   providers: [
     {

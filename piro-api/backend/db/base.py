@@ -29,3 +29,7 @@ from db.models.Tag import Tag  # noqa
 from db.models.TagCase import TagCase  # noqa
 from db.models.User import User  # noqa
 from db.models.UserRole import UserRole  # noqa
+from db.models.ExtractionSession import ExtractionSession  # noqa
+from db.models.ExtractionRun import ExtractionRun  # noqa
+from db.models.ExtractionQueue import ExtractionQueue  # noqa
+from db.models.ExtractionResult import ExtractionResult  # noqa

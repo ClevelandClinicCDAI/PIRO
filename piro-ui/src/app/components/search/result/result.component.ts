@@ -14,6 +14,7 @@ import { LocalStorageService } from '../../../services/localStorage.service';
 import { SynopticCopathComponent } from '../../common/synoptic-copath/synoptic-copath.component';
 import { SynopticEpicComponent } from '../../common/synoptic-epic/synoptic-epic.component';
 import { ToastrService } from 'ngx-toastr';
+import { SendToExtractionComponent } from '../../modal/send-to-extraction/send-to-extraction.component';
 @Component({
   standalone: false,
   selector: 'app-result',
@@ -42,6 +43,9 @@ export class ResultComponent {
 
   resultPayloadSubscription:any;
   noResults: boolean = false;
+
+  /** Cases selected for Extraction Suite */
+  selectedCaseIds: Set<number> = new Set();
   constructor(private modalService: NgbModal, 
     private searchService: SearchService, 
     private common: Common, 
@@ -241,4 +245,24 @@ export class ResultComponent {
       }      
 		});
 	}
+
+  toggleCase(caseId: number) {
+    if (this.selectedCaseIds.has(caseId)) {
+      this.selectedCaseIds.delete(caseId);
+    } else {
+      this.selectedCaseIds.add(caseId);
+    }
+  }
+
+  openSendToExtraction() {
+    const modalRef = this.modalService.open(SendToExtractionComponent, {
+      ariaLabelledBy: 'send-to-extraction-title',
+      size: 'md',
+      backdrop: 'static'
+    });
+    modalRef.componentInstance.caseIds = Array.from(this.selectedCaseIds);
+    modalRef.result.then((sessionId) => {
+      this.selectedCaseIds.clear();
+    }).catch(() => {});
+  }
 }
