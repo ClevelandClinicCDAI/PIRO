@@ -422,7 +422,10 @@ async def start_extraction(
             f"Search request audit error - create_audit_search_request 500 Internal Server Error "
             f"<{str(exc)} : {exc.args}>"
         )
-    return {"searchRequestId": searchRequestId, "extractionRunId": run.ExtractionRunId}
+    return {
+        "searchRequestId": searchRequestId,
+        "extractionRunId": run.ExtractionRunId,
+    }
 
 
 @router.post("/close/{searchRequestId}", dependencies=[Depends(JWTBearer())])
@@ -647,7 +650,10 @@ async def export(
         # whole data request. Only block while a run hasn't produced a final
         # result yet (pending/running) or never ran/failed outright.
         _EXPORTABLE_STATUSES = ("completed", "completed_with_errors")
-        if search_request.ExtractionRunId is None or search_request.ExtractionStatus not in _EXPORTABLE_STATUSES:
+        if (
+            search_request.ExtractionRunId is None
+            or search_request.ExtractionStatus not in _EXPORTABLE_STATUSES
+        ):
             raise HTTPException(
                 status_code=400,
                 detail="LLM extraction has not completed for this data request yet",
@@ -672,14 +678,23 @@ async def export(
             case_key = str(r.CaseId)
             if case_key not in extraction_data:
                 extraction_data[case_key] = {}
-            value = r.ExtractedValue
+            raw_value = r.ExtractedValue
+            if isinstance(raw_value, str):
+                try:
+                    value = json.loads(raw_value)
+                except (TypeError, ValueError):
+                    value = raw_value
+            else:
+                value = None
             if isinstance(value, (list, dict)):
                 value = json.dumps(value)
             extraction_data[case_key][r.FieldName] = value
             all_fields.add(r.FieldName)
 
         try:
-            from db.models.ExtractionSession import ExtractionSession as _ExtractionSessionModel
+            from db.models.ExtractionSession import (
+                ExtractionSession as _ExtractionSessionModel,
+            )
 
             session_row = (
                 db.query(_ExtractionSessionModel)
