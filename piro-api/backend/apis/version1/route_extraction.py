@@ -8,12 +8,11 @@ from __future__ import annotations
 import csv
 import io
 import json
-import asyncio
 from typing import Annotated, Any, Dict, List, Optional
 
 from core.auth_bearer import JWTBearer
 from core.constants import Constants
-from core.llm_client import FieldExtraction, get_llm_client
+from core.llm_client import get_llm_client
 from core.security_user import (
     get_current_user_id,
     get_current_user_nuid,
@@ -23,14 +22,12 @@ from db.repository.extraction import (
     AVAILABLE_TEXT_SOURCES,
     add_cases_to_queue,
     bulk_approve_high_confidence,
-    build_labelled_report_text,
     clear_queue,
     create_run,
     create_session,
     clone_results_for_run,
     delete_session,
     get_case_text_for_extraction,
-    get_case_text_segments,
     get_extraction_status,
     get_failed_case_ids,
     get_incorrect_case_ids,
@@ -57,7 +54,6 @@ from db.repository.extraction import (
     upsert_result,
 )
 from db.models.Case import Case
-from db.repository.cohort import get_cohort
 from db.models.SearchRequest import SearchRequest
 from db.repository.search import get_search
 from urllib.parse import parse_qs, urlparse
@@ -101,7 +97,8 @@ _ALLOWED_ROLES = [
 
 
 def _require_session_ownership(session_id: int, user_id: int, db: Session):
-    """Raise 404 if session doesn't exist, 403 if it belongs to a different user."""
+    """Raise 404 if session doesn't exist, 403 if it belongs to a different
+    user."""
     sess = get_session(session_id, db)
     if sess is None:
         raise HTTPException(
@@ -177,7 +174,9 @@ async def create_extraction_session(
     response_model=List[TextSourceOptionVM],
 )
 async def list_text_sources():
-    """Return the available report sections that can be selected for extraction."""
+    """
+    Return the available report sections that can be selected for extraction.
+    """
     return AVAILABLE_TEXT_SOURCES
 
 
@@ -264,7 +263,7 @@ async def add_to_queue(
     db: Session = Depends(get_db),
 ):
     _require_session_ownership(payload.session_id, current_user_id, db)
-    added = add_cases_to_queue(
+    add_cases_to_queue(
         session_id=payload.session_id,
         case_ids=payload.case_ids,
         user=current_user,
@@ -332,7 +331,7 @@ async def add_saved_search_to_queue(
         detail = (
             "Saved search returned no cases"
             if total == 0
-            else f"Search matched {total} documents but none had a caseId field"
+            else f"Search matched {total} documents but none had a caseId field"  # noqa:E501
         )
         raise HTTPException(status_code=400, detail=detail)
 
@@ -398,7 +397,7 @@ async def clear_queue_endpoint(
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
-            detail="Cannot clear the case set while a run is in progress. Cancel or wait for it to finish first.",
+            detail="Cannot clear the case set while a run is in progress. Cancel or wait for it to finish first.",  # noqa:E501
         )
 
     removed = clear_queue(session_id, db)
@@ -430,7 +429,6 @@ async def _run_extraction_job(
         update_session_status(session_id, "running", db)
 
         llm = get_llm_client()
-        from core.config import settings
 
         queue = get_queue(session_id, db)
         run = get_run(run_id, db)
@@ -441,8 +439,8 @@ async def _run_extraction_job(
         # Determine which cases to process
         validation_set = set(case_ids) if case_ids is not None else None
 
-        # For full runs, reset all queue items so previously completed validation
-        # cases are reprocessed to produce a complete result set
+        # For full runs, reset all queue items so previously completed
+        # validation cases are reprocessed to produce a complete result set
         if validation_set is None:
             reset_queue_statuses(session_id, db)
 
@@ -454,11 +452,12 @@ async def _run_extraction_job(
             ):
                 continue  # validation run: skip non-sampled cases
             if validation_set is None and queue_item.Status == "completed":
-                continue  # full run: skip already done (shouldn't exist after reset)
+                continue  # full run: skip already done (shouldn't exist after reset)  # noqa:E501
 
-            # Cooperative cancellation: checked between cases, not mid-LLM-call,
-            # so at most the case currently in flight finishes. Anything not
-            # yet started is left as "pending" so the run can be resumed later.
+            # Cooperative cancellation: checked between cases, not
+            # mid-LLM-call, so at most the case currently in flight finishes.
+            # Anything not yet started is left as "pending" so the run can be
+            # resumed later.
             if is_run_cancellation_requested(run_id, db):
                 cancelled = True
                 break
@@ -579,7 +578,9 @@ async def _run_extraction_job(
 def _notify_extraction_run_completed(
     run_id: int, status: str, db: Session
 ) -> None:
-    """Best-effort email notification; failures here must never break the run."""
+    """
+    Best-effort email notification; failures here must never break the run.
+    """
     try:
         from db.repository.searchRequest import email_extraction_run_completed
 
@@ -695,7 +696,7 @@ async def retry_failed_cases(
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
-            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",
+            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",  # noqa:E501
         )
 
     from core.config import settings
@@ -838,13 +839,19 @@ async def patch_result(
 async def approve_all_high_confidence(
     session_id: int,
     threshold: float = Query(default=0.8, ge=0.0, le=1.0),
-    current_user: Annotated[str, Depends(get_current_user_nuid)] = None,
-    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_user: Annotated[str, Depends(get_current_user_nuid)] | None = None,
+    current_user_id: (
+        Annotated[int, Depends(get_current_user_id)] | None
+    ) = None,
     db: Session = Depends(get_db),
 ):
+    if current_user is None or current_user_id is None:
+        raise HTTPException(
+            status_code=403, detail="User must be authenticated"
+        )
     _require_session_read_access(session_id, current_user_id, db)
     count = bulk_approve_high_confidence(
-        session_id, threshold, current_user, db
+        session_id, threshold, reviewer=current_user, db=db
     )
     return {"approved_count": count}
 
@@ -856,11 +863,17 @@ async def approve_all_high_confidence(
 async def get_low_confidence_cases(
     session_id: int,
     threshold: float = Query(default=0.8, ge=0.0, le=1.0),
-    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_user_id: (
+        Annotated[int, Depends(get_current_user_id)] | None
+    ) = None,
     db: Session = Depends(get_db),
 ):
     """Return distinct case IDs from the latest run that have any field below
     the confidence threshold or that have not yet been reviewed."""
+    if current_user_id is None:
+        raise HTTPException(
+            status_code=403, detail="User must be authenticated"
+        )
     _require_session_read_access(session_id, current_user_id, db)
     case_ids = get_low_confidence_case_ids(session_id, threshold, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
@@ -872,10 +885,17 @@ async def get_low_confidence_cases(
 )
 async def get_incorrect_cases(
     session_id: int,
-    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_user_id: (
+        Annotated[int, Depends(get_current_user_id)] | None
+    ) = None,
     db: Session = Depends(get_db),
 ):
-    """Return distinct case IDs from the latest run that have any field marked incorrect."""
+    """Return distinct case IDs from the latest run that have any field marked
+    incorrect."""
+    if current_user_id is None:
+        raise HTTPException(
+            status_code=403, detail="User must be authenticated"
+        )
     _require_session_read_access(session_id, current_user_id, db)
     case_ids = get_incorrect_case_ids(session_id, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
@@ -887,12 +907,18 @@ async def get_incorrect_cases(
 )
 async def get_failed_cases(
     session_id: int,
-    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_user_id: (
+        Annotated[int, Depends(get_current_user_id)] | None
+    ) = None,
     db: Session = Depends(get_db),
 ):
     """Return case IDs currently sitting at 'failed' in the queue (e.g. a
     transient LLM provider error), so the UI can offer to retry just those
     cases instead of re-running the whole session."""
+    if current_user_id is None:
+        raise HTTPException(
+            status_code=403, detail="User must be authenticated"
+        )
     _require_session_ownership(session_id, current_user_id, db)
     case_ids = get_failed_case_ids(session_id, db)
     return {"case_ids": case_ids, "count": len(case_ids)}
@@ -910,9 +936,15 @@ async def get_failed_cases(
 async def export_results(
     session_id: int,
     format: str = Query(default="csv", regex="^(csv|json|excel)$"),
-    current_user_id: Annotated[int, Depends(get_current_user_id)] = None,
+    current_user_id: (
+        Annotated[int, Depends(get_current_user_id)] | None
+    ) = None,
     db: Session = Depends(get_db),
 ):
+    if current_user_id is None:
+        raise HTTPException(
+            status_code=403, detail="User must be authenticated"
+        )
     sess = _require_session_read_access(session_id, current_user_id, db)
     results = get_results_for_session(session_id, db)
 
@@ -976,6 +1008,10 @@ async def export_results(
 
         wb = Workbook()
         ws = wb.active
+        if not ws:
+            raise HTTPException(
+                status_code=500, detail="Failed to create Excel worksheet"
+            )
         # Sheet titles also disallow []:*?/\ and are capped at 31 chars
         safe_title = (
             re.sub(r"[\[\]:*?/\\]", "_", sess.Name or "Results")[:31]
@@ -1014,9 +1050,9 @@ async def export_results(
         output.seek(0)
         return StreamingResponse(
             output,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa:E501
             headers={
-                "Content-Disposition": f'attachment; filename="extraction_{session_id}.xlsx"'
+                "Content-Disposition": f'attachment; filename="extraction_{session_id}.xlsx"'  # noqa:E501
             },
         )
 
@@ -1037,7 +1073,7 @@ async def export_results(
         io.BytesIO(output.getvalue().encode("utf-8")),
         media_type="text/csv",
         headers={
-            "Content-Disposition": f'attachment; filename="extraction_{session_id}.csv"'
+            "Content-Disposition": f'attachment; filename="extraction_{session_id}.csv"'  # noqa:E501
         },
     )
 
@@ -1078,7 +1114,7 @@ async def suggest_fields(
     if not sample_text:
         raise HTTPException(
             status_code=400,
-            detail="Provide either sample_text or a session_id with at least one case in the queue",
+            detail="Provide either sample_text or a session_id with at least one case in the queue",  # noqa:E501
         )
 
     llm = get_llm_client()
@@ -1108,7 +1144,7 @@ async def preview_extraction(
 
     _case = db.query(Case).filter(Case.CaseId == payload.case_id).first()
     logger.info(
-        f"[preview] CaseID={payload.case_id}  CaseNumber={_case.CaseNumber if _case else 'NOT FOUND'}"
+        f"[preview] CaseID={payload.case_id}  CaseNumber={_case.CaseNumber if _case else 'NOT FOUND'}"  # noqa:E501
     )
 
     if not payload.extraction_schema:
