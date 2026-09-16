@@ -97,6 +97,40 @@ _ALLOWED_ROLES = [
 ]
 
 
+def _is_demo_admin(role: Optional[str]) -> bool:
+    return (role or "").upper() == Constants.RoleDemoAdmin
+
+
+def _masked_case_number(
+    case_number: Optional[str], role: Optional[str]
+) -> Optional[str]:
+    if _is_demo_admin(role) and case_number is not None:
+        return "-"
+    return case_number
+
+
+def _serialize_queue_items(
+    items: List[Any], role: Optional[str]
+) -> List[ExtractionQueueItemVM]:
+    return [
+        ExtractionQueueItemVM.from_orm(item).copy(
+            update={"CaseNumber": _masked_case_number(item.CaseNumber, role)}
+        )
+        for item in items
+    ]
+
+
+def _serialize_results(
+    results: List[Any], role: Optional[str]
+) -> List[ExtractionResultVM]:
+    return [
+        ExtractionResultVM.from_orm(result).copy(
+            update={"CaseNumber": _masked_case_number(result.CaseNumber, role)}
+        )
+        for result in results
+    ]
+
+
 def _require_session_ownership(session_id: int, user_id: int, db: Session):
     """Raise 404 if session doesn't exist, 403 if it belongs to a different
     user."""
@@ -261,6 +295,7 @@ async def add_to_queue(
     payload: ExtractionQueueAdd,
     current_user: Annotated[str, Depends(get_current_user_nuid)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
     _require_session_ownership(payload.session_id, current_user_id, db)
@@ -270,7 +305,9 @@ async def add_to_queue(
         user=current_user,
         db=db,
     )
-    return get_queue(payload.session_id, db)
+    return _serialize_queue_items(
+        get_queue(payload.session_id, db), current_role
+    )
 
 
 @router.post(
@@ -282,6 +319,7 @@ async def add_saved_search_to_queue(
     payload: ExtractionQueueFromSearch,
     current_user: Annotated[str, Depends(get_current_user_nuid)],
     current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
     solr=Depends(get_solr),
 ):
@@ -342,7 +380,9 @@ async def add_saved_search_to_queue(
         user=current_user,
         db=db,
     )
-    return get_queue(payload.session_id, db)
+    return _serialize_queue_items(
+        get_queue(payload.session_id, db), current_role
+    )
 
 
 @router.get(
@@ -357,12 +397,7 @@ async def get_queue_items(
     db: Session = Depends(get_db),
 ):
     _require_session_read_access(session_id, current_user_id, db)
-    items = get_queue(session_id, db)
-    if current_role.upper() == "DEMOADMIN":
-        for item in items:
-            if item.Case:
-                item.Case.CaseNumber = "-"
-    return items
+    return _serialize_queue_items(get_queue(session_id, db), current_role)
 
 
 @router.delete(
@@ -790,12 +825,9 @@ async def get_results(
     db: Session = Depends(get_db),
 ):
     _require_session_read_access(session_id, current_user_id, db)
-    results = get_results_for_session(session_id, db)
-    if current_role.upper() == "DEMOADMIN":
-        for r in results:
-            if r.Case:
-                r.Case.CaseNumber = "-"
-    return results
+    return _serialize_results(
+        get_results_for_session(session_id, db), current_role
+    )
 
 
 @router.patch(
@@ -936,6 +968,7 @@ async def export_results(
     current_user_id: (
         Annotated[int, Depends(get_current_user_id)] | None
     ) = None,
+    current_role: Annotated[str, Depends(get_current_user_role)] | None = None,
     db: Session = Depends(get_db),
 ):
     if current_user_id is None:
@@ -954,14 +987,20 @@ async def export_results(
         except Exception:
             pass
 
-    # Build case_number → field → value table
-    case_fields: Dict[str, Dict[str, Any]] = {}
-    case_order: List[str] = []  # preserve first-seen order
+    # Build case_id → display case number / field → value table. Keying by
+    # CaseId avoids collapsing multiple demo rows into one when case numbers
+    # are redacted to the same placeholder.
+    case_rows: Dict[int, Dict[str, Any]] = {}
+    case_order: List[int] = []  # preserve first-seen order
     all_fields: set = set()
     for r in results:
-        case_key = r.CaseNumber or str(r.CaseId)
-        if case_key not in case_fields:
-            case_fields[case_key] = {}
+        case_key = r.CaseId
+        if case_key not in case_rows:
+            case_rows[case_key] = {
+                "case_number": _masked_case_number(r.CaseNumber, current_role)
+                or str(r.CaseId),
+                "fields": {},
+            }
             case_order.append(case_key)
         value = r.ExtractedValue
         try:
@@ -971,7 +1010,7 @@ async def export_results(
         # Flatten lists/dicts to a readable string
         if isinstance(value, (list, dict)):
             value = json.dumps(value)
-        case_fields[case_key][r.FieldName] = value
+        case_rows[case_key]["fields"][r.FieldName] = value
         all_fields.add(r.FieldName)
 
     # Preserve schema field order, appending any extra fields alphabetically
@@ -982,7 +1021,13 @@ async def export_results(
         fields = sorted(all_fields)
 
     if format == "json":
-        rows = [{"case_number": cn, **case_fields[cn]} for cn in case_order]
+        rows = [
+            {
+                "case_number": case_rows[case_id]["case_number"],
+                **case_rows[case_id]["fields"],
+            }
+            for case_id in case_order
+        ]
         return JSONResponse(content=rows)
 
     if format == "excel":
@@ -1028,9 +1073,11 @@ async def export_results(
             cell.alignment = Alignment(horizontal="center")
 
         # Data rows
-        for case_number in case_order:
-            field_vals = case_fields[case_number]
-            row = [case_number] + [field_vals.get(f) for f in fields]
+        for case_id in case_order:
+            field_vals = case_rows[case_id]["fields"]
+            row = [case_rows[case_id]["case_number"]] + [
+                field_vals.get(f) for f in fields
+            ]
             ws.append([_excel_safe(v) for v in row])
 
         # Auto-fit column widths (cap at 60)
@@ -1059,10 +1106,10 @@ async def export_results(
         output, fieldnames=["case_number"] + fields, extrasaction="ignore"
     )
     writer.writeheader()
-    for case_number in case_order:
-        row = {"case_number": case_number}
+    for case_id in case_order:
+        row = {"case_number": case_rows[case_id]["case_number"]}
         for field in fields:
-            row[field] = case_fields[case_number].get(field, "")
+            row[field] = case_rows[case_id]["fields"].get(field, "")
         writer.writerow(row)
 
     output.seek(0)
