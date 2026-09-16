@@ -9,6 +9,7 @@ from typing import List, Optional
 from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 
+from core.security_util import SecurityUtil
 from db.models.ExtractionQueue import ExtractionQueue
 from db.models.ExtractionResult import ExtractionResult
 from db.models.ExtractionRun import ExtractionRun
@@ -41,8 +42,8 @@ DEFAULT_TEXT_SOURCES = {"final", "comment", "addendum", "microscopic"}
 # Retained for backward compatibility with any external references.
 _EXTRACTION_SHORT_NAMES = DEFAULT_TEXT_SOURCES
 
-# Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report text.
-# Uses flexible whitespace matching to handle formatting variations.
+# Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report
+# text. Uses flexible whitespace matching to handle formatting variations.
 _LDT_DISCLAIMER_RE = re.compile(
     r"Laboratory\s+Developed\s+Test\s*\(LDT\)\s+Disclaimer\s*:.*?"
     r"Positive\s+and\s+negative\s+controls\s+stain\s+appropriately\s*\.",
@@ -51,7 +52,8 @@ _LDT_DISCLAIMER_RE = re.compile(
 
 
 def parse_text_sources(text_sources: Optional[str]) -> set:
-    """Parse a session's stored comma-separated TextSources into a lowercase set.
+    """Parse a session's stored comma-separated TextSources into a
+    lowercase set.
 
     Falls back to DEFAULT_TEXT_SOURCES when unset/empty.
     """
@@ -62,7 +64,9 @@ def parse_text_sources(text_sources: Optional[str]) -> set:
 
 
 def serialize_text_sources(text_sources: Optional[List[str]]) -> Optional[str]:
-    """Normalize a list of text source codes into the stored comma-separated form."""
+    """
+    Normalize a list of text source codes into the stored comma-separated form.
+    """
     if text_sources is None:
         return None
     codes = [c.strip().lower() for c in text_sources if c and c.strip()]
@@ -235,8 +239,9 @@ def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
 
 
 # A run stuck in "pending"/"running" this long with no queue-item activity is
-# almost certainly orphaned (e.g. the API process was restarted/crashed mid-run),
-# not a genuinely slow job — Azure OpenAI calls normally finish in seconds.
+# almost certainly orphaned (e.g. the API process was restarted/crashed
+# mid-run), not a genuinely slow job — Azure OpenAI calls normally finish in
+# seconds.
 STALE_RUN_THRESHOLD_MINUTES = 30
 
 
@@ -267,7 +272,7 @@ def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
         return run
 
     logger.warning(
-        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "
+        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "  # noqa:E501
         f"stale (no activity since {reference}); auto-marking as failed so a "
         f"new run can be started."
     )
@@ -567,18 +572,19 @@ def upsert_result(
         db.commit()
         db.refresh(result)
 
-    # de-duplicate run IDs
-    related_run_ids_to_update = []
+    # de-duplicate related run IDs
+    deduplicated_related_run_ids = []
     if related_run_ids:
         for run_id in related_run_ids:
-            if run_id not in related_run_ids_to_update:
-                related_run_ids_to_update.append(run_id)
+            if run_id not in deduplicated_related_run_ids:
+                deduplicated_related_run_ids.append(run_id)
 
     # update related runs, ensuring that each related run has the same result
     # as the current run
-    for related_run_id in related_run_ids_to_update:
+    for related_run_id in deduplicated_related_run_ids:
         if related_run_id == run_id:
             continue
+
         existing_result_from_another_run = (
             db.query(ExtractionResult)
             .filter(
@@ -588,6 +594,7 @@ def upsert_result(
             )
             .first()
         )
+
         if existing_result_from_another_run:
             _apply_result_values(existing_result_from_another_run)
             existing_result_from_another_run.ExtractionSessionId = session_id
@@ -676,7 +683,9 @@ def get_results_for_session(
 
 
 def get_results_for_run(run_id: int, db: Session) -> List[ExtractionResult]:
-    """Return results for a specific run (rather than always the latest one)."""
+    """
+    Return results for a specific run (rather than always the latest one).
+    """
     return (
         db.query(ExtractionResult)
         .options(joinedload(ExtractionResult.Case))
@@ -687,7 +696,8 @@ def get_results_for_run(run_id: int, db: Session) -> List[ExtractionResult]:
 
 
 def get_incorrect_case_ids(session_id: int, db: Session) -> List[int]:
-    """Return distinct case IDs from the latest run that have any field marked incorrect."""
+    """Return distinct case IDs from the latest run that have any field marked
+    incorrect."""
     latest_run = get_latest_run(session_id, db)
     if latest_run is None:
         return []
@@ -779,7 +789,8 @@ def update_result_review(
 def bulk_approve_high_confidence(
     session_id: int, threshold: float, reviewer: str, db: Session
 ) -> int:
-    """Approve all un-reviewed results with confidence >= threshold. Returns count."""
+    """Approve all un-reviewed results with confidence >= threshold. Returns
+    count."""
     latest_run = get_latest_run(session_id, db)
     if latest_run is None:
         return 0
@@ -813,8 +824,8 @@ def get_case_text_segments(
 ) -> List[VCaseCommentText]:
     """Fetch comment segments for extraction-relevant types in display order.
 
-    Filters on V_CaseCommentText.CommentType (the ShortName already in the view)
-    to avoid a redundant re-join to the CommentType table.
+    Filters on V_CaseCommentText.CommentType (the ShortName already in the
+    view) to avoid a redundant re-join to the CommentType table.
     ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES);
     defaults to DEFAULT_TEXT_SOURCES (Final, Comment, Addendum, Microscopic)
     when not provided.
@@ -854,7 +865,9 @@ def get_case_text_segments(
 
 
 def _strip_ldt_disclaimer(text: str) -> str:
-    """Remove the Cleveland Clinic LDT disclaimer boilerplate from report text."""
+    """
+    Remove the Cleveland Clinic LDT disclaimer boilerplate from report text.
+    """
     if not text:
         return text
     cleaned = _LDT_DISCLAIMER_RE.sub("", text)
@@ -864,8 +877,8 @@ def _strip_ldt_disclaimer(text: str) -> str:
 def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
     """Build a structured, labelled text string from comment segments.
 
-    The LDT disclaimer boilerplate is stripped from each segment before assembly
-    so it is neither displayed to users nor sent to the LLM.
+    The LDT disclaimer boilerplate is stripped from each segment before
+    assembly so it is neither displayed to users nor sent to the LLM.
 
     Example output:
         Final Diagnosis:
@@ -896,7 +909,6 @@ def get_case_text_for_extraction(
 
     # Apply PHI masking for demo mode (reuses existing SecurityUtil logic)
     if role and role.upper() == "DEMOADMIN":
-        from core.security_util import SecurityUtil
 
         for seg in segments:
             seg.CommentText = SecurityUtil.mask_date(seg.CommentText)

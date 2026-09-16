@@ -11,6 +11,7 @@ import json
 from typing import Annotated, Any, Dict, List, Optional
 
 from core.auth_bearer import JWTBearer
+from core.config import settings
 from core.constants import Constants
 from core.llm_client import get_llm_client
 from core.security_user import (
@@ -415,7 +416,7 @@ async def _run_extraction_job(
     user: str,
     role: str,
     case_ids: Optional[List[int]] = None,
-    source_run_id: Optional[int] = None,
+    related_run_id: Optional[int] = None,
 ) -> None:
     """Background task: extract cases for a session.
 
@@ -529,7 +530,7 @@ async def _run_extraction_job(
                         user=user,
                         db=db,
                         related_run_ids=(
-                            [source_run_id] if source_run_id else None
+                            [related_run_id] if related_run_id else None
                         ),
                     )
 
@@ -587,7 +588,7 @@ def _notify_extraction_run_completed(
         email_extraction_run_completed(run_id=run_id, status=status, db=db)
     except Exception as exc:
         logger.error(
-            f"Extraction completion email error - run {run_id} <{str(exc)} : {exc.args}>"
+            f"Extraction completion email error - run {run_id} <{str(exc)} : {exc.args}>"  # noqa:E501
         )
 
 
@@ -621,10 +622,8 @@ async def start_extraction(
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
-            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",
+            detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",  # noqa:E501
         )
-
-    from core.config import settings
 
     llm_provider = settings.LLM_PROVIDER or "ollama"
     llm_model = settings.LLM_MODEL or "llama3.2"
@@ -699,8 +698,6 @@ async def retry_failed_cases(
             detail=f"A run is already {latest.Status}. Wait for it to finish before starting another.",  # noqa:E501
         )
 
-    from core.config import settings
-
     llm_provider = settings.LLM_PROVIDER or "ollama"
     llm_model = settings.LLM_MODEL or "llama3.2"
 
@@ -729,7 +726,7 @@ async def retry_failed_cases(
         user=current_user,
         role=current_role,
         case_ids=failed_case_ids,
-        source_run_id=latest.ExtractionRunId,
+        related_run_id=latest.ExtractionRunId,
     )
 
     return run

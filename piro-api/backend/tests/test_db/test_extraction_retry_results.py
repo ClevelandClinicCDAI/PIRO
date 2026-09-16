@@ -1,7 +1,5 @@
 import os
 
-os.environ.setdefault("DATABASE", "SQLITE")
-
 from datetime import datetime
 
 import pytest
@@ -22,6 +20,8 @@ from db.repository.extraction import (
     get_results_for_session,
     upsert_result,
 )
+
+os.environ.setdefault("DATABASE", "SQLITE")
 
 
 @pytest.fixture
