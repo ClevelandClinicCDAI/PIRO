@@ -14,6 +14,7 @@ from core.auth_bearer import JWTBearer
 from core.config import settings
 from core.constants import Constants
 from core.llm_client import get_llm_client
+from core.security_util import SecurityUtil
 from core.security_user import (
     get_current_user_id,
     get_current_user_nuid,
@@ -97,24 +98,16 @@ _ALLOWED_ROLES = [
 ]
 
 
-def _is_demo_admin(role: Optional[str]) -> bool:
-    return (role or "").upper() == Constants.RoleDemoAdmin
-
-
-def _masked_case_number(
-    case_number: Optional[str], role: Optional[str]
-) -> Optional[str]:
-    if _is_demo_admin(role) and case_number is not None:
-        return "-"
-    return case_number
-
-
 def _serialize_queue_items(
     items: List[Any], role: Optional[str]
 ) -> List[ExtractionQueueItemVM]:
     return [
         ExtractionQueueItemVM.from_orm(item).copy(
-            update={"CaseNumber": _masked_case_number(item.CaseNumber, role)}
+            update={
+                "CaseNumber": SecurityUtil.mask_case_number(
+                    item.CaseNumber, role
+                )
+            }
         )
         for item in items
     ]
@@ -125,7 +118,11 @@ def _serialize_results(
 ) -> List[ExtractionResultVM]:
     return [
         ExtractionResultVM.from_orm(result).copy(
-            update={"CaseNumber": _masked_case_number(result.CaseNumber, role)}
+            update={
+                "CaseNumber": SecurityUtil.mask_case_number(
+                    result.CaseNumber, role
+                )
+            }
         )
         for result in results
     ]
@@ -997,7 +994,9 @@ async def export_results(
         case_key = r.CaseId
         if case_key not in case_rows:
             case_rows[case_key] = {
-                "case_number": _masked_case_number(r.CaseNumber, current_role)
+                "case_number": SecurityUtil.mask_case_number(
+                    r.CaseNumber, current_role
+                )
                 or str(r.CaseId),
                 "fields": {},
             }

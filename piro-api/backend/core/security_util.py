@@ -8,6 +8,8 @@ import re
 class SecurityUtil:
     "A collection of utilities for preventing unauthorized users from accessing protected attributes."
 
+    DEMO_MASK_PLACEHOLDER: str = "-"
+
     search_ADMIN: str = ""
     search_ANALYST: str = (
         "collectiondate,signoutdate,receivedate,accessiondate,isdeceased,dob,patientname,patientdeathdate,overduedate"  # noqa
@@ -43,11 +45,21 @@ class SecurityUtil:
             print(att, getattr(obj, att))
 
     @staticmethod
+    def is_demo_admin(role: str | None) -> bool:
+        return (role or "").upper() == Constants.RoleDemoAdmin
+
+    @staticmethod
+    def mask_case_number(case_number: str | None, role: str | None):
+        if SecurityUtil.is_demo_admin(role) and case_number is not None:
+            return SecurityUtil.DEMO_MASK_PLACEHOLDER
+        return case_number
+
+    @staticmethod
     def search(doc: document, role: str, isAttest: bool):
         """Remove protected attributes from a search result document."""
 
         excludes: str = ""
-        if role == Constants.RoleDemoAdmin:
+        if SecurityUtil.is_demo_admin(role):
             excludes = SecurityUtil.search_DEMOADMIN
         elif isAttest is True:
             excludes = SecurityUtil.search_ADMIN
@@ -64,7 +76,7 @@ class SecurityUtil:
         for exclude in excludes_arr:
             SecurityUtil.delete_attr(doc, exclude)
 
-        if role == Constants.RoleDemoAdmin:
+        if SecurityUtil.is_demo_admin(role):
             doc.comment = SecurityUtil.mask_date(doc.comment)
             doc.comment = SecurityUtil.mask_case(doc.comment)
 
@@ -94,7 +106,7 @@ class SecurityUtil:
         """Remove protected attributes from a VCase object."""
 
         excludes: str = ""
-        if role == Constants.RoleDemoAdmin:
+        if SecurityUtil.is_demo_admin(role):
             excludes = SecurityUtil.case_DEMOADMIN
         elif isAttest is True:
             excludes = SecurityUtil.case_ADMIN
@@ -116,7 +128,7 @@ class SecurityUtil:
 
     @staticmethod
     def comment_text(comments: Any, role):
-        if comments is not None and role == Constants.RoleDemoAdmin:
+        if comments is not None and SecurityUtil.is_demo_admin(role):
             for row in comments:
                 row.CommentText = SecurityUtil.mask_date(row.CommentText)
                 row.CommentText = SecurityUtil.mask_case(row.CommentText)

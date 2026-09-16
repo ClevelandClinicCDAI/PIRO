@@ -66,12 +66,36 @@ def test_search_demoadmin_masks_microscopic():
     """Test DemoAdmin masking also redacts microscopic text content."""
 
     doc = document()
-    for field in ["comment", "addend", "intraop", "resident", "final", "microscopic"]:
+    for field in [
+        "comment",
+        "addend",
+        "intraop",
+        "resident",
+        "final",
+        "microscopic",
+    ]:
         setattr(doc, field, "MICROSCOPIC Patient 12/12/2020 case AB12-12345")
 
     SecurityUtil.search(doc, role=Constants.RoleDemoAdmin, isAttest=False)
 
     assert doc.microscopic == "MICROSCOPIC Patient MM/dd/yyyy case X01-XXXXXX"
+
+
+def test_is_demo_admin_handles_none_and_case_insensitive():
+    assert SecurityUtil.is_demo_admin(None) is False
+    assert SecurityUtil.is_demo_admin("demoadmin") is True
+
+
+def test_mask_case_number_redacts_only_for_demoadmin():
+    assert (
+        SecurityUtil.mask_case_number("REAL-123", Constants.RoleDemoAdmin)
+        == SecurityUtil.DEMO_MASK_PLACEHOLDER
+    )
+    assert (
+        SecurityUtil.mask_case_number("REAL-123", Constants.RoleUser)
+        == "REAL-123"
+    )
+    assert SecurityUtil.mask_case_number(None, Constants.RoleDemoAdmin) is None
 
 
 def test_case_user_not_attested(vcase_one):
@@ -80,7 +104,8 @@ def test_case_user_not_attested(vcase_one):
     Some attributes should be removed.
 
     Note that the INSTANCE attribute will be removed, but class attribute continues to exist
-    as part of the model; so we test to ensure the original value has been removed."""
+    as part of the model; so we test to ensure the original value has been removed.
+    """
 
     SecurityUtil.case(vcase_one, role=Constants.RoleUser, isAttest=False)
 
