@@ -21,6 +21,7 @@ from db.repository.lookup import SearchRequestStatus_get_id
 from db.repository.searchRequest import (
     create_new_searchRequest,
     delete_searchRequest,
+    get_extraction_case_ids_for_request,
     get_searchRequest,
     get_searchRequest_all,
     list_reasons_active,
@@ -659,8 +660,14 @@ async def export(
                 detail="LLM extraction has not completed for this data request yet",
             )
 
-        queue = get_queue(search_request.ExtractionSessionId, db)
-        case_ids = [q.CaseId for q in queue]
+        case_ids = get_extraction_case_ids_for_request(
+            searchRequestId=searchRequestId,
+            extractionRunId=search_request.ExtractionRunId,
+            db=db,
+        )
+        if not case_ids:
+            queue = get_queue(search_request.ExtractionSessionId, db)
+            case_ids = [q.CaseId for q in queue]
 
         # Ensure caseid is always retrieved so extraction results can be joined
         solr_fields = fields
@@ -669,6 +676,14 @@ async def export(
 
         data = get_case_data_by_ids(
             case_ids=case_ids, db=db, solr=solr, fields=solr_fields
+        )
+        case_sort_order = {
+            str(case_id): index for index, case_id in enumerate(case_ids)
+        }
+        data.sort(
+            key=lambda doc: case_sort_order.get(
+                str(getattr(doc, "caseid", "")), len(case_sort_order)
+            )
         )
 
         results = get_results_for_run(search_request.ExtractionRunId, db)

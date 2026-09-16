@@ -365,7 +365,11 @@ def add_cases_to_queue(
     if not case_ids:
         return []
 
-    unique_case_ids = list(dict.fromkeys(case_ids))  # de-dupe, preserve order
+    # deduplicate case IDs while preserving order
+    unique_case_ids: list = []
+    for case_id in case_ids:
+        if case_id not in unique_case_ids:
+            unique_case_ids.append(case_id)
     existing_ids: set = set()
     CHUNK_SIZE = 1000
     for i in range(0, len(unique_case_ids), CHUNK_SIZE):

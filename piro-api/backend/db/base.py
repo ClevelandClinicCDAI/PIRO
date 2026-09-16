@@ -18,6 +18,9 @@ from db.models.Role import Role  # noqa
 from db.models.SlideRequest import SlideRequest  # noqa
 from db.models.Search import Search  # noqa
 from db.models.SearchRequest import SearchRequest  # noqa
+from db.models.SearchRequestExtractionCase import (  # noqa
+    SearchRequestExtractionCase,
+)
 from db.models.SearchRequestReason import SearchRequestReason  # noqa
 from db.models.SearchRequestStatus import SearchRequestStatus  # noqa
 from db.models.SearchRequestDataField import SearchRequest  # noqa

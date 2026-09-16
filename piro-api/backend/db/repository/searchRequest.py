@@ -5,6 +5,7 @@ from core.email import Email
 from db.dict2Class import dict2Class
 from db.models.Search import Search
 from db.models.SearchRequest import SearchRequest
+from db.models.SearchRequestExtractionCase import SearchRequestExtractionCase
 from db.models.SearchRequestReason import SearchRequestReason
 from db.models.SearchRequestStatus import SearchRequestStatus
 from db.models.ExtractionQueue import ExtractionQueue
@@ -133,7 +134,9 @@ def email_extraction_run_completed(run_id: int, status: str, db: Session):
         return
 
     approver = (
-        db.query(User).filter(User.UserId == searchRequest.ApprovedById).first()
+        db.query(User)
+        .filter(User.UserId == searchRequest.ApprovedById)
+        .first()
     )
     if approver is None or not approver.NUID:
         logger.warning(
@@ -150,7 +153,9 @@ def email_extraction_run_completed(run_id: int, status: str, db: Session):
         "failed": "failed",
     }.get(status, status)
 
-    subject = f"PIRO: Data extraction {status_label} - {searchRequest.RequestName}"
+    subject = (
+        f"PIRO: Data extraction {status_label} - {searchRequest.RequestName}"
+    )
     html_body = f"""
     <html>
       <body>
@@ -226,7 +231,11 @@ def list_searchRequest(
         db.query(
             SearchRequest, Search, SearchRequestStatus, Reviewer, Approver
         )
-        .join(SearchRequest, SearchRequest.SearchId == Search.SearchId, isouter=True)
+        .join(
+            SearchRequest,
+            SearchRequest.SearchId == Search.SearchId,
+            isouter=True,
+        )
         .join(
             SearchRequestStatus,
             SearchRequest.SearchRequestStatusId
@@ -311,7 +320,10 @@ def list_searchRequest_display(
         if searchRequest.IsLlmAssisted and searchRequest.ExtractionSessionId:
             case_count = (
                 db.query(ExtractionQueue)
-                .filter(ExtractionQueue.ExtractionSessionId == searchRequest.ExtractionSessionId)
+                .filter(
+                    ExtractionQueue.ExtractionSessionId
+                    == searchRequest.ExtractionSessionId
+                )
                 .count()
             )
         item = dict2Class(
@@ -366,14 +378,67 @@ def get_searchRequest_all(searchRequestId: int, db: Session):
     raise DataException("SearchRequest does not exist")
 
 
-def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Session):
+def snapshot_extraction_cases_for_request(
+    searchRequestId: int,
+    extractionRunId: int,
+    case_ids: list[int],
+    user: str,
+    db: Session,
+) -> list[int]:
+    """Persist the exact case membership tied to a request's extraction run."""
+    unique_case_ids = list(dict.fromkeys(case_ids))
+    if not unique_case_ids:
+        return []
+
+    rows = [
+        SearchRequestExtractionCase(
+            SearchRequestId=searchRequestId,
+            ExtractionRunId=extractionRunId,
+            CaseId=case_id,
+            SortOrder=index,
+            CreateBy=user,
+        )
+        for index, case_id in enumerate(unique_case_ids)
+    ]
+    db.add_all(rows)
+    db.commit()
+    return unique_case_ids
+
+
+def get_extraction_case_ids_for_request(
+    searchRequestId: int,
+    extractionRunId: int,
+    db: Session,
+) -> list[int]:
+    rows = (
+        db.query(SearchRequestExtractionCase.CaseId)
+        .filter(
+            SearchRequestExtractionCase.SearchRequestId == searchRequestId,
+            SearchRequestExtractionCase.ExtractionRunId == extractionRunId,
+        )
+        .order_by(
+            SearchRequestExtractionCase.SortOrder,
+            SearchRequestExtractionCase.SearchRequestExtractionCaseId,
+        )
+        .all()
+    )
+    return [row.CaseId for row in rows]
+
+
+def start_extraction_for_searchRequest(
+    searchRequestId: int, user: str, db: Session
+):
     """Prepare a new ExtractionRun for an approved, LLM-assisted SearchRequest.
 
     Returns (searchRequest, run, case_ids, role-agnostic schema_json) so the
     caller (route layer) can schedule the actual background extraction job.
     Raises DataException on invalid state.
     """
-    from db.repository.extraction import create_run, get_queue, reclaim_stale_run
+    from db.repository.extraction import (
+        create_run,
+        get_queue,
+        reclaim_stale_run,
+    )
     from db.models.ExtractionSession import ExtractionSession
 
     searchRequest = (
@@ -384,22 +449,32 @@ def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Sess
     )
     if searchRequest is None:
         raise DataException("SearchRequest does not exist")
-    if not searchRequest.IsLlmAssisted or searchRequest.ExtractionSessionId is None:
+    if (
+        not searchRequest.IsLlmAssisted
+        or searchRequest.ExtractionSessionId is None
+    ):
         raise DataException("SearchRequest is not LLM-assisted")
 
     approveId = SearchRequestStatus_get_id(
         code=str(Constants.SearchRequestStatus.APPROVE.name), db=db
     )
     if searchRequest.SearchRequestStatusId != approveId:
-        raise DataException("SearchRequest must be approved before extraction can start")
+        raise DataException(
+            "SearchRequest must be approved before extraction can start"
+        )
 
     session = (
         db.query(ExtractionSession)
-        .filter(ExtractionSession.ExtractionSessionId == searchRequest.ExtractionSessionId)
+        .filter(
+            ExtractionSession.ExtractionSessionId
+            == searchRequest.ExtractionSessionId
+        )
         .first()
     )
     if session is None or not session.SchemaJson:
-        raise DataException("Extraction schema is not defined for this request")
+        raise DataException(
+            "Extraction schema is not defined for this request"
+        )
 
     queue = get_queue(searchRequest.ExtractionSessionId, db)
     if not queue:
@@ -427,6 +502,13 @@ def start_extraction_for_searchRequest(searchRequestId: int, user: str, db: Sess
     db.commit()
 
     case_ids = [q.CaseId for q in queue]
+    snapshot_extraction_cases_for_request(
+        searchRequestId=searchRequest.SearchRequestId,
+        extractionRunId=run.ExtractionRunId,
+        case_ids=case_ids,
+        user=user,
+        db=db,
+    )
     return searchRequest, run, case_ids
 
 

@@ -6,14 +6,15 @@
 -- integration):
 --   1. create_extraction_tables.sql            (base tables)
 --   2. add_extraction_session_text_sources.sql (per-session text sources)
---   3. add_llm_assisted_data_request.sql        (SearchRequest integration)
+--   3. add_llm_assisted_data_request.sql         (SearchRequest integration)
 --   4. add_extraction_run_cancellation.sql       (cancellation flag)
+--   5. add_search_request_extraction_case_snapshot.sql (request export case snapshot)
 --
 -- All steps are idempotent (guarded by IF NOT EXISTS / COL_LENGTH checks),
 -- so this script is safe to re-run against a database at any point in its
 -- migration history — already-applied steps are skipped and PRINTed as such.
 --
--- Run this single file against PIRO PROD instead of the 4 individual
+-- Run this single file against PIRO PROD instead of the 5 individual
 -- scripts.
 -- =============================================================================
 
@@ -330,6 +331,38 @@ ELSE
 GO
 
 PRINT 'Step 4/4 complete: add_extraction_run_cancellation';
+GO
+
+-- #############################################################################
+-- # 5. add_search_request_extraction_case_snapshot.sql
+-- #############################################################################
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SearchRequestExtractionCase')
+BEGIN
+    CREATE TABLE [dbo].[SearchRequestExtractionCase] (
+        [SearchRequestExtractionCaseId] INT IDENTITY(1,1) PRIMARY KEY,
+        [SearchRequestId]               INT NOT NULL,
+        [ExtractionRunId]               INT NOT NULL,
+        [CaseId]                        INT NOT NULL,
+        [SortOrder]                     INT NOT NULL,
+        [CreateDate]                    DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET(),
+        [CreateBy]                      NVARCHAR(255) NOT NULL,
+        CONSTRAINT [FK_SearchRequestExtractionCase_Request]
+            FOREIGN KEY ([SearchRequestId]) REFERENCES [dbo].[SearchRequest]([SearchRequestId]),
+        CONSTRAINT [FK_SearchRequestExtractionCase_Run]
+            FOREIGN KEY ([ExtractionRunId]) REFERENCES [dbo].[ExtractionRun]([ExtractionRunId]),
+        CONSTRAINT [FK_SearchRequestExtractionCase_Case]
+            FOREIGN KEY ([CaseId]) REFERENCES [dbo].[Case]([CaseId]),
+        CONSTRAINT [UQ_SearchRequestExtractionCase_Request_Run_Case]
+            UNIQUE ([SearchRequestId], [ExtractionRunId], [CaseId])
+    );
+    PRINT 'Created table SearchRequestExtractionCase';
+END
+ELSE
+    PRINT 'Table SearchRequestExtractionCase already exists';
+GO
+
+PRINT 'Step 5/5 complete: add_search_request_extraction_case_snapshot';
 GO
 
 PRINT 'PIRO Extraction Suite deployment complete.';
