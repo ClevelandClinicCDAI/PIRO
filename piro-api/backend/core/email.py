@@ -2,7 +2,7 @@ import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from core.config import Settings
+from core.config import settings
 from logger import logger
 
 
@@ -48,10 +48,10 @@ class Email:
     """
 
     def __init__(self, subject: str, html_body: str):
-        self.email_server_hostname = Settings.EMAIL_SMTP_SERVER
+        self.email_server_hostname = settings.EMAIL_SMTP_SERVER
         self.email = MIMEMultipart()
-        self.from_address = Settings.EMAIL_FROM
-        self.email["From"] = Settings.EMAIL_FROM
+        self.from_address = settings.EMAIL_FROM
+        self.email["From"] = settings.EMAIL_FROM
         self.email["Subject"] = subject
         self.email.attach(MIMEText(html_body, "html"))
 

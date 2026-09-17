@@ -1,6 +1,6 @@
 from datetime import datetime
 from core.constants import Constants
-from core.config import Settings
+from core.config import settings
 from core.email import Email
 from db.dict2Class import dict2Class
 from db.models.Search import Search
@@ -10,7 +10,13 @@ from db.models.SearchRequestReason import SearchRequestReason
 from db.models.SearchRequestStatus import SearchRequestStatus
 from db.models.ExtractionQueue import ExtractionQueue
 from db.models.User import User
+from db.models.ExtractionSession import ExtractionSession
 from db.repository.lookup import SearchRequestStatus_get_id
+from db.repository.extraction import (
+    create_run,
+    get_queue,
+    reclaim_stale_run,
+)
 from db.repository.searchRequestDataField import (
     addupdate_searchRequestDataFields,
 )
@@ -87,13 +93,13 @@ def create_new_searchRequest(
 
 
 def email_searchRequest(searchRequestId: int, db: Session):
-    if Settings.DATAREQUEST_EMAIL_ENABLE == "True":
+    if settings.DATAREQUEST_EMAIL_ENABLE == "True":
         search_request = get_searchRequest(
             searchRequestId=searchRequestId, db=db
         )
         f = open(
-            Settings.DATAREQUEST_EMAIL_Template_DIRECTORY
-            + Settings.DATAREQUEST_EMAIL_Template_FILE,
+            settings.DATAREQUEST_EMAIL_Template_DIRECTORY
+            + settings.DATAREQUEST_EMAIL_Template_FILE,
             "r",
         )
         html = f.read()
@@ -101,12 +107,12 @@ def email_searchRequest(searchRequestId: int, db: Session):
         body_template = Template(html, autoescape=True)
         html_transform = body_template.render(search_request.__dict__)
 
-        subject = Settings.DATAREQUEST_EMAIL_SUBJECT
+        subject = settings.DATAREQUEST_EMAIL_SUBJECT
         subject_template = Template(subject, autoescape=True)
         subject_transform = subject_template.render(search_request.__dict__)
 
-        to_adress = Settings.DATAREQUEST_EMAIL_TO
-        cc_adress = Settings.DATAREQUEST_EMAIL_CC
+        to_adress = settings.DATAREQUEST_EMAIL_TO
+        cc_adress = settings.DATAREQUEST_EMAIL_CC
 
         email_obj = Email(subject=subject_transform, html_body=html_transform)
         email_obj.send(to=to_adress, cc=cc_adress, bcc=None)
@@ -121,7 +127,7 @@ def email_extraction_run_completed(run_id: int, status: str, db: Session):
     validation/preview runs triggered from the Schema Builder by whoever
     designed the extraction schema.
     """
-    if Settings.DATAREQUEST_EMAIL_ENABLE != "True":
+    if settings.DATAREQUEST_EMAIL_ENABLE != "True":
         return
 
     searchRequest = (
@@ -434,12 +440,6 @@ def start_extraction_for_searchRequest(
     caller (route layer) can schedule the actual background extraction job.
     Raises DataException on invalid state.
     """
-    from db.repository.extraction import (
-        create_run,
-        get_queue,
-        reclaim_stale_run,
-    )
-    from db.models.ExtractionSession import ExtractionSession
 
     searchRequest = (
         db.query(SearchRequest)
@@ -485,8 +485,6 @@ def start_extraction_for_searchRequest(
         raise DataException(
             f"A run is already {latest.Status}. Wait for it to finish before starting another."
         )
-
-    from core.config import settings
 
     run = create_run(
         session_id=searchRequest.ExtractionSessionId,

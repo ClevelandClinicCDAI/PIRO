@@ -5,7 +5,7 @@ import os
 from typing import Any, Dict, List, Optional
 from urllib.parse import parse_qs, urlparse
 
-from core.config import Settings
+from core.config import settings
 from db.repository.search import get_search
 from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE, Cell
@@ -62,7 +62,7 @@ def get_search_data(
         sortBy="",
         sortOrder="",
         page=1,
-        count=Settings.EXCEL_Output_Records,
+        count=settings.EXCEL_Output_Records,
         db=db,
         solr=solr,
         finalRtf=False,
@@ -184,14 +184,16 @@ def create_excel(
                     if value is None
                     else ILLEGAL_CHARACTERS_RE.sub(r"", str(value))
                 )
-                cell: Cell = ws1.cell(row + offset_row, col + offset_col, str_data)
+                cell: Cell = ws1.cell(
+                    row + offset_row, col + offset_col, str_data
+                )
                 cell.data_type = "s"
                 col = col + 1
 
         row += 1
 
     file = f"PIRO_{searchId}.xlsx"
-    output_dir = Settings.EXCEL_Output_DIRECTORY or ""
+    output_dir = settings.EXCEL_Output_DIRECTORY or ""
     if output_dir != "":
         os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, file)

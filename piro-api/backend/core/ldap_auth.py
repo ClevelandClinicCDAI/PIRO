@@ -2,7 +2,7 @@ import re
 import ldap
 import ldap.filter
 from logger import logger
-from core.config import Settings
+from core.config import settings
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from core.constants import Constants
@@ -22,7 +22,7 @@ def get_ldap_client() -> ldap.ldapobject.LDAPObject:
     """Configure necessary options and initialize an LDAP object (a 'client')."""
 
     ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-    return ldap.initialize(Settings.AD_LDAP_PATH)
+    return ldap.initialize(settings.AD_LDAP_PATH)
 
 
 def user_login(userName: str, password: str, islog: bool, db: Session) -> bool:
@@ -81,7 +81,7 @@ def try_ldap_bind(
     try:
         escaped_username: str = ldap.filter.escape_filter_chars(userName)
         ldap_client.simple_bind_s(
-            f"{escaped_username}@{Settings.AD_DOMAIN}", password
+            f"{escaped_username}@{settings.AD_DOMAIN}", password
         )
         return True
     except ldap.INVALID_CREDENTIALS:
@@ -98,16 +98,16 @@ def user_group(userName: str, password: str, islog: bool, db: Session) -> bool:
             ldap_client,
             username=userName,
             password=password,
-            auth_group_name=Settings.AD_SECURITY_GROUP,
+            auth_group_name=settings.AD_SECURITY_GROUP,
         )
         if user_is_a_group_member:
-            message = f"User '{userName}' is authorized via group '{Settings.AD_SECURITY_GROUP}'"
+            message = f"User '{userName}' is authorized via group '{settings.AD_SECURITY_GROUP}'"
             logger.info(message)
             create_user_log(
                 userName, -1, -1, SUCCESS, ADGROUP, message, islog, db=db
             )
         else:
-            message = f"User '{userName}' is NOT authorized via group '{Settings.AD_SECURITY_GROUP}'."
+            message = f"User '{userName}' is NOT authorized via group '{settings.AD_SECURITY_GROUP}'."
             logger.error(message)
             create_user_log(
                 userName, -1, -1, ERROR, ADGROUP, message, islog, db=db
@@ -134,7 +134,7 @@ def check_if_user_is_in_group(
 
     escaped_username: str = ldap.filter.escape_filter_chars(username)
     ldap_client.simple_bind_s(
-        f"{escaped_username}@{Settings.AD_DOMAIN}", password
+        f"{escaped_username}@{settings.AD_DOMAIN}", password
     )
     search_results = ldap_client.search_s(
         base="dc=cc,dc=ad,dc=cchs,dc=net",
@@ -193,7 +193,7 @@ def get_user_displayname_ldap(
 
     escaped_username: str = ldap.filter.escape_filter_chars(username)
     ldap_client.simple_bind_s(
-        f"{escaped_username}@{Settings.AD_DOMAIN}", password
+        f"{escaped_username}@{settings.AD_DOMAIN}", password
     )
     search_results = ldap_client.search_s(
         base="dc=cc,dc=ad,dc=cchs,dc=net",
