@@ -1,0 +1,1064 @@
+"""Repository layer for the PIRO Extraction Suite."""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
+
+from sqlalchemy import or_, func
+from sqlalchemy.orm import Session, joinedload
+
+from core.security_util import SecurityUtil
+from db.models.ExtractionQueue import ExtractionQueue
+from db.models.ExtractionResult import ExtractionResult
+from db.models.ExtractionRun import ExtractionRun
+from db.models.ExtractionSession import ExtractionSession
+from db.views.VCaseCommentText import VCaseCommentText
+from logger import logger
+
+# All selectable text sources for the schema builder's checkbox UI, in the
+# order they should appear in the assembled report text. Codes are matched
+# case-insensitively against V_CaseCommentText.CommentType.
+AVAILABLE_TEXT_SOURCES: List[dict] = [
+    {"code": "final", "label": "Final Diagnosis"},
+    {"code": "comment", "label": "Diagnostic Comment"},
+    {"code": "addendum", "label": "Addendum"},
+    {"code": "microscopic", "label": "Microscopic Description"},
+    {"code": "gross", "label": "Gross Description"},
+    {"code": "intraop", "label": "IntraOp"},
+    {"code": "resident", "label": "Resident"},
+    {"code": "synoptic", "label": "Synoptic"},
+    {"code": "clinical", "label": "Clinical"},
+]
+_TEXT_SOURCE_ORDER = {
+    src["code"]: i for i, src in enumerate(AVAILABLE_TEXT_SOURCES)
+}
+
+# Default set used when a session has no TextSources configured (backward
+# compatible with sessions created before this feature existed).
+DEFAULT_TEXT_SOURCES = {"final", "comment", "addendum", "microscopic"}
+
+# Retained for backward compatibility with any external references.
+_EXTRACTION_SHORT_NAMES = DEFAULT_TEXT_SOURCES
+
+# Regex to strip the Cleveland Clinic LDT disclaimer boilerplate from report
+# text. Uses flexible whitespace matching to handle formatting variations.
+_LDT_DISCLAIMER_RE = re.compile(
+    r"Laboratory\s+Developed\s+Test\s*\(LDT\)\s+Disclaimer\s*:.*?"
+    r"Positive\s+and\s+negative\s+controls\s+stain\s+appropriately\s*\.",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def parse_text_sources(text_sources: Optional[str]) -> set:
+    """Parse a session's stored comma-separated TextSources into a
+    lowercase set."""
+    if not text_sources:
+        return set()
+    codes = {c.strip().lower() for c in text_sources.split(",") if c.strip()}
+    return codes
+
+
+def serialize_text_sources(text_sources: Optional[List[str]]) -> Optional[str]:
+    """
+    Normalize a list of text source codes into the stored comma-separated form.
+    """
+    if text_sources is None:
+        return None
+    codes = [c.strip().lower() for c in text_sources if c and c.strip()]
+    return ",".join(codes) if codes else None
+
+
+def _segment_order(short_name: str) -> int:
+    """Map a CommentType ShortName to a display-order index."""
+    c = (short_name or "").lower()
+    if "addend" in c:  # matches Addendum, Addend, etc.
+        return _TEXT_SOURCE_ORDER.get("addendum", 99)
+    return _TEXT_SOURCE_ORDER.get(c, 99)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Session CRUD
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def create_session(
+    name: str,
+    user_id: int,
+    user: str,
+    db: Session,
+    text_sources: Optional[List[str]] = None,
+) -> ExtractionSession:
+    session = ExtractionSession(
+        UserId=user_id,
+        Name=name,
+        TextSources=serialize_text_sources(text_sources),
+        Status="draft",
+        IsActive=True,
+        CreateBy=user,
+        UpdateBy=user,
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def get_session(session_id: int, db: Session) -> Optional[ExtractionSession]:
+    return (
+        db.query(ExtractionSession)
+        .filter(
+            ExtractionSession.ExtractionSessionId == session_id,
+            ExtractionSession.IsActive == True,  # noqa: E712
+        )
+        .first()
+    )
+
+
+def list_user_sessions(user_id: int, db: Session) -> List[ExtractionSession]:
+    return (
+        db.query(ExtractionSession)
+        .filter(
+            ExtractionSession.UserId == user_id,
+            ExtractionSession.IsActive == True,  # noqa: E712
+        )
+        .order_by(ExtractionSession.CreateDate.desc())
+        .all()
+    )
+
+
+def update_session_schema(
+    session_id: int, schema_json: str, user: str, db: Session
+) -> Optional[ExtractionSession]:
+    session = get_session(session_id, db)
+    if session is None:
+        return None
+    session.SchemaJson = schema_json
+    session.UpdateBy = user
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_session_name(
+    session_id: int, name: str, user: str, db: Session
+) -> Optional[ExtractionSession]:
+    session = get_session(session_id, db)
+    if session is None:
+        return None
+    session.Name = name
+    session.UpdateBy = user
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_session_text_sources(
+    session_id: int, text_sources: List[str], user: str, db: Session
+) -> Optional[ExtractionSession]:
+    session = get_session(session_id, db)
+    if session is None:
+        return None
+    session.TextSources = serialize_text_sources(text_sources)
+    session.UpdateBy = user
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_session_status(session_id: int, status: str, db: Session) -> None:
+    session = get_session(session_id, db)
+    if session:
+        session.Status = status
+        db.commit()
+
+
+def delete_session(session_id: int, user: str, db: Session) -> bool:
+    session = get_session(session_id, db)
+    if session is None:
+        return False
+    session.IsActive = False
+    session.UpdateBy = user
+    db.commit()
+    return True
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Run CRUD
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def create_run(
+    session_id: int,
+    schema_json: str,
+    llm_provider: str,
+    llm_model: str,
+    user: str,
+    db: Session,
+    run_type: str = "full",
+    validation_size: Optional[int] = None,
+) -> ExtractionRun:
+    run = ExtractionRun(
+        ExtractionSessionId=session_id,
+        SchemaJson=schema_json,
+        LlmProvider=llm_provider,
+        LlmModel=llm_model,
+        Status="pending",
+        RunType=run_type,
+        ValidationSize=validation_size,
+        CreateBy=user,
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+    return run
+
+
+def get_run(run_id: int, db: Session) -> Optional[ExtractionRun]:
+    return (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.ExtractionRunId == run_id)
+        .first()
+    )
+
+
+def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
+    return (
+        db.query(ExtractionRun)
+        .filter(ExtractionRun.ExtractionSessionId == session_id)
+        .order_by(
+            ExtractionRun.CreateDate.desc(),
+            ExtractionRun.ExtractionRunId.desc(),
+        )
+        .first()
+    )
+
+
+# A run stuck in "pending"/"running" this long with no queue-item activity is
+# almost certainly orphaned (e.g. the API process was restarted/crashed
+# mid-run), not a genuinely slow job — Azure OpenAI calls normally finish in
+# seconds.
+STALE_RUN_THRESHOLD_MINUTES = 30
+
+
+def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
+    """Auto-fail the session's latest run if it's stuck in pending/running with
+    no recent progress, so it stops blocking new runs from being started.
+
+    Without this, a run orphaned by a server crash/restart would permanently
+    block the "a run is already running" concurrency guard, even after the
+    originating SearchRequest is deleted (deleting a request only soft-deletes
+    it — it never touches the underlying ExtractionRun).
+    """
+    run = get_latest_run(session_id, db)
+    if run is None or run.Status not in ("pending", "running"):
+        return run
+
+    last_activity = (
+        db.query(func.max(ExtractionQueue.UpdateDate))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .scalar()
+    )
+    reference = last_activity or run.StartedAt or run.CreateDate
+    if reference is None:
+        return run
+
+    now = datetime.now(timezone.utc) if reference.tzinfo else datetime.utcnow()
+    if now - reference <= timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES):
+        return run
+
+    logger.warning(
+        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "  # noqa:E501
+        f"stale (no activity since {reference}); auto-marking as failed so a "
+        f"new run can be started."
+    )
+    run.Status = "failed"
+    run.CompletedAt = datetime.now(timezone.utc)
+    note = (
+        "[Auto-recovered] Run had no progress for over "
+        f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a "
+        "server restart or crash; marked failed to unblock new runs."
+    )
+    run.ErrorMessage = (
+        f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
+    )
+    db.commit()
+    db.refresh(run)
+    return run
+
+
+def update_run_status(
+    run_id: int,
+    status: str,
+    db: Session,
+    error: Optional[str] = None,
+) -> None:
+    run = get_run(run_id, db)
+    if run is None:
+        return
+    run.Status = status
+    if status == "running":
+        run.StartedAt = datetime.now(timezone.utc)
+    elif status in (
+        "completed",
+        "failed",
+        "completed_with_errors",
+        "cancelled",
+    ):
+        run.CompletedAt = datetime.now(timezone.utc)
+    if error:
+        run.ErrorMessage = error
+    db.commit()
+
+
+def request_run_cancellation(
+    run_id: int, db: Session
+) -> Optional[ExtractionRun]:
+    """Flag an in-progress run for cooperative cancellation.
+
+    The background job checks ``is_run_cancellation_requested`` between
+    cases and stops before starting the next one — it can't interrupt an
+    in-flight LLM call, so at most one case finishes after this is called.
+    Cases already completed keep their results; the rest stay queued so the
+    run can be resumed later.
+    """
+    run = get_run(run_id, db)
+    if run is None or run.Status not in ("pending", "running"):
+        return run
+    run.CancellationRequested = True
+    db.commit()
+    db.refresh(run)
+    return run
+
+
+def is_run_cancellation_requested(run_id: int, db: Session) -> bool:
+    # Query a fresh row (bypassing the session identity-map cache) so the
+    # background job's long-lived ORM objects see cancellation requests
+    # made from a different request/DB session.
+    flag = (
+        db.query(ExtractionRun.CancellationRequested)
+        .filter(ExtractionRun.ExtractionRunId == run_id)
+        .scalar()
+    )
+    return bool(flag)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Queue CRUD
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def add_cases_to_queue(
+    session_id: int, case_ids: List[int], user: str, db: Session
+) -> List[ExtractionQueue]:
+    """Bulk-add cases to a session's extraction queue.
+
+    Fetches already-queued CaseIds in batches (avoids the SQL Server ~2100
+    bound-parameter limit on IN clauses) instead of issuing one existence
+    check query per case, which was the main bottleneck when loading large
+    saved searches into the queue.
+    """
+    if not case_ids:
+        return []
+
+    # deduplicate case IDs while preserving order
+    unique_case_ids: list = []
+    for case_id in case_ids:
+        if case_id not in unique_case_ids:
+            unique_case_ids.append(case_id)
+    existing_ids: set = set()
+    CHUNK_SIZE = 1000
+    for i in range(0, len(unique_case_ids), CHUNK_SIZE):
+        chunk = unique_case_ids[i : i + CHUNK_SIZE]
+        rows = (
+            db.query(ExtractionQueue.CaseId)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.CaseId.in_(chunk),
+            )
+            .all()
+        )
+        existing_ids.update(row.CaseId for row in rows)
+
+    added = []
+    for case_id in unique_case_ids:
+        if case_id in existing_ids:
+            continue
+        item = ExtractionQueue(
+            ExtractionSessionId=session_id,
+            CaseId=case_id,
+            Status="pending",
+            AttemptCount=0,
+            CreateBy=user,
+            UpdateBy=user,
+        )
+        db.add(item)
+        added.append(item)
+    db.commit()
+    return added
+
+
+def get_queue(session_id: int, db: Session) -> List[ExtractionQueue]:
+    return (
+        db.query(ExtractionQueue)
+        .options(joinedload(ExtractionQueue.Case))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .order_by(ExtractionQueue.CreateDate)
+        .all()
+    )
+
+
+def remove_from_queue(session_id: int, case_id: int, db: Session) -> bool:
+    item = (
+        db.query(ExtractionQueue)
+        .filter(
+            ExtractionQueue.ExtractionSessionId == session_id,
+            ExtractionQueue.CaseId == case_id,
+        )
+        .first()
+    )
+    if item is None:
+        return False
+    db.delete(item)
+    db.commit()
+    return True
+
+
+def clear_queue(session_id: int, db: Session) -> int:
+    """Remove every queued case for a session so a new case set can be loaded.
+
+    Returns the number of items removed. Does not touch prior run results —
+    those stay associated with the session's run history for export.
+    """
+    deleted = (
+        db.query(ExtractionQueue)
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return deleted
+
+
+def update_queue_item_status(
+    queue_item_id: int,
+    status: str,
+    db: Session,
+    error: Optional[str] = None,
+) -> None:
+    item = (
+        db.query(ExtractionQueue)
+        .filter(ExtractionQueue.ExtractionQueueId == queue_item_id)
+        .first()
+    )
+    if item is None:
+        return
+    item.Status = status
+    if error:
+        item.ErrorMessage = error[:1000]
+    if status == "running":
+        item.AttemptCount = (item.AttemptCount or 0) + 1
+    # Set explicitly in Python (UTC-aware) rather than relying on the
+    # column's onupdate=func.now(), which on MSSQL compiles to
+    # CURRENT_TIMESTAMP — the DB server's naive local clock. That naive
+    # value serializes over the API without a timezone suffix, so the
+    # browser parses it as local browser time, not UTC. This can skew the
+    # "last activity" heartbeat by hours and made actively-running jobs
+    # falsely show as "Possibly stalled" in the UI. Using the same
+    # datetime.now(timezone.utc) convention as StartedAt/CompletedAt keeps
+    # all run/queue timestamps consistently UTC-aware.
+    item.UpdateDate = datetime.now(timezone.utc)
+    db.commit()
+
+
+def reset_queue_statuses(session_id: int, db: Session) -> None:
+    """Reset all queue items to 'pending' before a full run."""
+    db.query(ExtractionQueue).filter(
+        ExtractionQueue.ExtractionSessionId == session_id
+    ).update(
+        {"Status": "pending", "ErrorMessage": None}, synchronize_session=False
+    )
+    db.commit()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Result CRUD
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def upsert_result(
+    run_id: int,
+    session_id: int,
+    case_id: int,
+    field_name: str,
+    extracted_value: Optional[str],
+    confidence: Optional[float],
+    provenance_text: Optional[str],
+    source_comment_id: Optional[int],
+    provenance_start: Optional[int],
+    provenance_end: Optional[int],
+    user: str,
+    db: Session,
+    reviewed_value: Optional[str] = None,
+    is_reviewed: Optional[bool] = None,
+    is_incorrect: Optional[bool] = None,
+    reviewed_by: Optional[str] = None,
+    reviewed_date: Optional[datetime] = None,
+    related_run_ids: Optional[List[int]] = None,
+) -> ExtractionResult:
+    """Insert or update an extraction result for a given run, session, and
+    case.
+
+    If a result already exists for the specified run, session, case, and field,
+    it will be updated with the provided values. Otherwise, a new result will
+    be created.
+    """
+
+    def _apply_result_values(result: ExtractionResult) -> ExtractionResult:
+        """Apply the provided result values to the given ExtractionResult
+        instance."""
+        result.ExtractedValue = extracted_value
+        result.Confidence = confidence
+        result.ProvenanceText = provenance_text
+        result.SourceCommentId = source_comment_id
+        result.ProvenanceStart = provenance_start
+        result.ProvenanceEnd = provenance_end
+        result.ReviewedValue = reviewed_value
+        if is_reviewed is not None:
+            result.IsReviewed = is_reviewed
+        if is_incorrect is not None:
+            result.IsIncorrect = is_incorrect
+        if reviewed_by is not None:
+            result.ReviewedBy = reviewed_by
+        if reviewed_date is not None:
+            result.ReviewedDate = reviewed_date
+        result.UpdateBy = user
+        return result
+
+    existing = (
+        db.query(ExtractionResult)
+        .filter(
+            ExtractionResult.ExtractionRunId == run_id,
+            ExtractionResult.CaseId == case_id,
+            ExtractionResult.FieldName == field_name,
+        )
+        .first()
+    )
+    if existing:
+        _apply_result_values(existing)
+        db.commit()
+        db.refresh(existing)
+        result = existing
+    else:
+        result = ExtractionResult(
+            ExtractionRunId=run_id,
+            ExtractionSessionId=session_id,
+            CaseId=case_id,
+            FieldName=field_name,
+            ExtractedValue=extracted_value,
+            Confidence=confidence,
+            ProvenanceText=provenance_text,
+            SourceCommentId=source_comment_id,
+            ProvenanceStart=provenance_start,
+            ProvenanceEnd=provenance_end,
+            ReviewedValue=reviewed_value,
+            IsReviewed=is_reviewed if is_reviewed is not None else False,
+            IsIncorrect=is_incorrect if is_incorrect is not None else False,
+            ReviewedBy=reviewed_by,
+            ReviewedDate=reviewed_date,
+            CreateBy=user,
+            UpdateBy=user,
+        )
+        db.add(result)
+        db.commit()
+        db.refresh(result)
+
+    current_run_id = run_id
+
+    # de-duplicate related run IDs
+    deduplicated_related_run_ids = []
+    if related_run_ids:
+        for related_run_id in related_run_ids:
+            if related_run_id not in deduplicated_related_run_ids:
+                deduplicated_related_run_ids.append(related_run_id)
+
+    # update related runs, ensuring that each related run has the same result
+    # as the current run
+    for related_run_id in deduplicated_related_run_ids:
+        if related_run_id == current_run_id:
+            continue
+
+        existing_result_from_another_run = (
+            db.query(ExtractionResult)
+            .filter(
+                ExtractionResult.ExtractionRunId == related_run_id,
+                ExtractionResult.CaseId == case_id,
+                ExtractionResult.FieldName == field_name,
+            )
+            .first()
+        )
+
+        if existing_result_from_another_run:
+            _apply_result_values(existing_result_from_another_run)
+            existing_result_from_another_run.ExtractionSessionId = session_id
+            db.commit()
+            db.refresh(existing_result_from_another_run)
+        else:
+            mirror_result = ExtractionResult(
+                ExtractionRunId=related_run_id,
+                ExtractionSessionId=session_id,
+                CaseId=case_id,
+                FieldName=field_name,
+                ExtractedValue=extracted_value,
+                Confidence=confidence,
+                ProvenanceText=provenance_text,
+                SourceCommentId=source_comment_id,
+                ProvenanceStart=provenance_start,
+                ProvenanceEnd=provenance_end,
+                ReviewedValue=reviewed_value,
+                IsReviewed=is_reviewed if is_reviewed is not None else False,
+                IsIncorrect=(
+                    is_incorrect if is_incorrect is not None else False
+                ),
+                ReviewedBy=reviewed_by,
+                ReviewedDate=reviewed_date,
+                CreateBy=user,
+                UpdateBy=user,
+            )
+            db.add(mirror_result)
+            db.commit()
+            db.refresh(mirror_result)
+    return result
+
+
+def clone_results_for_run(
+    source_run_id: int,
+    destination_run_id: int,
+    user: str,
+    db: Session,
+) -> int:
+    """Copy every result row from one run into another run.
+
+    Retry runs use this to start with the successful rows from the preceding
+    run so the latest session export stays complete while the retry is only
+    filling in the previously failed cases.
+    """
+    results = get_results_for_run(source_run_id, db)
+    copied = 0
+    for result in results:
+        upsert_result(
+            run_id=destination_run_id,
+            session_id=result.ExtractionSessionId,
+            case_id=result.CaseId,
+            field_name=result.FieldName,
+            extracted_value=result.ExtractedValue,
+            confidence=result.Confidence,
+            provenance_text=result.ProvenanceText,
+            source_comment_id=result.SourceCommentId,
+            provenance_start=result.ProvenanceStart,
+            provenance_end=result.ProvenanceEnd,
+            reviewed_value=result.ReviewedValue,
+            is_reviewed=result.IsReviewed,
+            is_incorrect=result.IsIncorrect,
+            reviewed_by=result.ReviewedBy,
+            reviewed_date=result.ReviewedDate,
+            user=user,
+            db=db,
+        )
+        copied += 1
+    return copied
+
+
+def get_results_for_session(
+    session_id: int, db: Session
+) -> List[ExtractionResult]:
+    """Return results from the latest run for a session."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    return (
+        db.query(ExtractionResult)
+        .options(joinedload(ExtractionResult.Case))
+        .filter(ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId)
+        .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
+        .all()
+    )
+
+
+def get_results_for_run(run_id: int, db: Session) -> List[ExtractionResult]:
+    """
+    Return results for a specific run (rather than always the latest one).
+    """
+    return (
+        db.query(ExtractionResult)
+        .options(joinedload(ExtractionResult.Case))
+        .filter(ExtractionResult.ExtractionRunId == run_id)
+        .order_by(ExtractionResult.CaseId, ExtractionResult.FieldName)
+        .all()
+    )
+
+
+def get_incorrect_case_ids(session_id: int, db: Session) -> List[int]:
+    """Return distinct case IDs from the latest run that have any field marked
+    incorrect."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    rows = (
+        db.query(ExtractionResult.CaseId)
+        .filter(
+            ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId,
+            ExtractionResult.IsReviewed == True,  # noqa: E712
+            ExtractionResult.IsIncorrect == True,  # noqa: E712
+        )
+        .distinct()
+        .all()
+    )
+    return [r.CaseId for r in rows]
+
+
+def get_failed_case_ids(session_id: int, db: Session) -> List[int]:
+    """Return case IDs whose most recent queue attempt ended in 'failed'
+    (e.g. a transient LLM provider error) so they can be resubmitted
+    without reprocessing the rest of the session's queue."""
+    rows = (
+        db.query(ExtractionQueue.CaseId)
+        .filter(
+            ExtractionQueue.ExtractionSessionId == session_id,
+            ExtractionQueue.Status == "failed",
+        )
+        .all()
+    )
+    return [r.CaseId for r in rows]
+
+
+def get_low_confidence_case_ids(
+    session_id: int, threshold: float, db: Session
+) -> List[int]:
+    """Return distinct case IDs from the latest run that have any field with
+    confidence below threshold OR that are not yet reviewed."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return []
+    rows = (
+        db.query(ExtractionResult.CaseId)
+        .filter(
+            ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId,
+            (ExtractionResult.Confidence < threshold)
+            | (ExtractionResult.IsReviewed == False),  # noqa: E712
+        )
+        .distinct()
+        .all()
+    )
+    return [r.CaseId for r in rows]
+
+
+def get_result_by_id(
+    result_id: int, db: Session
+) -> Optional[ExtractionResult]:
+    return (
+        db.query(ExtractionResult)
+        .filter(ExtractionResult.ExtractionResultId == result_id)
+        .first()
+    )
+
+
+def update_result_review(
+    result_id: int,
+    reviewed_value: Optional[str],
+    is_reviewed: Optional[bool],
+    reviewer: str,
+    db: Session,
+    is_incorrect: Optional[bool] = None,
+) -> Optional[ExtractionResult]:
+    result = get_result_by_id(result_id, db)
+    if result is None:
+        return None
+    if reviewed_value is not None:
+        result.ReviewedValue = reviewed_value
+    if is_reviewed is not None:
+        result.IsReviewed = is_reviewed
+        if is_reviewed:
+            result.ReviewedBy = reviewer
+            result.ReviewedDate = datetime.now(timezone.utc)
+    if is_incorrect is not None:
+        result.IsIncorrect = is_incorrect
+    result.UpdateBy = reviewer
+    db.commit()
+    db.refresh(result)
+    return result
+
+
+def bulk_approve_high_confidence(
+    session_id: int, threshold: float, reviewer: str, db: Session
+) -> int:
+    """Approve all un-reviewed results with confidence >= threshold. Returns
+    count."""
+    latest_run = get_latest_run(session_id, db)
+    if latest_run is None:
+        return 0
+    results = (
+        db.query(ExtractionResult)
+        .filter(
+            ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId,
+            ExtractionResult.IsReviewed == False,  # noqa: E712
+            ExtractionResult.Confidence >= threshold,
+            ExtractionResult.ExtractedValue.isnot(None),
+        )
+        .all()
+    )
+    now = datetime.now(timezone.utc)
+    for r in results:
+        r.IsReviewed = True
+        r.ReviewedBy = reviewer
+        r.ReviewedDate = now
+        r.UpdateBy = reviewer
+    db.commit()
+    return len(results)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Case text helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def get_case_text_segments(
+    case_id: int, db: Session, comment_types: Optional[set] = None
+) -> List[VCaseCommentText]:
+    """Fetch comment segments for extraction-relevant types in display order.
+
+    Filters on V_CaseCommentText.CommentType (the ShortName already in the
+    view) to avoid a redundant re-join to the CommentType table.
+    ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES).
+
+    If the comment_types are explicitly specified (for example the user selects
+    only 'gross'), and none of those sections exist on the case, return an
+    empty list.
+
+    If comment_types are not specified, default types are tried.  If no
+    comments are found among the default types, the selection of comment types
+    is expanded to include all types as a fallback."""
+
+    types: set
+    allow_all_comment_types_fallback: bool = False
+
+    if comment_types:
+        types = comment_types
+    else:
+        types = DEFAULT_TEXT_SOURCES
+        allow_all_comment_types_fallback = True
+
+    filters = [func.lower(VCaseCommentText.CommentType).in_(types)]
+    if "addendum" in types:
+        filters.append(
+            func.lower(VCaseCommentText.CommentType).like("%addend%")
+        )
+
+    rows = (
+        db.query(VCaseCommentText)
+        .filter(VCaseCommentText.CaseId == case_id)
+        .filter(or_(*filters))
+        .all()
+    )
+
+    if rows:
+        rows.sort(key=lambda r: _segment_order(r.CommentType))
+        return rows
+
+    if allow_all_comment_types_fallback:
+        all_rows = (
+            db.query(VCaseCommentText)
+            .filter(VCaseCommentText.CaseId == case_id)
+            .all()
+        )
+        available = [r.CommentType for r in all_rows]
+        logger.warning(
+            "Case %s: no segments matched selected extraction types "
+            "(available: %s). Using all available comment text because "
+            "fallback is enabled.",
+            case_id,
+            available,
+        )
+        all_rows.sort(key=lambda r: _segment_order(r.CommentType))
+        return all_rows
+    else:
+        logger.info(
+            "Case %s: no segments matched explicit text-source selection %s; "
+            "returning no text to honor the configured scope.",
+            case_id,
+            sorted(types),
+        )
+        return []
+
+
+def _strip_ldt_disclaimer(text: str) -> str:
+    """
+    Remove the Cleveland Clinic LDT disclaimer boilerplate from report text.
+    """
+    if not text:
+        return text
+    cleaned = _LDT_DISCLAIMER_RE.sub("", text)
+    return cleaned.strip()
+
+
+def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
+    """Build a structured, labelled text string from comment segments.
+
+    The LDT disclaimer boilerplate is stripped from each segment before
+    assembly so it is neither displayed to users nor sent to the LLM.
+
+    Example output:
+        Final Diagnosis:
+        Invasive ductal carcinoma, grade 2...
+
+        Microscopic Description:
+        Sections show...
+    """
+    parts = []
+    for seg in segments:
+        clean_text = _strip_ldt_disclaimer(seg.CommentText)
+        if clean_text:
+            parts.append(f"{seg.CommentType}:\n{clean_text}")
+    return "\n\n".join(parts)
+
+
+def get_case_text_for_extraction(
+    case_id: int,
+    db: Session,
+    role: Optional[str] = None,
+    comment_types: Optional[set] = None,
+) -> tuple[str, List[VCaseCommentText]]:
+    """Return (labelled_text, segments) for LLM input.
+
+    Applies DEMOADMIN masking if role == 'DEMOADMIN'.
+    """
+    segments = get_case_text_segments(case_id, db, comment_types=comment_types)
+
+    # Apply PHI masking for demo mode (reuses existing SecurityUtil logic)
+    if role and role.upper() == "DEMOADMIN":
+
+        for seg in segments:
+            seg.CommentText = SecurityUtil.mask_date(seg.CommentText)
+            seg.CommentText = SecurityUtil.mask_case(seg.CommentText)
+
+    labelled_text = build_labelled_report_text(segments)
+    return labelled_text, segments
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Progress / status helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def get_extraction_status(session_id: int, db: Session) -> dict:
+    """Return progress counts for the latest run of a session."""
+    latest_run = get_latest_run(session_id, db)
+    session = get_session(session_id, db)
+
+    if latest_run is None:
+        total = (
+            db.query(ExtractionQueue)
+            .filter(ExtractionQueue.ExtractionSessionId == session_id)
+            .count()
+        )
+        return {
+            "session_id": session_id,
+            "run_id": None,
+            "status": session.Status if session else "unknown",
+            "total": total,
+            "completed": 0,
+            "failed": 0,
+            "pending": total,
+            "running": 0,
+            "started_at": None,
+            "completed_at": None,
+            "last_updated_at": None,
+        }
+
+    # Most recent queue-item activity, used as a "still alive" heartbeat for
+    # long-running jobs (a stalled/crashed run will stop advancing this).
+    last_updated_at = (
+        db.query(func.max(ExtractionQueue.UpdateDate))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .scalar()
+    )
+
+    # For validation runs, scope progress to the run itself so the counter
+    # reflects the validation set size, not the full queue.
+    if latest_run.RunType == "validation" and latest_run.ValidationSize:
+        total = latest_run.ValidationSize
+        completed = (
+            db.query(ExtractionResult.CaseId)
+            .filter(
+                ExtractionResult.ExtractionRunId == latest_run.ExtractionRunId
+            )
+            .distinct()
+            .count()
+        )
+        failed = (
+            max(0, total - completed)
+            if latest_run.Status
+            in ("completed", "completed_with_errors", "failed")
+            else (
+                db.query(ExtractionQueue)
+                .filter(
+                    ExtractionQueue.ExtractionSessionId == session_id,
+                    ExtractionQueue.Status == "failed",
+                )
+                .count()
+            )
+        )
+        pending = max(0, total - completed - failed)
+        running = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "running",
+            )
+            .count()
+        )
+    else:
+        total = (
+            db.query(ExtractionQueue)
+            .filter(ExtractionQueue.ExtractionSessionId == session_id)
+            .count()
+        )
+        completed = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "completed",
+            )
+            .count()
+        )
+        failed = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "failed",
+            )
+            .count()
+        )
+        running = (
+            db.query(ExtractionQueue)
+            .filter(
+                ExtractionQueue.ExtractionSessionId == session_id,
+                ExtractionQueue.Status == "running",
+            )
+            .count()
+        )
+        pending = max(0, total - completed - failed - running)
+
+    return {
+        "session_id": session_id,
+        "run_id": latest_run.ExtractionRunId,
+        "status": latest_run.Status,
+        "total": total,
+        "completed": completed,
+        "failed": failed,
+        "pending": pending,
+        "running": running,
+        "started_at": latest_run.StartedAt,
+        "completed_at": latest_run.CompletedAt,
+        "last_updated_at": last_updated_at,
+    }

@@ -5,7 +5,9 @@ from logger import logger
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, roles: str | None = None, auto_error: bool = False):
+    def __init__(
+        self, roles: list[str] | None = None, auto_error: bool = False
+    ):
         if roles is None:
             roles = []
         self.allowed_roles = roles

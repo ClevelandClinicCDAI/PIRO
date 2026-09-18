@@ -53,13 +53,13 @@ export class HeaderInterceptor implements HttpInterceptor {
         })).pipe(timeout(timeoutMsec)).pipe(tap((event: HttpEvent<any>) => {
           if (event instanceof HttpResponse) {
             // console.log(event.status)
-            if(event.status == 200) {
-              if(event.headers.has('Refreshtoken')) {
+            if (event.status == 200) {
+              if (event.headers.has('Refreshtoken')) {
                 this.localStorageService.setApiToken(event.headers.get("Refreshtoken"));
               }
             }
           }
-         },
+        },
           (err: any) => {
             if (err instanceof HttpErrorResponse) {
               console.log("Error: ", err);
@@ -84,7 +84,7 @@ export class HeaderInterceptor implements HttpInterceptor {
                     return;
                   }
                   this.showoast(EventTypes.Error, environment.accessExceptionMessage, []);
-                } else if (err.status == 510) {                  
+                } else if (err.status == 510) {
                   // console.log(err);
                   if ((err?.error?.detail || '') != '') {
                     this.showoast(EventTypes.Error, err?.error?.detail, []);
@@ -94,7 +94,13 @@ export class HeaderInterceptor implements HttpInterceptor {
                     this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
                   }
                 } else {
-                  this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
+                  // Suppress generic toast for endpoints that already handle errors in the component
+                  const isHandledLocally =
+                    urlRequest.indexOf('/extraction/preview') >= 0 ||
+                    urlRequest.indexOf('/extraction/case/') >= 0;
+                  if (!isHandledLocally) {
+                    this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
+                  }
                 }
               }
               const current1 = new Date();

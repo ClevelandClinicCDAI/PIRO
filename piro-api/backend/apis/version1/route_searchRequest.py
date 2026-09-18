@@ -1,3 +1,4 @@
+import json
 import pathlib
 import tempfile
 from datetime import datetime
@@ -7,24 +8,46 @@ from db.repository.auditTrailSearchRequest import create_audit_search_request
 
 from core.auth_bearer import JWTBearer
 from core.constants import Constants
-from core.security_user import get_current_user_id, get_current_user_nuid
+from core.security_user import (
+    get_current_user_id,
+    get_current_user_nuid,
+    get_current_user_role,
+)
+from db.repository.extraction import (
+    get_queue,
+    get_results_for_run,
+)
 from db.repository.lookup import SearchRequestStatus_get_id
 from db.repository.searchRequest import (
     create_new_searchRequest,
     delete_searchRequest,
+    get_extraction_case_ids_for_request,
     get_searchRequest,
     get_searchRequest_all,
     list_reasons_active,
     list_searchRequest_display,
+    start_extraction_for_searchRequest,
     update_approvalComment,
     update_searchRequest_status,
 )
 from db.session import get_db, get_solr
 from pysolr import Solr
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 from fastapi_pagination import Page, paginate
-from solr.repository.excel_search import create_excel, get_search_data
+from solr.repository.excel_search import (
+    create_excel,
+    get_case_data_by_ids,
+    get_search_data,
+)
 from sqlalchemy.orm import Session
 from viewmodel.searchRequest import (
     SearchRequestApprovalCommentVM,
@@ -35,6 +58,7 @@ from viewmodel.searchRequest import (
 from db.repository.searchRequestDataField import list_searchRequestDataField
 from viewmodel.searchRequestReason import SearchRequestReasonVMDropdown
 from logger import logger
+from exception.data_exception import DataException
 
 router = APIRouter()
 
@@ -59,7 +83,6 @@ async def create_searchRequest(
     name: Annotated[str, Form()],
     comment: Annotated[str, Form()],
     reasonId: Annotated[str, Form()],
-    searchId: Annotated[str, Form()],
     irb: Annotated[str, Form()],
     isPediatric: Annotated[bool, Form()],
     selectedFields: Annotated[str, Form()],
@@ -67,6 +90,8 @@ async def create_searchRequest(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
     file: UploadFile = File(...),  # noqa B008
+    searchId: Annotated[str | None, Form()] = None,
+    extractionSessionId: Annotated[str | None, Form()] = None,
     dateFrom: Annotated[str | None, Form()] = None,
     dateTo: Annotated[str | None, Form()] = None,
 ):
@@ -84,7 +109,8 @@ async def create_searchRequest(
 
     search_request: SearchRequestVMCreate = SearchRequestVMCreate(
         name=name,
-        searchId=searchId,
+        searchId=searchId or None,
+        extractionSessionId=extractionSessionId or None,
         reasonId=reasonId,
         comment=comment,
         fileData=file.file.read(),
@@ -142,11 +168,12 @@ async def create_searchRequestLite(
     name: Annotated[str, Form()],
     comment: Annotated[str, Form()],
     reasonId: Annotated[str, Form()],
-    searchId: Annotated[str, Form()],
     selectedFields: Annotated[str, Form()],
     current_user: Annotated[str, Depends(get_current_user_nuid)],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
+    searchId: Annotated[str | None, Form()] = None,
+    extractionSessionId: Annotated[str | None, Form()] = None,
     dateFrom: Annotated[str | None, Form()] = None,
     dateTo: Annotated[str | None, Form()] = None,
 ):
@@ -161,7 +188,8 @@ async def create_searchRequestLite(
 
     search_request: SearchRequestVMCreate = SearchRequestVMCreate(
         name=name,
-        searchId=searchId,
+        searchId=searchId or None,
+        extractionSessionId=extractionSessionId or None,
         reasonId=reasonId,
         comment=comment,
         fileData=None,
@@ -337,6 +365,68 @@ async def deny_search_request(
             f"<{str(exc)} : {exc.args}>"
         )
     return result
+
+
+@router.post(
+    "/startextraction/{searchRequestId}",
+    dependencies=[
+        Depends(
+            JWTBearer(
+                [
+                    Constants.RoleAdmin,
+                    Constants.RoleDemoAdmin,
+                    Constants.RoleAnalyst,
+                ]
+            )
+        )
+    ],
+)
+async def start_extraction(
+    searchRequestId: int,
+    background_tasks: BackgroundTasks,
+    current_user: Annotated[str, Depends(get_current_user_nuid)],
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
+    db: Session = Depends(get_db),
+):
+    # Imported here to avoid a circular import at module load time
+    # (route_extraction imports from db.repository.searchRequest indirectly
+    # via shared repository modules).
+    from apis.version1.route_extraction import _run_extraction_job
+
+    try:
+        searchRequest, run, case_ids = start_extraction_for_searchRequest(
+            searchRequestId=searchRequestId, user=current_user, db=db
+        )
+    except DataException as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    background_tasks.add_task(
+        _run_extraction_job,
+        session_id=searchRequest.ExtractionSessionId,
+        run_id=run.ExtractionRunId,
+        user=current_user,
+        role=current_role,
+        case_ids=None,
+    )
+
+    try:
+        create_audit_search_request(
+            userId=current_user_id,
+            user=current_user,
+            searchRequestId=searchRequestId,
+            action=Constants.SearchRequestAction.UPDATE.name,
+            db=db,
+        )
+    except Exception as exc:
+        logger.error(
+            f"Search request audit error - create_audit_search_request 500 Internal Server Error "
+            f"<{str(exc)} : {exc.args}>"
+        )
+    return {
+        "searchRequestId": searchRequestId,
+        "extractionRunId": run.ExtractionRunId,
+    }
 
 
 @router.post("/close/{searchRequestId}", dependencies=[Depends(JWTBearer())])
@@ -549,13 +639,104 @@ async def export(
     fields: str = ",".join(
         str(x.DataFieldSolrField) for x in searchRequestDataFields
     )
-    data = get_search_data(
-        search_request.SearchId,
-        reasonCode=search_request.SearchRequestReasonCode,
-        db=db,
-        solr=solr,
-        fields=fields,
-    )
+
+    extraction_fields: List[str] = []
+    extraction_data: dict = {}
+
+    if search_request.IsLlmAssisted:
+        # Allow export once the run has finished, even if some cases
+        # permanently failed (e.g. a case has no report text, or an upstream
+        # LLM provider error that retries won't fix). Those cases simply show
+        # blank extraction columns in the export rather than blocking the
+        # whole data request. Only block while a run hasn't produced a final
+        # result yet (pending/running) or never ran/failed outright.
+        _EXPORTABLE_STATUSES = ("completed", "completed_with_errors")
+        if (
+            search_request.ExtractionRunId is None
+            or search_request.ExtractionStatus not in _EXPORTABLE_STATUSES
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="LLM extraction has not completed for this data request yet",
+            )
+
+        case_ids = get_extraction_case_ids_for_request(
+            searchRequestId=searchRequestId,
+            extractionRunId=search_request.ExtractionRunId,
+            db=db,
+        )
+        if not case_ids:
+            queue = get_queue(search_request.ExtractionSessionId, db)
+            case_ids = [q.CaseId for q in queue]
+
+        # Ensure caseid is always retrieved so extraction results can be joined
+        solr_fields = fields
+        if "caseid" not in solr_fields.split(","):
+            solr_fields = f"{solr_fields},caseid" if solr_fields else "caseid"
+
+        data = get_case_data_by_ids(
+            case_ids=case_ids, db=db, solr=solr, fields=solr_fields
+        )
+        case_sort_order = {
+            str(case_id): index for index, case_id in enumerate(case_ids)
+        }
+        data.sort(
+            key=lambda doc: case_sort_order.get(
+                str(getattr(doc, "caseid", "")), len(case_sort_order)
+            )
+        )
+
+        results = get_results_for_run(search_request.ExtractionRunId, db)
+        field_order: List[str] = []
+        all_fields: set = set()
+        for r in results:
+            case_key = str(r.CaseId)
+            if case_key not in extraction_data:
+                extraction_data[case_key] = {}
+            raw_value = r.ExtractedValue
+            if isinstance(raw_value, str):
+                try:
+                    value = json.loads(raw_value)
+                except (TypeError, ValueError):
+                    value = raw_value
+            else:
+                value = None
+            if isinstance(value, (list, dict)):
+                value = json.dumps(value)
+            extraction_data[case_key][r.FieldName] = value
+            all_fields.add(r.FieldName)
+
+        try:
+            from db.models.ExtractionSession import (
+                ExtractionSession as _ExtractionSessionModel,
+            )
+
+            session_row = (
+                db.query(_ExtractionSessionModel)
+                .filter(
+                    _ExtractionSessionModel.ExtractionSessionId
+                    == search_request.ExtractionSessionId
+                )
+                .first()
+            )
+            if session_row and session_row.SchemaJson:
+                schema = json.loads(session_row.SchemaJson)
+                field_order = list(schema.keys())
+        except Exception:
+            field_order = []
+
+        extraction_fields = field_order + [
+            f for f in sorted(all_fields) if f not in field_order
+        ]
+    else:
+        data = get_search_data(
+            search_request.SearchId,
+            reasonCode=search_request.SearchRequestReasonCode,
+            db=db,
+            solr=solr,
+            fields=fields,
+        )
+
     try:
         create_audit_search_request(
             userId=current_user_id,
@@ -570,9 +751,11 @@ async def export(
             f"<{str(exc)} : {exc.args}>"
         )
     file = create_excel(
-        searchId=search_request.SearchId,
+        searchId=search_request.SearchId or search_request.SearchRequestId,
         data=data,
         fields=searchRequestDataFields,
+        extraction_fields=extraction_fields,
+        extraction_data=extraction_data,
     )
     headers = {"Content-Disposition": f'attachment; filename={file["file"]}'}
 

@@ -2,7 +2,7 @@ import requests
 
 from pathlib import Path
 
-from core.config import Settings
+from core.config import settings
 from logger import logger
 
 
@@ -29,7 +29,7 @@ def get_certificates_directory() -> Path | None:
 
 def get_certificate_path_airflow() -> Path:
     certificates_directory: Path | None = get_certificates_directory()
-    certname = Settings.AIRFLOW_CERTIFICATE
+    certname = settings.AIRFLOW_CERTIFICATE
     if certificates_directory is None or not certname:
         raise FileNotFoundError("Certificates directory not found")
     return certificates_directory / certname
@@ -42,8 +42,8 @@ def get_airflow_api_token(base_url: str, cert_path: str) -> str | None:
 
     token_url: str = f"{base_url}/auth/token"
     payload: dict = {
-        "username": Settings.AIRFLOW_USERNAME,
-        "password": Settings.AIRFLOW_PASSWORD,
+        "username": settings.AIRFLOW_USERNAME,
+        "password": settings.AIRFLOW_PASSWORD,
     }
     response: requests.Response = requests.post(
         token_url,

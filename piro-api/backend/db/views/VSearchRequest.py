@@ -5,7 +5,11 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String
 class VSearchRequest(Base):
     __tablename__ = "V_SearchRequest"
     SearchRequestId = Column(Integer, primary_key=True, index=True)
-    SearchId = Column(Integer, nullable=False)
+    SearchId = Column(Integer, nullable=True)
+    ExtractionSessionId = Column(Integer, nullable=True)
+    ExtractionRunId = Column(Integer, nullable=True)
+    IsLlmAssisted = Column(Boolean, nullable=False)
+    ExtractionStatus = Column(String, nullable=True)
     SearchRequestReasonId = Column(Integer, nullable=False)
     SearchRequestReason = Column(String, nullable=False)
     SearchRequestReasonCode = Column(String, nullable=False)

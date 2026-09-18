@@ -1,0 +1,13 @@
+We have many pathologists and many cytotechnologists.  We needs a way to assign these evaluation form instances to specific people, so that it is only visible to the assigned users.  The list of evaluations to the left should only contain the forms that have been assigned to the user.  The workflow should be like this
+
+1. User creates a new form.  This is sometimes the cytology personnel, or a pathologist.  This user fills in most of the information.  THis person will submit with "Create Draft".  This person may also preliminary verify the evaluation. 
+
+2. Next the case is reviewed by the signout pathologist.  This is the person from the "Assign Screened Case To" box. 
+
+A resident or fellow may also be assisting on the case. 
+
+We need to have a worklist in the left side of the screen that shows that specific user's cases.  Use the "My evaluations" table for this.  After the evaluation is first saved with Create Draft.  The evaluation should be visible in the "My evaluatinos" list to anyone listed on the evaluation: Assigned screened case to, Cytology Personnel, Pathologist, Fellow Resident.   But the case should be hidden from anyone else.
+
+There also needs to be a button to delete the evaluation, if it was created in error.  Make sure there's a confirm box modal.
+
+Finally, users may want to see their completed evaluations.  Put a button somewhere, which will take a user to a new view, which will list the completed cases associated with them. This should be in table format. Columns should include the MRN, Screened case assigned to, prelim verify date, and final verify date. They should be able to view contents of the evaluation, but not change them at this time.

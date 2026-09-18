@@ -1,0 +1,232 @@
+<div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="height: 300px;">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div *ngIf="!loading" class="d-flex flex-column" style="height: calc(100vh - 70px);">
+
+  <!-- Top bar -->
+  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-white shadow-sm flex-shrink-0">
+    <div class="d-flex align-items-center gap-3">
+      <nav aria-label="breadcrumb" class="mb-0">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a routerLink="/extraction">Extraction Suite</a></li>
+          <li class="breadcrumb-item"><a [routerLink]="['/extraction/schema', sessionId]">{{ session?.Name }}</a></li>
+          <li class="breadcrumb-item active">Review</li>
+        </ol>
+      </nav>
+
+      <!-- Progress bar when running -->
+      <div *ngIf="isRunning" class="d-flex align-items-center gap-2">
+        <div style="width: 250px;">
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 [class.bg-danger]="isStalled"
+                 [style.width.%]="progressPercent"></div>
+          </div>
+        </div>
+        <small class="text-muted text-nowrap">
+          {{ statusInfo?.completed }}/{{ statusInfo?.total }}
+          <span *ngIf="statusInfo?.failed">({{ statusInfo?.failed }} failed)</span>
+        </small>
+        <small *ngIf="elapsedText" class="text-muted text-nowrap" title="Elapsed time since the run started">
+          <i class="bi bi-clock-history me-1"></i>{{ elapsedText }}
+        </small>
+        <small *ngIf="etaText" class="text-muted text-nowrap" title="Estimated time remaining">
+          &middot; ETA {{ etaText }}
+        </small>
+        <span *ngIf="isStalled" class="badge bg-danger-subtle text-danger border border-danger-subtle text-nowrap"
+              [title]="'No progress in the last ' + lastUpdatedAgoText + ' — the run may have stalled or crashed.'">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>Possibly stalled
+        </span>
+        <button class="btn btn-sm btn-outline-danger text-nowrap" (click)="cancelRun()" [disabled]="cancelling"
+                title="Stop the run after the current case finishes; completed cases are kept.">
+          <span *ngIf="cancelling" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!cancelling" class="bi bi-stop-circle me-1"></i>
+          Cancel Run
+        </button>
+      </div>
+
+      <!-- Summary once a run has finished -->
+      <div *ngIf="!isRunning && statusInfo?.run_id && statusInfo?.status !== 'pending'"
+           class="d-flex align-items-center gap-2">
+        <span class="badge text-nowrap"
+              [class.bg-success]="statusInfo?.status === 'completed'"
+              [class.bg-warning]="statusInfo?.status === 'completed_with_errors'"
+              [class.bg-danger]="statusInfo?.status === 'failed'"
+              [class.bg-secondary]="statusInfo?.status === 'cancelled'"
+              [class.text-dark]="statusInfo?.status === 'completed_with_errors'">
+          <i class="bi me-1"
+             [class.bi-check-circle-fill]="statusInfo?.status === 'completed'"
+             [class.bi-exclamation-triangle-fill]="statusInfo?.status === 'completed_with_errors'"
+             [class.bi-x-circle-fill]="statusInfo?.status === 'failed'"
+             [class.bi-stop-circle-fill]="statusInfo?.status === 'cancelled'"></i>
+          {{ statusInfo?.status === 'completed' ? 'Completed'
+            : statusInfo?.status === 'completed_with_errors' ? 'Completed with errors'
+            : statusInfo?.status === 'cancelled' ? 'Cancelled'
+            : 'Failed' }}
+        </span>
+        <small class="text-muted text-nowrap">
+          {{ statusInfo?.completed }}/{{ statusInfo?.total }}
+          <span *ngIf="statusInfo?.failed">({{ statusInfo?.failed }} failed)</span>
+        </small>
+        <small *ngIf="elapsedText" class="text-muted text-nowrap" title="Total run time">
+          <i class="bi bi-clock-history me-1"></i>{{ elapsedText }}
+        </small>
+        <button *ngIf="hasFailedCases" class="btn btn-sm btn-outline-warning text-nowrap"
+                (click)="retryFailedCases()" [disabled]="retryingFailed"
+                title="Resubmit only the cases that failed (e.g. a transient LLM error) without reprocessing completed cases.">
+          <span *ngIf="retryingFailed" class="spinner-border spinner-border-sm me-1"></span>
+          <i *ngIf="!retryingFailed" class="bi bi-arrow-clockwise me-1"></i>
+          Retry Failed ({{ statusInfo?.failed }})
+        </button>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <div class="dropdown" *ngIf="!isRunning && rows.length > 0">
+        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false" title="Download extraction results">
+          <i class="bi bi-download me-1"></i>
+          Export
+        </button>
+        <ul class="dropdown-menu">
+          <li><button class="dropdown-item" (click)="exportExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i>Excel (.xlsx)</button></li>
+          <li><button class="dropdown-item" (click)="exportCsv()">
+            <i class="bi bi-file-earmark-text me-1"></i>CSV</button></li>
+          <li><button class="dropdown-item" (click)="exportJson()">
+            <i class="bi bi-filetype-json me-1"></i>JSON</button></li>
+        </ul>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" [routerLink]="['/extraction/schema', sessionId]"
+              title="Return to the schema builder">
+        <i class="bi bi-arrow-left me-1"></i>
+        Back to Schema Builder
+      </button>
+      <button class="btn btn-sm btn-outline-warning" (click)="refineOnIncorrect()"
+              [disabled]="refiningLowConf || rows.length === 0"
+              title="Go back to schema builder focused on incorrect cases">
+        <span *ngIf="refiningLowConf" class="spinner-border spinner-border-sm me-1"></span>
+        <i *ngIf="!refiningLowConf" class="bi bi-arrow-left-circle me-1"></i>
+        Refine Schema on Incorrect Cases
+      </button>
+    </div>
+  </div>
+
+  <!-- Main area: grid + side panel -->
+  <div class="d-flex flex-grow-1 overflow-hidden">
+
+    <!-- Data grid -->
+    <div class="flex-grow-1 overflow-auto p-2">
+      <div *ngIf="rows.length === 0 && !isRunning" class="text-center py-5 text-muted">
+        <i class="bi bi-grid-3x3 fs-2 d-block mb-2"></i>
+        No results yet.
+        <a [routerLink]="['/extraction/schema', sessionId]">Go back to the Schema Builder</a> and run extraction.
+      </div>
+
+      <div *ngIf="rows.length === 0 && isRunning" class="text-center py-5 text-muted">
+        <div class="spinner-border text-primary mb-2"></div>
+        <p>Extraction in progress… results will appear here as they complete.</p>
+      </div>
+
+      <table *ngIf="rows.length > 0" class="table table-bordered table-sm review-grid">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th class="text-muted small" style="width:42px;">#</th>
+            <th class="case-col">Case Number</th>
+            <th *ngFor="let f of fields" class="field-col">{{ f }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows; let i = index">
+            <td class="text-muted small text-end pe-2" style="width:42px;">{{ i + 1 }}</td>
+            <td class="case-col text-muted small fw-semibold">{{ row.caseNumber }}</td>
+            <td
+              *ngFor="let f of fields"
+              [class]="'field-cell ' + cellClass(row.cells[f])"
+              (click)="selectCell(row.cells[f], row.caseId, row.caseNumber, f)"
+              [class.selected]="selectedCaseId === row.caseId && selectedField === f"
+            >
+              <div class="cell-view">
+                <span *ngIf="row.cells[f]?.displayValue !== null && row.cells[f]?.displayValue !== undefined">
+                  {{ row.cells[f].displayValue }}
+                </span>
+                <span *ngIf="row.cells[f]?.displayValue === null || row.cells[f]?.displayValue === undefined" class="text-muted fst-italic small">—</span>
+                <div class="cell-actions">
+                  <button
+                    class="verdict-btn incorrect-btn"
+                    [class.active]="row.cells[f]?.isReviewed && row.cells[f]?.isIncorrect"
+                    (click)="markPrediction(row.cells[f], $event)"
+                    title="Mark incorrect">✗</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Side panel: provenance -->
+    <div *ngIf="selectedCell" class="side-panel border-start bg-white d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center p-3 border-bottom flex-shrink-0">
+        <div>
+          <strong>{{ selectedField }}</strong>
+          <div class="text-muted small">Case {{ selectedCaseNumber }}</div>
+        </div>
+        <button class="btn-close" (click)="closePanel()"></button>
+      </div>
+
+      <!-- Cell detail -->
+      <div class="p-3 border-bottom flex-shrink-0">
+        <div class="mb-2 d-flex align-items-center justify-content-between">
+          <div>
+            <span class="small text-muted">AI extracted:</span>
+            <div class="fw-semibold">{{ selectedCell.extractedValue ?? '—' }}</div>
+          </div>
+          <div class="d-flex gap-1">
+            <button
+              class="verdict-btn incorrect-btn lg"
+              [class.active]="selectedCell.isReviewed && selectedCell.isIncorrect"
+              (click)="markPrediction(selectedCell, $event)"
+              title="Mark incorrect">✗</button>
+          </div>
+        </div>
+        <div *ngIf="selectedCell.confidence !== null" class="small text-muted">
+          Confidence: {{ selectedCell.confidence | number:'1.0-2' }}
+        </div>
+        <div *ngIf="selectedCell.provenanceText" class="mt-2">
+          <span class="small text-muted">Evidence:</span>
+          <blockquote class="blockquote-sm text-muted fst-italic border-start border-2 ps-2 mb-0">
+            "{{ selectedCell.provenanceText }}"
+          </blockquote>
+        </div>
+      </div>
+
+      <!-- Report text: labeled sections -->
+      <div class="flex-grow-1 overflow-auto p-2">
+        <div *ngIf="sidePanelLoading" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary"></div>
+        </div>
+        <ng-container *ngIf="!sidePanelLoading">
+          <div *ngIf="reportSegments.length === 0" class="text-muted small fst-italic p-2">No report text available.</div>
+          <div *ngFor="let seg of reportSegments" class="mb-3">
+            <div class="fw-semibold small text-uppercase text-secondary border-bottom pb-1 mb-1"
+                 style="letter-spacing: 0.05em;">{{ seg.CommentType }}</div>
+            <pre class="small mb-0" style="white-space: pre-wrap; word-wrap: break-word; font-family: inherit;"
+                 [innerHTML]="seg.html"></pre>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+  </div><!-- main area -->
+
+  <!-- Legend -->
+  <div class="px-3 py-1 bg-light border-top d-flex gap-3 flex-shrink-0">
+    <small><span class="legend-dot high"></span> High confidence (&ge;0.8)</small>
+    <small><span class="legend-dot medium"></span> Medium confidence (0.5–0.8)</small>
+    <small><span class="legend-dot low"></span> Low confidence (&lt;0.5)</small>
+    <small><span class="legend-dot correct"></span> Marked correct</small>
+    <small><span class="legend-dot incorrect"></span> Marked incorrect</small>
+  </div>
+</div>
