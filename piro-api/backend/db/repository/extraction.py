@@ -573,17 +573,19 @@ def upsert_result(
         db.commit()
         db.refresh(result)
 
+    current_run_id = run_id
+
     # de-duplicate related run IDs
     deduplicated_related_run_ids = []
     if related_run_ids:
-        for run_id in related_run_ids:
-            if run_id not in deduplicated_related_run_ids:
-                deduplicated_related_run_ids.append(run_id)
+        for related_run_id in related_run_ids:
+            if related_run_id not in deduplicated_related_run_ids:
+                deduplicated_related_run_ids.append(related_run_id)
 
     # update related runs, ensuring that each related run has the same result
     # as the current run
     for related_run_id in deduplicated_related_run_ids:
-        if related_run_id == run_id:
+        if related_run_id == current_run_id:
             continue
 
         existing_result_from_another_run = (
