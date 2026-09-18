@@ -16,10 +16,12 @@ from db.repository.extraction import (
     clone_results_for_run,
     create_run,
     create_session,
+    get_case_text_segments,
     get_results_for_run,
     get_results_for_session,
     upsert_result,
 )
+from db.views.VCaseCommentText import VCaseCommentText
 
 os.environ.setdefault("DATABASE", "SQLITE")
 
@@ -35,6 +37,7 @@ def db():
             ExtractionSession.__table__,
             ExtractionRun.__table__,
             ExtractionResult.__table__,
+            VCaseCommentText.__table__,
         ],
     )
     session = sessionmaker(bind=engine)()
@@ -160,3 +163,67 @@ def test_retry_run_keeps_previous_successes_and_original_run_sees_retry_result(
         (case_a.CaseId, "field_a"),
         (case_b.CaseId, "field_b"),
     }
+
+
+def test_explicit_text_source_selection_does_not_fall_back_to_other_sections(
+    db,
+):
+    user = _create_user(db, "explicit-text-user@example.com")
+    case = _create_case(db, "CASE-TEXT-SOURCE")
+    session = create_session(
+        name="explicit-selection-session",
+        user_id=user.UserId,
+        user="pytest",
+        db=db,
+        text_sources=["gross"],
+    )
+
+    db.add(
+        VCaseCommentText(
+            CaseId=case.CaseId,
+            CommentTypeId=1,
+            CommentType="Final Diagnosis",
+            CommentText="Final diagnosis text",
+            SourceCommentType="Final Diagnosis",
+        )
+    )
+    db.commit()
+
+    rows = get_case_text_segments(
+        case.CaseId,
+        db,
+        comment_types={"gross"},
+    )
+
+    assert rows == []
+    assert session.TextSources == "gross"
+
+
+def test_no_selection_still_uses_fallback_sections(db):
+    user = _create_user(db, "legacy-fallback-user@example.com")
+    case = _create_case(db, "CASE-LEGACY-FALLBACK")
+    create_session(
+        name="legacy-selection-session",
+        user_id=user.UserId,
+        user="pytest",
+        db=db,
+    )
+
+    db.add(
+        VCaseCommentText(
+            CaseId=case.CaseId,
+            CommentTypeId=2,
+            CommentType="Final Diagnosis",
+            CommentText="Legacy fallback text",
+            SourceCommentType="Final Diagnosis",
+        )
+    )
+    db.commit()
+
+    rows = get_case_text_segments(
+        case.CaseId,
+        db,
+        comment_types=None,
+    )
+
+    assert [row.CommentType for row in rows] == ["Final Diagnosis"]

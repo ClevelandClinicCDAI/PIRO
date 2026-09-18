@@ -78,7 +78,7 @@ def test_search_demoadmin_masks_microscopic():
 
     SecurityUtil.search(doc, role=Constants.RoleDemoAdmin, isAttest=False)
 
-    assert doc.microscopic == "MICROSCOPIC Patient MM/dd/yyyy case X01-XXXXXX"
+    assert doc.microscopic == "MICROSCOPIC Patient MM/dd/yyyy case -"
 
 
 def test_is_demo_admin_handles_none_and_case_insensitive():

@@ -53,14 +53,11 @@ _LDT_DISCLAIMER_RE = re.compile(
 
 def parse_text_sources(text_sources: Optional[str]) -> set:
     """Parse a session's stored comma-separated TextSources into a
-    lowercase set.
-
-    Falls back to DEFAULT_TEXT_SOURCES when unset/empty.
-    """
+    lowercase set."""
     if not text_sources:
-        return set(DEFAULT_TEXT_SOURCES)
+        return set()
     codes = {c.strip().lower() for c in text_sources.split(",") if c.strip()}
-    return codes or set(DEFAULT_TEXT_SOURCES)
+    return codes
 
 
 def serialize_text_sources(text_sources: Optional[List[str]]) -> Optional[str]:
@@ -830,12 +827,24 @@ def get_case_text_segments(
 
     Filters on V_CaseCommentText.CommentType (the ShortName already in the
     view) to avoid a redundant re-join to the CommentType table.
-    ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES);
-    defaults to DEFAULT_TEXT_SOURCES (Final, Comment, Addendum, Microscopic)
-    when not provided.
-    Falls back to all available comment types if none of those are present.
-    """
-    types = comment_types if comment_types else DEFAULT_TEXT_SOURCES
+    ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES).
+
+    If the comment_types are explicitly specified (for example the user selects
+    only 'gross'), and none of those sections exist on the case, return an
+    empty list.
+
+    If comment_types are not specified, default types are tried.  If no
+    comments are found among the default types, the selection of comment types
+    is expanded to include all types as a fallback."""
+
+    types: set
+    allow_all_comment_types_fallback: bool = False
+
+    if comment_types:
+        types = comment_types
+    else:
+        types = DEFAULT_TEXT_SOURCES
+        allow_all_comment_types_fallback = True
 
     filters = [func.lower(VCaseCommentText.CommentType).in_(types)]
     if "addendum" in types:
@@ -850,8 +859,11 @@ def get_case_text_segments(
         .all()
     )
 
-    if not rows:
-        # Fallback: use all comment types for this case and log what was found
+    if rows:
+        rows.sort(key=lambda r: _segment_order(r.CommentType))
+        return rows
+
+    if allow_all_comment_types_fallback:
         all_rows = (
             db.query(VCaseCommentText)
             .filter(VCaseCommentText.CaseId == case_id)
@@ -859,13 +871,22 @@ def get_case_text_segments(
         )
         available = [r.CommentType for r in all_rows]
         logger.warning(
-            f"Case {case_id}: no segments matched selected extraction types "
-            f"(available: {available}). Using all available comment text."
+            "Case %s: no segments matched selected extraction types "
+            "(available: %s). Using all available comment text because "
+            "fallback is enabled.",
+            case_id,
+            available,
         )
-        rows = all_rows
-
-    rows.sort(key=lambda r: _segment_order(r.CommentType))
-    return rows
+        all_rows.sort(key=lambda r: _segment_order(r.CommentType))
+        return all_rows
+    else:
+        logger.info(
+            "Case %s: no segments matched explicit text-source selection %s; "
+            "returning no text to honor the configured scope.",
+            case_id,
+            sorted(types),
+        )
+        return []
 
 
 def _strip_ldt_disclaimer(text: str) -> str:
