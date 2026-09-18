@@ -116,32 +116,100 @@ def _parse_json_from_response(text: str) -> Any:
 def _normalize_extraction_response(
     raw: Any, schema: dict
 ) -> ExtractionResponse:
-    """Normalize raw LLM JSON into ExtractionResponse, handling partial/malformed output."""
+    """Normalize raw LLM JSON into ExtractionResponse.
+
+    Malformed outputs raise ValidationError so the caller can record the case
+    as failed and allow retry. Valid empty or low-confidence values are kept as
+    null-valued FieldExtraction objects rather than being treated as malformed.
+    """
     result: ExtractionResponse = {}
     if not isinstance(raw, dict):
-        return result
+        raise ValueError(
+            "Malformed extraction response: expected a top-level JSON object"
+        )
+
     for field_name in schema.keys():
         field_data = raw.get(field_name, {})
+
         if isinstance(field_data, dict):
-            value = field_data.get("value")
-            confidence = field_data.get("confidence")
-            provenance = field_data.get("provenance")
+            if not field_data:
+                value = None
+                confidence = None
+                provenance = None
+            else:
+                value = field_data.get("value")
+                confidence = field_data.get("confidence")
+                provenance = field_data.get("provenance")
+
+                if set(field_data.keys()) - {
+                    "value",
+                    "confidence",
+                    "provenance",
+                }:
+                    raise ValueError(
+                        f"Malformed extraction response for '{field_name}': "
+                        "unexpected keys in field payload"
+                    )
+
+                if "confidence" in field_data and confidence is not None:
+                    if isinstance(confidence, bool) or not isinstance(
+                        confidence, (int, float)
+                    ):
+                        raise ValueError(
+                            f"Malformed extraction response for '{field_name}': "  # noqa:E501
+                            "confidence must be numeric or null"
+                        )
+                    confidence = float(confidence)
+                    if not 0.0 <= confidence <= 1.0:
+                        raise ValueError(
+                            f"Malformed extraction response for '{field_name}': "  # noqa:E501
+                            "confidence must be between 0.0 and 1.0"
+                        )
+
+                if "provenance" in field_data and provenance is not None:
+                    if not isinstance(provenance, str):
+                        raise ValueError(
+                            f"Malformed extraction response for '{field_name}': "  # noqa:E501
+                            "provenance must be a string or null"
+                        )
+
+                if "value" in field_data and value is not None and value == "":
+                    value = None
+
         else:
-            # LLM returned a bare value instead of the nested structure
-            value = field_data if field_data != "" else None
-            confidence = None
-            provenance = None
+            # Allow a bare scalar value only when it's not empty/None.
+            if field_data is None or field_data == "":
+                value = None
+                confidence = None
+                provenance = None
+            elif isinstance(field_data, (str, int, float, bool)):
+                value = field_data
+                confidence = None
+                provenance = None
+            else:
+                raise ValueError(
+                    f"Malformed extraction response for '{field_name}': "
+                    "expected object payload or bare scalar value"
+                )
 
         # Enforce null-over-hallucination: drop low-confidence values
-        if confidence is not None and float(confidence) < 0.5:
-            value = None
-            confidence = None
-            provenance = None
+        if confidence is not None:
+            try:
+                confidence = float(confidence)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Malformed extraction response for '{field_name}': "
+                    "confidence is not numeric"
+                ) from exc
+            if confidence < 0.5:
+                value = None
+                confidence = None
+                provenance = None
 
         result[field_name] = FieldExtraction(
             value=value,
             confidence=float(confidence) if confidence is not None else None,
-            provenance=str(provenance) if provenance else None,
+            provenance=str(provenance) if provenance is not None else None,
         )
     return result
 
