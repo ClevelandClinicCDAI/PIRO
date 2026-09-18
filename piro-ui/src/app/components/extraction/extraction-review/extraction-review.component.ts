@@ -325,9 +325,24 @@ export class ExtractionReviewComponent implements OnInit, OnDestroy {
     const poll = async () => {
       try {
         this.statusInfo = await this.extractionService.getStatus(this.sessionId);
-        if (this.statusInfo?.status === 'running') {
+
+        const activeStatuses = new Set(['pending', 'running']);
+        const terminalStatuses = new Set([
+          'completed',
+          'completed_with_errors',
+          'failed',
+          'cancelled',
+        ]);
+
+        if (activeStatuses.has(this.statusInfo?.status)) {
+          if (this.statusInfo?.status === 'running') {
+            await this.loadResults();
+          }
+          return;
+        }
+
+        if (terminalStatuses.has(this.statusInfo?.status)) {
           await this.loadResults();
-        } else {
           this.stopStatusPoll();
         }
       } catch { }
