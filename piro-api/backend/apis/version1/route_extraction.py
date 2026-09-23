@@ -166,6 +166,35 @@ def _require_session_read_access(session_id: int, user_id: int, db: Session):
     return sess
 
 
+# Staff roles that fulfill LLM extraction requests. Any of these users may
+# check the progress of a run even if they didn't start it, so multiple
+# analysts can cover for each other on long-running extractions.
+_STAFF_ROLES = {
+    Constants.RoleAdmin,
+    Constants.RoleDemoAdmin,
+    Constants.RoleAnalyst,
+}
+
+
+def _require_session_status_access(
+    session_id: int, user_id: int, role: Optional[str], db: Session
+):
+    """Allow any staff user (admin/analyst) to view a run's progress, in
+    addition to owners and request-scoped readers. Unlike
+    ``_require_session_read_access``, this does not gate on ownership or a
+    linked SearchRequest for staff roles, since run status/progress is not
+    sensitive and any analyst may need to monitor or cover a colleague's
+    run."""
+    sess = get_session(session_id, db)
+    if sess is None:
+        raise HTTPException(
+            status_code=404, detail="Extraction session not found"
+        )
+    if (role or "").upper() in _STAFF_ROLES:
+        return sess
+    return _require_session_read_access(session_id, user_id, db)
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Session endpoints
 # ──────────────────────────────────────────────────────────────────────────────
@@ -798,9 +827,12 @@ async def cancel_extraction(
 async def get_status(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
+    current_role: Annotated[str, Depends(get_current_user_role)],
     db: Session = Depends(get_db),
 ):
-    _require_session_read_access(session_id, current_user_id, db)
+    _require_session_status_access(
+        session_id, current_user_id, current_role, db
+    )
     status = get_extraction_status(session_id, db)
     return status
 

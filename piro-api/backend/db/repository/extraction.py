@@ -10,10 +10,12 @@ from sqlalchemy import or_, func
 from sqlalchemy.orm import Session, joinedload
 
 from core.security_util import SecurityUtil
+from db.models.CaseCommentSynopticSpecimen import CaseCommentSynopticSpecimen
 from db.models.ExtractionQueue import ExtractionQueue
 from db.models.ExtractionResult import ExtractionResult
 from db.models.ExtractionRun import ExtractionRun
 from db.models.ExtractionSession import ExtractionSession
+from db.repository.caseCommentSynoptic import synoptic_report
 from db.views.VCaseCommentText import VCaseCommentText
 from logger import logger
 
@@ -822,6 +824,56 @@ def bulk_approve_high_confidence(
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+def _build_synoptic_segment(
+    case_id: int, db: Session
+) -> Optional[VCaseCommentText]:
+    """Build a synthetic 'Synoptic' text segment sourced from
+    CaseCommentSynopticSpecimen / CaseCommentSynopticText — the same tables
+    the case detail UI's synoptic report is built from — instead of
+    CaseComment.
+
+    CaseComment only reliably contains synoptic report text for cases from
+    before ~2022; more recent cases store the parsed synoptic data in
+    CaseCommentSynopticText instead. Sourcing from there matches how regular
+    (non-extraction) data requests assemble synoptic text regardless of case
+    age. Returns None if no parsed synoptic data exists for the case (e.g.
+    older cases), letting the caller fall back to CaseComment.
+    """
+    synoptic_ids = [
+        row[0]
+        for row in (
+            db.query(CaseCommentSynopticSpecimen.SynopticId)
+            .filter(CaseCommentSynopticSpecimen.CaseId == case_id)
+            .distinct()
+            .all()
+        )
+    ]
+    if not synoptic_ids:
+        return None
+
+    lines: List[str] = []
+    for synoptic_id in synoptic_ids:
+        for row in synoptic_report(synopticId=synoptic_id, db=db):
+            key = (row.Key or "").strip()
+            value = (row.Value or "").strip()
+            if not key and not value:
+                continue
+            lines.append(f"{key}: {value}" if key and value else key or value)
+
+    text = "\n".join(lines).strip()
+    if not text:
+        return None
+
+    return VCaseCommentText(
+        Id=-case_id,
+        CaseId=case_id,
+        CommentTypeId=0,
+        CommentType="Synoptic",
+        CommentText=text,
+        SourceCommentType="Synoptic",
+    )
+
+
 def get_case_text_segments(
     case_id: int, db: Session, comment_types: Optional[set] = None
 ) -> List[VCaseCommentText]:
@@ -830,6 +882,13 @@ def get_case_text_segments(
     Filters on V_CaseCommentText.CommentType (the ShortName already in the
     view) to avoid a redundant re-join to the CommentType table.
     ``comment_types`` is a lowercase set of codes (see AVAILABLE_TEXT_SOURCES).
+
+    The 'synoptic' source is handled separately: it is preferentially built
+    from CaseCommentSynopticSpecimen/CaseCommentSynopticText (see
+    ``_build_synoptic_segment``), since CaseComment does not reliably contain
+    synoptic text for cases after ~2022. If no parsed synoptic data exists
+    for the case (common for older cases), this falls back to the raw
+    synoptic text in CaseComment/V_CaseCommentText.
 
     If the comment_types are explicitly specified (for example the user selects
     only 'gross'), and none of those sections exist on the case, return an
@@ -848,18 +907,40 @@ def get_case_text_segments(
         types = DEFAULT_TEXT_SOURCES
         allow_all_comment_types_fallback = True
 
-    filters = [func.lower(VCaseCommentText.CommentType).in_(types)]
-    if "addendum" in types:
-        filters.append(
-            func.lower(VCaseCommentText.CommentType).like("%addend%")
+    non_synoptic_types = types - {"synoptic"}
+
+    rows: List[VCaseCommentText] = []
+    if non_synoptic_types:
+        filters = [
+            func.lower(VCaseCommentText.CommentType).in_(non_synoptic_types)
+        ]
+        if "addendum" in non_synoptic_types:
+            filters.append(
+                func.lower(VCaseCommentText.CommentType).like("%addend%")
+            )
+        rows = (
+            db.query(VCaseCommentText)
+            .filter(VCaseCommentText.CaseId == case_id)
+            .filter(or_(*filters))
+            .all()
         )
 
-    rows = (
-        db.query(VCaseCommentText)
-        .filter(VCaseCommentText.CaseId == case_id)
-        .filter(or_(*filters))
-        .all()
-    )
+    if "synoptic" in types:
+        synoptic_segment = _build_synoptic_segment(case_id, db)
+        if synoptic_segment is not None:
+            rows.append(synoptic_segment)
+        else:
+            # Older cases (pre-~2022) often have no parsed
+            # CaseCommentSynopticText data; fall back to whatever raw
+            # synoptic text CaseComment has for the case, matching the
+            # extraction suite's prior behavior for those cases.
+            legacy_synoptic_rows = (
+                db.query(VCaseCommentText)
+                .filter(VCaseCommentText.CaseId == case_id)
+                .filter(func.lower(VCaseCommentText.CommentType) == "synoptic")
+                .all()
+            )
+            rows.extend(legacy_synoptic_rows)
 
     if rows:
         rows.sort(key=lambda r: _segment_order(r.CommentType))

@@ -7,7 +7,10 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from apis.version1.route_extraction import _require_session_read_access
+from apis.version1.route_extraction import (
+    _require_session_read_access,
+    _require_session_status_access,
+)
 from db.base_class import Base
 from db.models.ExtractionSession import ExtractionSession
 from db.models.SearchRequest import SearchRequest
@@ -139,6 +142,56 @@ def test_require_session_read_access_denies_admin_without_linked_request(db):
         _require_session_read_access(
             session.ExtractionSessionId,
             admin.UserId,
+            db,
+        )
+
+    assert exc.value.status_code == 403
+
+
+def test_require_session_status_access_allows_any_analyst(db):
+    """Any analyst can check the progress of a run, not just the analyst
+    who started it or a linked requester/approver."""
+    owner = _create_user(db, "extraction-owner-4@example.com")
+    other_analyst = _create_user(db, "extraction-other-analyst@example.com")
+    session = _create_session(db, owner.UserId, "status-visible-session")
+
+    result = _require_session_status_access(
+        session.ExtractionSessionId,
+        other_analyst.UserId,
+        "ANALYST",
+        db,
+    )
+
+    assert result.ExtractionSessionId == session.ExtractionSessionId
+
+
+def test_require_session_status_access_allows_admin(db):
+    owner = _create_user(db, "extraction-owner-5@example.com")
+    admin = _create_user(db, "extraction-admin-2@example.com")
+    session = _create_session(db, owner.UserId, "status-visible-session-admin")
+
+    result = _require_session_status_access(
+        session.ExtractionSessionId,
+        admin.UserId,
+        "ADMIN",
+        db,
+    )
+
+    assert result.ExtractionSessionId == session.ExtractionSessionId
+
+
+def test_require_session_status_access_falls_back_for_non_staff_role(db):
+    """A non-staff role (e.g. a plain requester) without ownership or a
+    linked SearchRequest is still denied."""
+    owner = _create_user(db, "extraction-owner-6@example.com")
+    outsider = _create_user(db, "extraction-outsider-2@example.com")
+    session = _create_session(db, owner.UserId, "status-blocked-session")
+
+    with pytest.raises(HTTPException) as exc:
+        _require_session_status_access(
+            session.ExtractionSessionId,
+            outsider.UserId,
+            "USER",
             db,
         )
 
