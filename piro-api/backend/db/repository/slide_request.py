@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from core.config import Settings
+from core.config import settings
 from core.constants import Constants
 from core.email import Email
 from db.models.SlideRequest import SlideRequest
@@ -16,7 +16,7 @@ from viewmodel.slide_request import (
 
 
 def _send_slide_request_completed_email(request: SlideRequest):
-    if not Settings.EMAIL_SMTP_SERVER or not Settings.EMAIL_FROM:
+    if not settings.EMAIL_SMTP_SERVER or not settings.EMAIL_FROM:
         logger.warning(
             "Slide request completion email skipped for request %s because email settings are not configured.",
             request.SlideRequestId,

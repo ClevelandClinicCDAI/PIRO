@@ -208,6 +208,27 @@ export class RequesthistoryService {
 		return result;
 	}
 
+	async startExtraction(searchRequestId: number) {
+		let promise = new Promise((resolve, reject) => {
+			let apiURL = environment.apiBaseUrl + 'searchrequest/startextraction/' + searchRequestId;
+
+			this.http.post<any>(apiURL, {})
+				.subscribe({
+					next: (res: any) => {
+						resolve({ status: true, data: res });
+					},
+					error: (err: any) => {
+						resolve({ status: false, data: [], err: err.error?.detail || err.message })
+					},
+					complete: () => {
+
+					},
+				});
+		});
+		const result: any = await promise;
+		return result;
+	}
+
 	getExport(searchRequestId: number) {
 		let apiURL = environment.apiBaseUrl + 'searchrequest/export/' + searchRequestId;
 		return this.http.get(apiURL, {

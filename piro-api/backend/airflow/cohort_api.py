@@ -3,7 +3,7 @@ import requests
 from pathlib import Path
 
 from logger import logger
-from core.config import Settings
+from core.config import settings
 from airflow.general import get_certificate_path_airflow, get_airflow_api_token
 
 
@@ -15,7 +15,7 @@ def trigger_cohort_job(cohortId: int) -> bool:
 
     certPath: Path = get_certificate_path_airflow()
 
-    load_url: str | None = Settings.AIRFLOW_DAG_COHORT_LOADER_URL
+    load_url: str | None = settings.AIRFLOW_DAG_COHORT_LOADER_URL
 
     # Derive the base URL from the full DAG trigger URL
     # e.g. https://<host>/api/v2/dags/solr_cohort_load/dagRuns

@@ -1,0 +1,59 @@
+<div class="modal-header">
+  <h5 class="modal-title"><i class="bi bi-send me-2"></i>Send to Extraction Suite</h5>
+  <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  <p class="text-muted">
+    You are sending <strong>{{ caseIds.length }}</strong> {{ caseIds.length === 1 ? 'case' : 'cases' }}
+    to the AI Extraction Suite.
+  </p>
+
+  <div *ngIf="loading" class="text-center py-3">
+    <div class="spinner-border spinner-border-sm text-primary"></div>
+  </div>
+
+  <div *ngIf="!loading">
+    <!-- Mode toggle -->
+    <div class="mb-3">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" id="modeNew" value="new" [(ngModel)]="mode">
+        <label class="form-check-label" for="modeNew">Create new session</label>
+      </div>
+      <div class="form-check form-check-inline" *ngIf="sessions.length > 0">
+        <input class="form-check-input" type="radio" id="modeExisting" value="existing" [(ngModel)]="mode">
+        <label class="form-check-label" for="modeExisting">Add to existing session</label>
+      </div>
+    </div>
+
+    <!-- New session name -->
+    <div *ngIf="mode === 'new'" class="mb-3">
+      <label class="form-label">Session name <span class="text-muted">(optional)</span></label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="e.g. Lung Carcinoma Study Q1 2025"
+        [(ngModel)]="newSessionName"
+      />
+    </div>
+
+    <!-- Existing session picker -->
+    <div *ngIf="mode === 'existing'" class="mb-3">
+      <label class="form-label">Select session</label>
+      <select class="form-select" [(ngModel)]="selectedSessionId">
+        <option *ngFor="let s of sessions" [value]="s.ExtractionSessionId">
+          {{ s.Name }} — {{ s.Status }}
+        </option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="modal-footer">
+  <button class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
+  <button class="btn btn-primary" (click)="send()" [disabled]="sending || loading">
+    <span *ngIf="sending" class="spinner-border spinner-border-sm me-1"></span>
+    <i *ngIf="!sending" class="bi bi-send me-1"></i>
+    Send &amp; Open Schema Builder
+  </button>
+</div>

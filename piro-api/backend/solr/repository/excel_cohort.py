@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import List
 
 from exception.custom_exception import CustomException
-from core.config import Settings
+from core.config import settings
 from openpyxl import Workbook, load_workbook
 from viewmodel.cohort import CohortDetailsVM, CohortVMUpdate, CohortDataVM
 from viewmodel.cohortPatient import CohortPatientVM
@@ -58,7 +58,7 @@ def create_excel_patient_mrn(
 ):
     wb = Workbook()
     wb = load_workbook(
-        f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_MRN_Template_FILE}"
+        f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_MRN_Template_FILE}"
     )
     ws1 = wb["Data"]
 
@@ -77,7 +77,7 @@ def create_excel_patient_mrn(
         row += 1
 
     file = f"CohortMRN_{cohortId}.xlsx"
-    path = f"{Settings.EXCEL_Output_DIRECTORY}{file}"
+    path = f"{settings.EXCEL_Output_DIRECTORY}{file}"
     wb.save(path)
     return {"path": path, "file": file}
 
@@ -87,7 +87,7 @@ def create_excel_patient_epi(
 ):
     wb = Workbook()
     wb = load_workbook(
-        f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_EID_Template_FILE}"
+        f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_EID_Template_FILE}"
     )
     ws1 = wb["Data"]
 
@@ -106,7 +106,7 @@ def create_excel_patient_epi(
         row += 1
 
     file = f"CohortEID_{cohortId}.xlsx"
-    path = f"{Settings.EXCEL_Output_DIRECTORY}{file}"
+    path = f"{settings.EXCEL_Output_DIRECTORY}{file}"
     wb.save(path)
     return {"path": path, "file": file}
 
@@ -116,7 +116,7 @@ def create_excel_case(
 ):
     wb = Workbook()
     wb = load_workbook(
-        f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_CASE_Template_FILE}"
+        f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_CASE_Template_FILE}"
     )
     ws1 = wb["Data"]
 
@@ -149,27 +149,27 @@ def create_excel_case(
         row += 1
 
     file = f"CohortCase_{cohortId}.xlsx"
-    path = f"{Settings.EXCEL_Output_DIRECTORY}{file}"
+    path = f"{settings.EXCEL_Output_DIRECTORY}{file}"
     wb.save(path)
     return {"path": path, "file": file}
 
 
 def create_mrn_template():
     return {
-        "path": f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_MRN_Template_FILE}",
+        "path": f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_MRN_Template_FILE}",
         "file": "Cohort_MRN_Template.xlsx",
     }
 
 
 def create_case_template():
     return {
-        "path": f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_CASE_Template_FILE}",
+        "path": f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_CASE_Template_FILE}",
         "file": "Cohort_Case_Template.xlsx",
     }
 
 
 def create_eid_template():
     return {
-        "path": f"{Settings.EXCEL_Template_DIRECTORY}{Settings.EXCEL_Cohort_EID_Template_FILE}",
+        "path": f"{settings.EXCEL_Template_DIRECTORY}{settings.EXCEL_Cohort_EID_Template_FILE}",
         "file": "Cohort_EID_Template.xlsx",
     }

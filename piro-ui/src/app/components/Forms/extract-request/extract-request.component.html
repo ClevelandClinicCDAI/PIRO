@@ -89,6 +89,20 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label>Data Source <span class="asterisk-danger">*</span></label>
+                            <br>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="sourceType" id="sourceTypeSearch"
+                                    [checked]="sourceType === 'search'" (change)="onSourceTypeChange('search')">
+                                <label class="form-check-label" for="sourceTypeSearch">Saved Search</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="sourceType" id="sourceTypeSchema"
+                                    [checked]="sourceType === 'schema'" (change)="onSourceTypeChange('schema')">
+                                <label class="form-check-label" for="sourceTypeSchema">Extraction Schema (LLM-assisted)</label>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="sourceType === 'search'">
                             <label for="searchId">Select Saved Search <span class="asterisk-danger">*</span></label>
                             <br>
                             <select class="q-input-control" (change)="onSearchChange()" formControlName="searchId" id="searchId"
@@ -102,6 +116,19 @@
                             </div>
                             <div *ngIf="collectionDateFilterError" class="invalid-feedback d-block">
                                 <div>{{collectionDateFilterError}}</div>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="sourceType === 'schema'">
+                            <label for="extractionSessionId">Select Extraction Schema <span class="asterisk-danger">*</span></label>
+                            <br>
+                            <select class="q-input-control" formControlName="extractionSessionId" id="extractionSessionId"
+                                [ngClass]="{ 'is-invalid': submitted && f.extractionSessionId.errors }">
+                                <option value="">Select Option</option>
+                                <option value="{{schema.ExtractionSessionId}}" *ngFor="let schema of schemas">{{schema.Name}}
+                                </option>
+                            </select>
+                            <div *ngIf="submitted && f.extractionSessionId.errors" class="invalid-feedback">
+                                <div *ngIf="f.extractionSessionId.errors.required">Please select a schema</div>
                             </div>
                         </div>
                         <div class="form-group" *ngIf="isirb">

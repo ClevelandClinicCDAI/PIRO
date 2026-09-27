@@ -25,6 +25,14 @@ from utils import get_model_dict
 from db.base_class import Base  # noqa E402
 from db.session import get_db, get_solr  # noqa E402
 
+# Ensure the JWT config has valid test defaults when the environment file is
+# missing or incomplete. This keeps the auth fixtures working without altering
+# production code paths.
+settings.ACCESS_TOKEN_SECRET_KEY = (
+    settings.ACCESS_TOKEN_SECRET_KEY or "test-secret-key"
+)
+settings.ACCESS_TOKEN_ALGORITHM = settings.ACCESS_TOKEN_ALGORITHM or "HS256"
+
 
 # ############################## #
 # ##### Solr Configuration ##### #

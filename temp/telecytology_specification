@@ -1,0 +1,493 @@
+# PIRO Feature Specification: Cytology Telepathology Evaluation Form
+
+## Overview
+
+Develop a new feature within the PIRO platform to support the cytology telepathology workflow. This feature will replace the current PDF-based remote cytopathologic evaluation process with an integrated web-based workflow.
+
+The primary component will be an electronic evaluation form modeled after the PDF form currently used by the Cytology department.
+
+The workflow is collaborative. An on-site cytology technician will initially complete the form during the procedure. The signing pathologist will later review the information, make any necessary changes, complete any remaining fields, and finalize the form.
+
+The implementation should integrate with PIRO’s existing Angular frontend, FastAPI backend, SQL Server database, authentication system, authorization system, and user-management infrastructure.
+
+---
+
+# Reference Files
+
+Use the following files located in the `temp` directory as authoritative references.
+
+## `adequacy.pdf`
+
+This PDF is the authoritative reference for:
+
+- Form sections
+- Field labels
+- Instructions
+- Static content
+- Field groupings
+- Repeatable specimen-site information
+- General form organization
+
+The PIRO implementation should reproduce the content and workflow represented in this PDF while following existing PIRO user-interface conventions.
+
+## `terminologies.xlsx`
+
+This spreadsheet contains the permitted values for categorical fields that must be implemented as drop-down controls.
+
+Do not invent or hard-code alternative values when the applicable terminology is available in this spreadsheet.
+
+---
+
+# PDF Analysis and Field Inventory
+
+Before beginning substantial implementation, examine `temp/adequacy.pdf` and identify every field, label, section, instruction, selectable option, and repeated data structure contained in the document.
+
+Do not limit the implementation to the fields explicitly named in this specification. The PDF contains additional fields that must be represented in the web form.
+
+For each field identified in the PDF:
+
+- Determine its intended purpose.
+- Determine whether it is static for the overall form or belongs to a repeatable specimen-site entry.
+- Select an appropriate web input control.
+- Preserve logical relationships and groupings between fields.
+- Use clear and consistent frontend, API, and database field names.
+- Follow existing PIRO interface patterns whenever an equivalent control or component already exists.
+
+Potential controls include:
+
+- Single-line text inputs
+- Multiline text areas
+- Numeric inputs
+- Date or date-time controls
+- Checkboxes
+- Radio buttons
+- Drop-down menus
+- Searchable selection controls
+- Read-only values
+- Repeatable field groups
+- Other controls appropriate for the apparent data type and workflow
+
+Before implementation, produce a concise field inventory containing:
+
+1. Displayed field label
+2. Proposed internal field name
+3. Whether the field is form-level or part of a repeatable site entry
+4. Proposed user-interface control
+5. Whether the field appears required or optional, when determinable
+6. Source of any permitted values
+7. Any ambiguity requiring clarification
+
+When the purpose, expected data type, allowable values, required status, or workflow behavior of a field cannot be determined reliably, ask for clarification rather than making an unsupported assumption.
+
+---
+
+# Form Structure
+
+The information represented in `adequacy.pdf` consists of two general types of data:
+
+1. **Form-level fields**, which occur once and apply to the entire examination.
+2. **Repeatable specimen-site entries**, where each entry represents a different anatomic site or biopsy location.
+
+The implementation must distinguish between these two types of data.
+
+## Form-Level Fields
+
+Many fields in the PDF are static in the sense that they appear once per form and apply to the examination as a whole.
+
+Copilot should identify these fields directly from the PDF and select appropriate controls based on their apparent purpose and data type.
+
+## Repeatable Specimen-Site Entries
+
+The PDF contains a table in which each row represents a separate anatomic site or biopsy location.
+
+An examination may contain one site or many sites. The web form must therefore support a dynamic number of specimen-site entries.
+
+The form should initially display one blank specimen-site entry. The user must be able to add additional entries as needed.
+
+The user should also be able to remove an added entry, provided that doing so does not violate an existing workflow or data-integrity rule.
+
+The implementation does not have to visually reproduce the PDF table. Copilot may choose the most usable PIRO-compatible interface, such as:
+
+- An editable table
+- Repeating field groups
+- Expandable cards
+- Accordion sections
+- Another suitable dynamic form pattern
+
+Regardless of the visual design, each specimen-site entry must contain the same fields and be stored as a separate child record associated with the parent evaluation form.
+
+---
+
+# Specimen-Site Entry Fields
+
+Each repeatable specimen-site entry must contain the following fields.
+
+## Site
+
+- Represents the anatomic site or biopsy location.
+- Must be implemented as a categorical drop-down control.
+- Permitted values must come from `temp/terminologies.xlsx`.
+- Do not invent site values.
+
+## Evaluation Episode Number
+
+- Represents the evaluation episode associated with the site.
+- Must be implemented as a numeric input.
+- The input should accept whole numbers unless the PDF or existing workflow indicates otherwise.
+
+## Adequacy / Preliminary Interpretation / Intraoperative Consultation
+
+- Must be implemented as a categorical drop-down control.
+- Permitted values must come from `temp/terminologies.xlsx`.
+- Do not invent or infer terminology values.
+
+## Slide and Block Counts
+
+Each specimen-site entry must include numeric inputs for the number of slides or blocks generated for that site.
+
+The required categories are:
+
+- DQ
+- Pap
+- ThinPrep
+- CellBlock
+- Unstained Slides
+
+Each field should:
+
+- Accept whole-number values.
+- Default to zero or blank according to the most consistent existing PIRO form convention.
+- Reject negative values.
+- Be stored separately for each specimen-site entry.
+
+Copilot should confirm the appropriate maximum value or numeric validation behavior if this cannot be inferred from existing PIRO patterns.
+
+---
+
+# Slide and Block Totals
+
+The user interface must display the total number of slides or blocks in each category across all specimen-site entries.
+
+Calculate and display separate totals for:
+
+- Total DQ
+- Total Pap
+- Total ThinPrep
+- Total CellBlock
+- Total Unstained Slides
+
+Each total should equal the sum of that category across all active specimen-site entries.
+
+For example:
+
+`Total Pap = sum of Pap counts for every specimen-site entry`
+
+The totals should update automatically whenever the user:
+
+- Adds a specimen-site entry
+- Removes a specimen-site entry
+- Changes a slide or block count
+
+These calculated totals should be clearly visible in the interface.
+
+Copilot should determine whether the totals should also be persisted in the database or calculated dynamically from the individual specimen-site records. Unless an existing PIRO pattern or reporting requirement indicates otherwise, the individual site-level counts should be treated as the authoritative data, and totals should be calculated from them to avoid inconsistent duplicate values.
+
+---
+
+# Explicit Drop-Down Fields
+
+The following fields are explicitly required to use categorical drop-down controls populated from `temp/terminologies.xlsx`:
+
+- Procedure Type
+- Relocation
+- Procedural Location
+- Anatomical Site or Site
+- Adequacy / Preliminary Interpretation / Intraoperative Consultation
+
+Do not invent permitted values for these fields.
+
+Copilot should examine the terminology spreadsheet to determine the correct terminology list associated with each field.
+
+For all other fields identified in the PDF, determine the most appropriate control from the PDF layout, labels, and intended workflow.
+
+---
+
+# User Interface
+
+The primary interface should consist of a single electronic evaluation form modeled after `adequacy.pdf`.
+
+The goal is to reproduce the existing clinical workflow without requiring the web interface to be a pixel-for-pixel copy of the PDF.
+
+The UI should:
+
+- Preserve the logical organization of the PDF.
+- Clearly distinguish form-level fields from repeatable specimen-site entries.
+- Initially provide one specimen-site entry.
+- Allow additional site entries to be added as needed.
+- Allow eligible site entries to be removed.
+- Display calculated slide and block totals.
+- Use appropriate PIRO components and validation patterns.
+- Remain practical for use during an active cytology procedure.
+
+---
+
+# Multi-User Workflow
+
+A single form will be completed by multiple users during its lifecycle.
+
+## Phase 1: On-Site Technician
+
+The on-site cytology technician performs the initial data entry during the procedure.
+
+The technician should be able to save the form as a draft while it is being completed.
+
+When the initial evaluation is complete, the technician selects **Prelim Verify**.
+
+Selecting **Prelim Verify** must:
+
+- Validate all fields required for preliminary verification.
+- Save the current form-level data.
+- Save all specimen-site entries.
+- Automatically determine the authenticated user’s NUID.
+- Record the preliminary verifier’s NUID.
+- Record the preliminary verification timestamp.
+- Change the workflow status to **Prelim Verified**.
+
+The form must remain editable after preliminary verification.
+
+## Phase 2: Reviewing Pathologist
+
+The signing pathologist opens a preliminarily verified form and reviews:
+
+- Form-level information
+- All specimen-site entries
+- Slide and block counts
+- Calculated totals
+- Preliminary interpretation information
+- Any remaining fields identified in the PDF
+
+The pathologist may edit existing information, add or remove site entries where permitted, and complete any remaining fields.
+
+When the review is complete, the pathologist selects **Final Verify**.
+
+Selecting **Final Verify** must:
+
+- Validate all fields required for final verification.
+- Save all modifications.
+- Save all specimen-site entries.
+- Automatically determine the authenticated user’s NUID.
+- Record the final verifier’s NUID.
+- Record the final verification timestamp.
+- Change the workflow status to **Final Verified**.
+
+Once the form reaches **Final Verified**, it represents the completed remote cytopathologic evaluation.
+
+---
+
+# Workflow Statuses
+
+Support the following workflow statuses:
+
+- Draft
+- Prelim Verified
+- Final Verified
+
+The current status must be:
+
+- Stored in the database
+- Returned by the API
+- Clearly displayed in the user interface
+
+The form should remain editable after **Prelim Verified** and before **Final Verified**.
+
+Copilot should examine existing PIRO workflow and authorization patterns to determine how editing should be handled after **Final Verified**. If no established pattern clearly applies, ask for clarification before implementing post-verification editing behavior.
+
+---
+
+# User Identity
+
+Determine user identity automatically from the authenticated PIRO login session.
+
+Users must never manually enter or select their own names on the form.
+
+Whenever a user performs **Prelim Verify** or **Final Verify**, the application must:
+
+- Obtain the authenticated user’s string NUID from the current PIRO session.
+- Store the NUID in the applicable verification field.
+- Store the applicable verification timestamp.
+- Resolve the stored NUID to the user’s full name through PIRO’s existing user data when displaying the form.
+- Display the resolved full name in the appropriate preliminary or final verification area.
+
+---
+
+# Database Requirements
+
+Create new SQL Server tables to support the feature.
+
+The design should use a parent-child structure.
+
+## Parent Evaluation Record
+
+The parent record should store information that occurs once per evaluation, including:
+
+- All form-level fields identified in `adequacy.pdf`
+- Workflow status
+- Creation timestamp
+- Last-modified timestamp
+- Preliminary Verifier NUID
+- Preliminary Verification Timestamp
+- Final Verifier NUID
+- Final Verification Timestamp
+
+## Child Specimen-Site Records
+
+Each repeatable specimen-site entry should be stored as a separate child record associated with the parent evaluation.
+
+Each child record should store at least:
+
+- Parent evaluation identifier
+- Site terminology value or identifier
+- Evaluation Episode Number
+- Adequacy / Preliminary Interpretation / Intraoperative Consultation value or identifier
+- DQ count
+- Pap count
+- ThinPrep count
+- CellBlock count
+- Unstained Slides count
+- Display or sequence order, when needed to preserve the user-entered order
+- Creation and modification metadata consistent with PIRO conventions
+
+The database relationship should support one parent evaluation with one or more specimen-site records.
+
+Prefer normalized site-level count storage. Calculate overall slide and block totals from child records unless an established PIRO reporting or performance requirement justifies storing totals separately.
+
+Use stored NUID values to retrieve user display names through PIRO’s existing user table or user-resolution mechanism.
+
+Design the schema so future workflow stages, additional count categories, or other enhancements can be introduced without major redesign.
+
+---
+
+# API Requirements
+
+The FastAPI implementation should support:
+
+- Creating a new evaluation
+- Retrieving an evaluation and all associated specimen-site entries
+- Saving form-level changes
+- Adding specimen-site entries
+- Updating specimen-site entries
+- Removing specimen-site entries where permitted
+- Saving a draft
+- Performing preliminary verification
+- Performing final verification
+- Returning calculated totals or sufficient site-level data for the frontend to calculate them
+- Resolving verifier NUIDs to display names using existing PIRO patterns
+
+Use existing PIRO endpoint structure, schemas, validation, authentication dependencies, and error-handling conventions wherever possible.
+
+Verification endpoints must derive the acting user’s NUID from the authenticated session. They must not accept a user-supplied verifier NUID as authoritative input from the frontend.
+
+---
+
+# Validation and Data Integrity
+
+At minimum:
+
+- Slide and block counts must be whole numbers.
+- Slide and block counts must not be negative.
+- Each site entry must have a valid site value before the applicable verification stage.
+- Categorical values must be validated against the applicable terminology source.
+- A child specimen-site entry must belong to a valid parent evaluation.
+- Preliminary and final verifier identities must come from the authenticated session.
+- Verification timestamps must be generated by the application or database rather than supplied by the client.
+- Calculated totals must remain consistent with the active specimen-site entries.
+
+Copilot should identify additional validation requirements from the PDF and existing PIRO code.
+
+When required-field rules cannot be determined reliably, list them as questions before implementing verification validation.
+
+---
+
+# Concurrency and Multi-User Access
+
+Because multiple users may access the same form at different workflow stages, the implementation should follow existing PIRO patterns for concurrent editing and stale updates.
+
+Copilot should examine the existing codebase for:
+
+- Record versioning
+- Last-modified checks
+- Optimistic concurrency
+- Edit locking
+- Conflict notifications
+
+Reuse the established PIRO pattern where one exists.
+
+Do not silently overwrite another user’s more recent changes. If the codebase does not contain a clear concurrency pattern, identify this as an implementation question before choosing a new approach.
+
+---
+
+# Implementation Guidance
+
+Extend PIRO’s existing architecture rather than creating parallel infrastructure.
+
+Specifically:
+
+- Reuse PIRO’s existing authentication system.
+- Reuse PIRO’s existing authorization system.
+- Reuse the existing user table or user-resolution mechanism.
+- Do not create a new authentication system.
+- Do not create a new authorization system.
+- Do not create a new user table.
+- Do not duplicate user records.
+- Do not require users to manually enter or select their identity.
+- Obtain the authenticated user’s NUID directly from the PIRO login session.
+- Store NUID values in the new records.
+- Resolve user display names through existing PIRO user data.
+- Follow existing Angular architecture and reactive-form patterns.
+- Follow existing FastAPI architecture and dependency patterns.
+- Follow existing SQL Server naming and migration conventions.
+- Reuse existing PIRO UI components where possible.
+- Follow existing PIRO validation, error-handling, logging, and audit conventions.
+- Avoid introducing a new architectural pattern when an established PIRO implementation already meets the requirement.
+
+---
+
+# Required Questions Before Substantial Implementation
+
+After examining `adequacy.pdf`, `terminologies.xlsx`, and the existing PIRO codebase, provide:
+
+1. A complete field inventory.
+2. A proposed mapping of fields to UI controls.
+3. A distinction between form-level fields and repeatable specimen-site fields.
+4. A proposed parent-child database design.
+5. A proposed UI pattern for adding and removing specimen-site entries.
+6. A list of required-field and validation rules that can be confidently inferred.
+7. A list of unresolved ambiguities.
+
+Ask for clarification before implementation when an ambiguity could materially affect:
+
+- Database schema
+- API contracts
+- Terminology storage
+- Required-field validation
+- Verification behavior
+- Editing after final verification
+- Concurrency handling
+- Clinical meaning of a field
+
+Do not delay implementation for minor cosmetic decisions that can be handled using existing PIRO conventions.
+
+---
+
+# General Requirements
+
+- Multiple users must be able to access the same evaluation.
+- Each evaluation must support one or more specimen-site entries.
+- The form must initially provide one specimen-site entry.
+- Users must be able to add additional specimen-site entries as needed.
+- Slide and block totals must update as entry values change.
+- The form must remain editable after **Prelim Verified** until **Final Verified**.
+- Data persistence must follow existing PIRO patterns.
+- Database tables, APIs, Angular components, and backend services must follow existing PIRO architectural and naming conventions.
+- The completed application should preserve the clinical content and workflow of the PDF while providing a practical, dynamic, web-based interface.
+- When implementation decisions are uncertain, prefer established PIRO patterns over newly invented solutions.
