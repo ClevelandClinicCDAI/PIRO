@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ContenttextComponent } from './contenttext.component';
+import { CatImageUrlPipe } from './rtfpipe';
 
 describe('ContenttextComponent', () => {
   let component: ContenttextComponent;
@@ -8,12 +9,13 @@ describe('ContenttextComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ContenttextComponent ]
+      declarations: [ContenttextComponent, CatImageUrlPipe]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(ContenttextComponent);
     component = fixture.componentInstance;
+    component.inData = { heading: 'Comment', content: [] };
     fixture.detectChanges();
   });
 

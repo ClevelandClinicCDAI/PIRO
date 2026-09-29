@@ -41,7 +41,7 @@ describe('ToastComponent', () => {
     component.title = 'infp';
     component.message = 'info';
     spyOn(component.disposeEvent, 'emit');
-    const button = debugElement.nativeElement.querySelector('button[class="btn-close"]');
+    const button = debugElement.nativeElement.querySelector('.close-alert');
 
     // when
     fixture.detectChanges();

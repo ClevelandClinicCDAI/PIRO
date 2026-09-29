@@ -170,10 +170,8 @@ services:
       # extra_hosts entry below). This keeps the issuer URL identical on both
       # sides so JWT validation succeeds.
       OIDC_ISSUER: ${OIDC_ISSUER:-http://piro-auth:8888/piro}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-piro-api}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-local-dev-secret-not-a-real-secret}
-      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:8080/auth/callback}
-      OIDC_SCOPES: ${OIDC_SCOPES:-openid profile email}
+      # Must match the client ID used by the UI to request the ID token.
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-${OIDC_UI_CLIENT_ID:-piro-ui}}
       OIDC_ALLOWED_GROUPS: ${OIDC_ALLOWED_GROUPS:-}
     extra_hosts:
       - "piro-auth:host-gateway"

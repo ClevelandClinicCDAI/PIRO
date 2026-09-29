@@ -123,6 +123,14 @@ def verify_oauth_token(
         create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
         return None
 
+    if not (settings.OIDC_AUDIENCE and settings.OIDC_AUDIENCE.strip()):
+        message = (
+            "OIDC_AUDIENCE not configured; refusing to validate OAuth token."
+        )
+        logger.error(message)
+        create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
+        return None
+
     try:
         jwks_client = _get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(id_token)
@@ -139,15 +147,10 @@ def verify_oauth_token(
     ]
     decode_kwargs: dict[str, Any] = {
         "issuer": settings.OIDC_ISSUER,
+        "audience": settings.OIDC_AUDIENCE,
         "leeway": settings.OIDC_CLOCK_SKEW_SECONDS,
         "algorithms": algorithms,
     }
-    if settings.OIDC_AUDIENCE:
-        decode_kwargs["audience"] = settings.OIDC_AUDIENCE
-    else:
-        # Skip audience verification when no audience is configured;
-        # mock IdPs and some enterprise setups don't populate `aud`.
-        decode_kwargs["options"] = {"verify_aud": False}
 
     try:
         claims = jwt.decode(id_token, signing_key.key, **decode_kwargs)
@@ -226,7 +229,7 @@ def normalize_nuid(raw_nuid: Any) -> str:
     """Normalize Entra-style usernames to PIRO's stored NUID format.
 
     PIRO stores NUIDs as lowercase local parts (for example,
-    ``CUMBOJ@ccf.org`` -> ``cumboj``). Values that do not look like email
+    ``username@test.org`` -> ``username``). Values that do not look like email
     addresses are preserved after trimming and lowercasing.
     """
 

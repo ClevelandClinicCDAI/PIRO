@@ -49,7 +49,7 @@ SPA can perform IdP-side single-logout.
 | Variable | Default | Purpose |
 | :---- | :---- | :---- |
 | `OIDC_ISSUER` | *(unset)* | Issuer URL published in the id_token's `iss` claim. Also used to discover `end_session_endpoint` via `/.well-known/openid-configuration`. |
-| `OIDC_AUDIENCE` | *(unset)* | Expected `aud` claim. When empty, audience validation is disabled (`verify_aud=False`). |
+| `OIDC_AUDIENCE` | *(required)* | Expected `aud` claim. The API refuses to start in OAuth mode when this is empty. Set it to the SPA/application client ID that requests the ID token. |
 | `OIDC_JWKS_URL` | *(derived)* | JWKS endpoint. If unset, `oauth_auth` derives it from `OIDC_ISSUER` via discovery. |
 | `OIDC_ALGORITHMS` | `RS256` | Comma-separated list of accepted JWS algorithms. |
 | `OIDC_ALLOWED_GROUPS` | *(empty)* | Comma-separated allowed groups. Empty **disables** the group check (any authenticated user passes). Non-empty uses OR semantics — one match is enough. Case-insensitive. |
@@ -63,6 +63,11 @@ SPA can perform IdP-side single-logout.
 Sample values for the bundled `mock-oauth` compose service (see
 `docker-compose.yml`) are already wired in when you run
 `PIRO_AUTH_MODE=OAUTH docker compose up`.
+
+The API validates an ID token supplied by the browser; it does not act as an
+OAuth client or exchange the authorization code. Consequently,
+`OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI`, and
+`OIDC_SCOPES` are UI settings and are not API configuration options.
 
 ### Executing Unit Tests
 

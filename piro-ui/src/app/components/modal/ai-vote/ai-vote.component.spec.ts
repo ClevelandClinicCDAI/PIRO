@@ -8,12 +8,13 @@ describe('AiVoteComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AiVoteComponent ]
+      declarations: [AiVoteComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(AiVoteComponent);
     component = fixture.componentInstance;
+    component.vote = 1;
     fixture.detectChanges();
   });
 

@@ -151,7 +151,7 @@ class Settings:
     CONCENTRIQ_URL: str | None = os.getenv("CONCENTRIQ_URL")
 
     # ── Extraction Suite LLM settings ────────────────────────────────────────
-    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic | azure
+    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic | azure  # noqa:E501
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
     # Base URL for Ollama or generic OpenAI-compatible servers
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "http://localhost:11434")
@@ -165,6 +165,17 @@ class Settings:
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     # Anthropic — requires Business Associate Agreement before use with PHI
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
+
+    def validate_auth_config(self) -> None:
+        """Fail startup when OAuth token validation is not fully configured."""
+
+        if self.AUTH_MODE == "OAUTH" and not (
+            self.OIDC_AUDIENCE and self.OIDC_AUDIENCE.strip()
+        ):
+            raise RuntimeError(
+                "OIDC_AUDIENCE is required when AUTH_MODE=OAUTH. "
+                "Set it to the client ID that requests the OIDC ID token."
+            )
 
 
 settings = Settings()

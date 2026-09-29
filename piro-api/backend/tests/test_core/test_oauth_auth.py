@@ -168,25 +168,41 @@ def test_verify_oauth_token_success_returns_claims(
         "aud": "piro-api",
         "groups": ["Group-A"],
     }
-    monkeypatch.setattr(pyjwt, "decode", Mock(return_value=claims))
+    decode = Mock(return_value=claims)
+    monkeypatch.setattr(pyjwt, "decode", decode)
     db = _mock_db()
     result = oauth_auth.verify_oauth_token("any", islog=False, db=db)
     assert result == claims
+    assert decode.call_args.kwargs["audience"] == "piro-api"
+    assert "options" not in decode.call_args.kwargs
 
 
-def test_verify_oauth_token_skips_audience_when_unset(
+def test_verify_oauth_token_rejects_missing_audience(
     issuer_configured, patch_jwks_client, monkeypatch
 ):
-    """When OIDC_AUDIENCE is empty, `verify_aud` is disabled."""
+    """An ID token is never accepted without an expected audience."""
 
     monkeypatch.setattr(settings, "OIDC_AUDIENCE", "")
-    decode = Mock(return_value={"sub": "x"})
+    decode = Mock(return_value={"sub": "x", "aud": "some-other-client"})
     monkeypatch.setattr(pyjwt, "decode", decode)
     db = _mock_db()
-    oauth_auth.verify_oauth_token("any", islog=False, db=db)
-    kwargs = decode.call_args.kwargs
-    assert "audience" not in kwargs
-    assert kwargs.get("options") == {"verify_aud": False}
+    assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
+    decode.assert_not_called()
+
+
+def test_oauth_startup_validation_rejects_missing_audience(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_MODE", "OAUTH")
+    monkeypatch.setattr(settings, "OIDC_AUDIENCE", None)
+
+    with pytest.raises(RuntimeError, match="OIDC_AUDIENCE"):
+        settings.validate_auth_config()
+
+
+def test_ldap_startup_validation_does_not_require_audience(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_MODE", "LDAP")
+    monkeypatch.setattr(settings, "OIDC_AUDIENCE", None)
+
+    settings.validate_auth_config()
 
 
 # --------------------------------------------------------------------------- #
@@ -239,7 +255,7 @@ def test_extract_identity_honors_custom_nuid_claim(monkeypatch):
             "family_name": "Doe",
         }
     )
-    assert result["nuid"] == "jdoe@corp.example"
+    assert result["nuid"] == "jdoe"
 
 
 def test_extract_identity_normalizes_email_style_nuid(monkeypatch):

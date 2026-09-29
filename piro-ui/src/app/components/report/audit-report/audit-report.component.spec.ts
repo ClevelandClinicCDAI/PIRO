@@ -8,12 +8,13 @@ describe('AuditReportComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AuditReportComponent ]
+      declarations: [AuditReportComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(AuditReportComponent);
     component = fixture.componentInstance;
+    component.data = { title: 'Audit report' };
     fixture.detectChanges();
   });
 

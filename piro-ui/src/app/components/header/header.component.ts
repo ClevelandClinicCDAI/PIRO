@@ -120,8 +120,8 @@ export class HeaderComponent {
     this.router.navigate(['/signed-out']);
   }
   ngOnDestroy() {
-    this.authListenerSubs.unsubscribe();
-    this.loginSubscription.unsubscribe();
+    this.authListenerSubs?.unsubscribe();
+    this.loginSubscription?.unsubscribe();
     if (this.setIntervalId) {
       clearInterval(this.setIntervalId);
     }

@@ -8,12 +8,13 @@ describe('CommentTextComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CommentTextComponent ]
+      declarations: [CommentTextComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(CommentTextComponent);
     component = fixture.componentInstance;
+    component.inData = { textComments: [] };
     fixture.detectChanges();
   });
 
