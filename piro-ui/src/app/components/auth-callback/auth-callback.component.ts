@@ -78,7 +78,7 @@ export class AuthCallbackComponent implements OnInit {
         const safeMessage = message || 'Sign-in failed.';
         this.toast.showErrorToast('Error', safeMessage, []);
         this.router.navigate(['/login'], {
-            queryParams: { oauthError: '1' },
+            queryParams: { oauthError: '1', returnUrl: this.oidcService.consumeReturnUrl() },
             replaceUrl: true,
         });
     }

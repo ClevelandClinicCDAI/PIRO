@@ -51,11 +51,8 @@ export class HeaderComponent {
 
 
     this.setIntervalId = setInterval(async () => {
-      var auth: any = await this.authService.getIsAuth();
-      // Only force a logout redirect when a previously-authenticated
-      // session becomes invalid; do not disrupt already signed-out pages.
-      if (this.isAuthenticated && !auth?.isauth) {
-        this.logout();
+      if (this.isAuthenticated) {
+        await this.authService.getIsAuth();
       }
     }, 60000);
 

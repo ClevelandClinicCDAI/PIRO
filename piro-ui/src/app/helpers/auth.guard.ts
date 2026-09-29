@@ -72,8 +72,7 @@ export class AuthGuard implements CanActivate, CanActivateChild, CanDeactivate<u
     //   return true;
     // }
 
-    if (this.authService.clearExpiredSessionIfNeeded()) {
-      this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    if (this.authService.clearExpiredSessionIfNeeded(state.url)) {
       return false;
     }
 

@@ -4,6 +4,7 @@ import { firstValueFrom, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { LocalStorageService } from '../services/localStorage.service';
 import { FilterService } from '../services/filter.service';
+import { SessionExpiryService } from './session-expiry.service';
 @Injectable({
   providedIn: 'root'
 })
@@ -14,7 +15,8 @@ export class AuthService {
 
   constructor(private http: HttpClient,
     private filterService: FilterService,
-    private localStorageService: LocalStorageService) { }
+    private localStorageService: LocalStorageService,
+    private sessionExpiry: SessionExpiryService) { }
 
   //Login User into system
   generateToken(username: any, password: any, islog: boolean) {
@@ -100,14 +102,15 @@ export class AuthService {
     return payload.exp * 1000 <= Date.now();
   }
 
-  clearExpiredSessionIfNeeded(): boolean {
+  clearExpiredSessionIfNeeded(returnUrl?: string): boolean {
     const token = this.localStorageService.getApiToken();
     if (!token || !this.isTokenExpired(token)) {
       return false;
     }
 
-    this.logout();
-    return true;
+    this.isAuthenticated = false;
+    this.roleAs = '';
+    return this.sessionExpiry.expire(token, returnUrl);
   }
 
   getIsAuth() {
@@ -118,7 +121,8 @@ export class AuthService {
         return;
       }
 
-      if (this.localStorageService.getApiToken() == '') {
+      const token = this.localStorageService.getApiToken();
+      if (token == '') {
         resolve({ isauth: false, role: '' })
       } else {
         let apiURL = environment.apiBaseUrl + 'token/isvalid';
@@ -128,7 +132,9 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
-              this.clearExpiredSessionIfNeeded();
+              if (err.status === 401 || err.status === 403) {
+                this.sessionExpiry.expire(token);
+              }
               resolve({ isauth: false, role: '' })
             },
             complete: () => {
@@ -167,7 +173,8 @@ export class AuthService {
         return;
       }
 
-      if (this.localStorageService.getApiToken() == '') {
+      const token = this.localStorageService.getApiToken();
+      if (token == '') {
         resolve({ isauth: false, role: '' })
       } else {
         let apiURL = environment.apiBaseUrl + 'token/user';
@@ -177,7 +184,9 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
-              this.clearExpiredSessionIfNeeded();
+              if (err.status === 401 || err.status === 403) {
+                this.sessionExpiry.expire(token);
+              }
               resolve({ isauth: false, name: '', nuid: '' })
             },
             complete: () => {
