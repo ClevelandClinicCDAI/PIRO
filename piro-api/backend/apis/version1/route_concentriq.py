@@ -7,8 +7,7 @@ from fastapi import Request, APIRouter, Depends, status
 from pytest import Session
 from viewmodel.views.case import ResultVM
 from logger import logger
-from core.config import Settings
-
+from core.config import settings
 
 router = APIRouter()
 
@@ -31,7 +30,7 @@ async def concentriq_create(
             detail="Missing signature headers.",
         )
 
-    if not Settings.CONCENTRIQ_WEBHOOK_SECRET:
+    if not settings.CONCENTRIQ_WEBHOOK_SECRET:
         logger.error(
             "Conentriq create error - concentriq_create 501 Internal Server Error "
             "CONCENTRIQ_WEBHOOK_SECRET not set."
@@ -44,7 +43,7 @@ async def concentriq_create(
     payload = await request.json()
     logger.info(f"concentriq_create, payload from Concentriq is " f"{payload}")
     computed_signature = get_signature(
-        timestamp, payload, Settings.CONCENTRIQ_WEBHOOK_SECRET
+        timestamp, payload, settings.CONCENTRIQ_WEBHOOK_SECRET
     )
     logger.info(f"received_signature " f"{received_signature}")
     logger.info(f"computed_signature " f"{computed_signature}")
@@ -101,7 +100,7 @@ async def concentriq_delete(
     payload = await request.json()
     logger.info(f"concentriq_delete, payload from Concentriq is " f"{payload}")
     computed_signature = get_signature(
-        timestamp, payload, Settings.CONCENTRIQ_WEBHOOK_SECRET
+        timestamp, payload, settings.CONCENTRIQ_WEBHOOK_SECRET
     )
     if received_signature != computed_signature:
         logger.error(
@@ -144,7 +143,7 @@ async def concentriq_update(
     payload = await request.json()
     logger.info(f"concentriq_update, payload from Concentriq is " f"{payload}")
     computed_signature = get_signature(
-        timestamp, payload, Settings.CONCENTRIQ_WEBHOOK_SECRET
+        timestamp, payload, settings.CONCENTRIQ_WEBHOOK_SECRET
     )
     if received_signature != computed_signature:
         logger.error(

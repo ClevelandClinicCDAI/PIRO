@@ -104,6 +104,23 @@ export class RequesthistoryComponent {
     });
   }
 
+  async onStartExtraction(searchRequestId: number) {
+    let that = this;
+    this.confirmDialogService.confirmThis('Start the LLM-assisted extraction for this request? This may take a while depending on the number of cases.', async function () {
+      that.contentLoaded = false;
+      const result = await that.requesthistoryService.startExtraction(searchRequestId);
+      that.contentLoaded = true;
+      if (result.status == true) {
+        that.toastr.success('', 'Extraction started.');
+        that.filterData(true);
+      } else {
+        that.toastr.error('', result.err || 'Unable to start extraction.');
+      }
+    }, function () {
+      that.contentLoaded = true;
+    });
+  }
+
   async filterData(pagereset: boolean) {
     this.contentLoaded = false;
     if(pagereset) {

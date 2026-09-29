@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field
 # properties required during user creation
 class SearchRequestVMCreate(BaseModel):
     name: str
-    searchId: int
+    # Exactly one of searchId / extractionSessionId must be provided.
+    searchId: Optional[int] = None
+    extractionSessionId: Optional[int] = None
     reasonId: int
     irb: Optional[str]
     isPediatric: Optional[bool]
@@ -71,7 +73,11 @@ class SearchRequestVM(BaseModel):
 
 class SearchRequestDisplayVM(BaseModel):
     SearchRequestId: int = Field(alias="searchRequestId")
-    SearchId: int = Field(alias="searchId")
+    SearchId: Optional[int] = Field(alias="searchId")
+    ExtractionSessionId: Optional[int] = Field(alias="extractionSessionId")
+    ExtractionRunId: Optional[int] = Field(alias="extractionRunId")
+    IsLlmAssisted: bool = Field(alias="isLlmAssisted")
+    ExtractionStatus: Optional[str] = Field(alias="extractionStatus")
     RequesterId: int = Field(alias="requesterId")
     SearchRequestReasonId: Optional[int] = Field(alias="reasonId")
     SearchRequestReason: Optional[str] = Field(alias="reason")
@@ -95,6 +101,7 @@ class SearchRequestDisplayVM(BaseModel):
     SearchRequestStatus: Optional[str] = Field(alias="searchRequestStatus")
     RequestedBy: Optional[str] = Field(alias="requestedBy")
     ApprovedBy: Optional[str] = Field(alias="approvedBy")
+    CaseCount: Optional[int] = Field(alias="caseCount")
 
     class Config:  # to convert non dict obj to json
         orm_mode = True

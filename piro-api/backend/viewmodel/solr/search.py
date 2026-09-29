@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from core.config import Settings
+from core.config import settings
 from core.string_util import StringUtil
 from logger import logger
 from pydantic import BaseModel, Field, root_validator
@@ -209,7 +209,7 @@ class SearchOutputVM(BaseModel):
     total: int
     pages: int
     page: int
-    size: int = Settings.RECORDS_PER_PAGE
+    size: int = settings.RECORDS_PER_PAGE
 
     class Config:  # to convert non dict obj to json
         orm_mode = True

@@ -160,6 +160,11 @@ services:
       AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD:-}
       AIRFLOW_DAG_COHORT_LOADER_URL: ${AIRFLOW_DAG_COHORT_LOADER_URL:-}
       AIRFLOW_CERTIFICATE: ${AIRFLOW_CERTIFICATE:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://localhost:11434}
+      LLM_MODEL: ${LLM_MODEL:-llama3.2}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_API_VERSION: ${LLM_API_VERSION:-2024-02-01}
       # OAuth / OIDC settings. `piro-auth` must resolve to 127.0.0.1 from both
       # the browser (via the Windows hosts file) and the api container (via the
       # extra_hosts entry below). This keeps the issuer URL identical on both

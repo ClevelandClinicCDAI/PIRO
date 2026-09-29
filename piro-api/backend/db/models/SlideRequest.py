@@ -15,6 +15,7 @@ class SlideRequest(Base):
     Status = Column(String, nullable=False, default="PENDING")
     UrgencyStatus = Column(String, nullable=False)
     Reason = Column(String, nullable=True)
+    DeliveryLocation = Column(String, nullable=True)
     RequesterId = Column(Integer, ForeignKey("User.UserId"), nullable=False)
     CompletedById = Column(Integer, ForeignKey("User.UserId"), nullable=True)
     InProcessById = Column(Integer, ForeignKey("User.UserId"), nullable=True)

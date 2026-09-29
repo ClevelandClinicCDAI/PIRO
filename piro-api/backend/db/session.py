@@ -19,10 +19,30 @@ elif settings.DATABASE == "MSSQL":
         SQLALCHEMY_DATABASE_URL = settings.MSSQL_DB_URL_WIN
     else:
         SQLALCHEMY_DATABASE_URL = settings.MSSQL_DB_URL_SQL
-    engine_inst = create_engine(SQLALCHEMY_DATABASE_URL, echo=False)
+    # pool_pre_ping validates a pooled connection (cheap SELECT 1) before
+    # handing it to a request, transparently reconnecting if the network/DB
+    # has silently dropped it (e.g. firewall/idle timeout on the SQL Server
+    # link). Without this, long-running requests (like LLM data extraction)
+    # leave connections idle in the pool long enough to go stale, so the
+    # next request to reuse one fails immediately with a pyodbc
+    # OperationalError ("TCP Provider: Error code 0x2746 (10054)") before
+    # any of its own logic runs. pool_recycle proactively retires
+    # connections older than 280s so they're never given the chance to go
+    # stale in the first place.
+    engine_inst = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_recycle=280,
+    )
 elif settings.DATABASE == "POSTGRES":
     SQLALCHEMY_DATABASE_URL = settings.POSTGRES_DB_URL
-    engine_inst = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+    engine_inst = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        echo=True,
+        pool_pre_ping=True,
+        pool_recycle=280,
+    )
 else:
     raise Exception("Settings DATABASE is not set in the env file")
 

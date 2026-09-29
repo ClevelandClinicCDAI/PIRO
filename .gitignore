@@ -11,6 +11,7 @@ Thumbs.db
 !.env.example
 !.env.sample
 !.env.template
+ALSET_env.txt
 
 __pycache__/
 *.py[cod]
