@@ -149,6 +149,11 @@ The following values can be used to control localhost PIRO development via Docke
 - `api` builds from `./piro-api` with ODBC Driver 18, exposes Swagger UI on `http://localhost:8001/docs`, and expects Solr + SQL hostnames from Compose networking.
 - `ui` builds `./piro-ui`, copies the compiled Angular build artifacts plus `nginx.conf`, and serves the SPA via `http://localhost:8080` (proxying `/api` to `api`).
 
+#### localhost Authentication Help
+
+- LDAP: either configure the `ACCESS_TOKEN_TEST_USER` value (see above) or configure LDAP authentication values and login using your real LDAP credentials.
+- OAUTH: enter your PIRO username (just username, not the full email address) into the mock OAuth login form.
+
 ### Common Docker Compose launch recipes
 
 Replace placeholder values (`ChooseA$trongPassword`, `ldap.example.org`, `CN=Your-Security-Group,...`, etc.) with settings from your own environment before running the commands.
@@ -342,7 +347,7 @@ The Compose file uses `piro-auth` as that shared hostname. You must map it to `1
 
 Inside the `api` container the same name resolves via the `extra_hosts: - "piro-auth:host-gateway"` entry already defined in `docker-compose.yml`, so no additional configuration is needed there.
 
-Once the entry is in place, the mock login page is reachable at <http://piro-auth:8888/piro> and the UI's OAuth redirect flow will complete against it. To skip OAuth entirely and use the legacy LDAP bypass instead, set `ACCESS_TOKEN_TEST_USER` as described below.
+Once the entry is in place, the mock login page is reachable at <http://piro-auth:8888/piro> and the UI's OAuth redirect flow will complete against it. To skip OAuth entirely and use the legacy LDAP bypass instead, set `ACCESS_TOKEN_TEST_USER` (see above).
 
 ##### OAuth AD Group
 
