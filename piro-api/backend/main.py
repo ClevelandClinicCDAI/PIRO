@@ -51,6 +51,7 @@ def seed_system_roles():
 
 
 def start_application():
+    settings.validate_auth_config()
     app = FastAPI(
         title=settings.PROJECT_NAME,
         version=settings.PROJECT_VERSION,

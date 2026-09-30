@@ -315,7 +315,7 @@ This file provides example documentation of the Airflow installation process for
 1. Create the `smtp_default` connection (required in Airflow 3 for failure emails):
     * With the project venv activated:
         * `airflow connections delete smtp_default || true`
-        * `airflow connections add smtp_default --conn-json '{"conn_type":"smtp","host":"localhost","port":25,"extra":{"from_email":"piro-builder@build-piro.ccf.org","disable_ssl":true,"disable_tls":false}}'`
+        * `airflow connections add smtp_default --conn-json '{"conn_type":"smtp","host":"localhost","port":25,"extra":{"from_email":"[email address]","disable_ssl":true,"disable_tls":false}}'`
         * `airflow connections get smtp_default`
     * Configuration notes:
         * This setup uses localhost SMTP relay (port 25) with STARTTLS enabled (`disable_tls=false`).

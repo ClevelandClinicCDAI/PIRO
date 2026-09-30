@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Union
 
 from core.auth_bearer import JWTBearer
+from core.oauth_auth import get_end_session_endpoint
 from core.security_token import create_access_token
 from core.security_user import (
     authenticate_user,
@@ -10,10 +11,10 @@ from core.security_user import (
     get_current_user_id,
 )
 from db.session import get_db
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
 from logger import logger
 from sqlalchemy.orm import Session
-from viewmodel.tokens import Token, UserLoginVM
+from viewmodel.tokens import LogoutResponseVM, OAuthLoginVM, Token, UserLoginVM
 from viewmodel.user import UserAuthVM, UserDetailsVM
 from core.constants import Constants
 from viewmodel.userAttestation import UserAttestationVM
@@ -32,14 +33,12 @@ router = APIRouter()
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
     response: Response,
-    credentials: UserLoginVM,
+    credentials: Union[UserLoginVM, OAuthLoginVM] = Body(...),
     db: Session = Depends(get_db),
 ):
     logger.info("Attempting to authenticate!")
 
-    user = authenticate_user(
-        credentials.username, credentials.password, credentials.islog, db
-    )
+    user = authenticate_user(credentials, credentials.islog, db)
     if not user:
         logger.info("No user found.")
         raise HTTPException(
@@ -54,7 +53,7 @@ async def login_for_access_token(
     message: str = f"User Attest - {isAttest}"
     logger.info(message)
     create_user_log(
-        credentials.username,
+        user.NUID,
         -1,
         -1,
         Constants.StatusCode.S.name,
@@ -79,7 +78,7 @@ async def login_for_access_token(
     message: str = "Token created"
     logger.info(message)
     create_user_log(
-        credentials.username,
+        user.NUID,
         -1,
         -1,
         Constants.StatusCode.S.name,
@@ -149,3 +148,48 @@ async def saveAttest(
 ):
     result = create_new_attestation(int(current_userid), current_user, db)
     return result
+
+
+@router.post(
+    "/logout",
+    dependencies=[Depends(JWTBearer())],
+    response_model=LogoutResponseVM,
+)
+async def logout(
+    current_user_nuid: Annotated[str, Depends(get_current_user_nuid)],
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
+):
+    """End the caller's PIRO session.
+
+    The API is stateless (JWT-based), so "logging out" means:
+
+    * Record the logout event in ``UserLog`` for audit.
+    * If configured for OAuth, return the IdP's RP-initiated logout URL
+      so the client can optionally end the shared IdP session (SLO).
+
+    The SPA is responsible for discarding the PIRO JWT locally in
+    every case.
+    """
+    message = f"User '{current_user_nuid}' logged out."
+    logger.info(message)
+    try:
+        user_id_int = int(current_user_id) if current_user_id else -1
+    except (TypeError, ValueError):
+        user_id_int = -1
+    create_user_log(
+        current_user_nuid,
+        user_id_int,
+        -1,
+        Constants.StatusCode.S.name,
+        Constants.LoginTypeCode.TOKEN.name,
+        message,
+        True,
+        db=db,
+    )
+
+    end_session_url = None
+    if settings.AUTH_MODE == "OAUTH":
+        end_session_url = get_end_session_endpoint()
+
+    return {"end_session_url": end_session_url}

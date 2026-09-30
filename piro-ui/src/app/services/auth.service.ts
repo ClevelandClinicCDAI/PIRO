@@ -1,9 +1,10 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { LocalStorageService } from '../services/localStorage.service';
 import { FilterService } from '../services/filter.service';
+import { SessionExpiryService } from './session-expiry.service';
 @Injectable({
   providedIn: 'root'
 })
@@ -13,16 +14,14 @@ export class AuthService {
   roleAs: any = '';
 
   constructor(private http: HttpClient,
-    private filterService:FilterService,
-    private localStorageService: LocalStorageService) { }
+    private filterService: FilterService,
+    private localStorageService: LocalStorageService,
+    private sessionExpiry: SessionExpiryService) { }
 
   //Login User into system
   generateToken(username: any, password: any, islog: boolean) {
     let promise = new Promise((resolve, reject) => {
       let apiURL = environment.apiBaseUrl + 'token/token';
-      // const body = {
-      //   'query':'username='+username
-      // };
       const body = {
         'username': username,
         'password': password,
@@ -44,6 +43,28 @@ export class AuthService {
     return promise;
   }
 
+  /**
+   * Exchange an OIDC id_token for a PIRO JWT. Mirrors `generateToken`
+   * but uses the OAuth request body shape supported by the FastAPI
+   * union endpoint (`{id_token, islog}`).
+   */
+  generateTokenFromIdToken(idToken: string, islog: boolean) {
+    let promise = new Promise((resolve, reject) => {
+      let apiURL = environment.apiBaseUrl + 'token/token';
+      const body = { id_token: idToken, islog };
+      this.http.post(apiURL, body)
+        .subscribe({
+          next: (res: any) => {
+            resolve({ status: 200, body: res });
+          },
+          error: (err: any) => {
+            resolve({ status: false, body: [] });
+          },
+        });
+    });
+    return promise;
+  }
+
   // getIsAuth() {
   //   // if(localStorage.getItem('api-token') !== null){
   //   if(this.localStorageService.getApiToken() !== null){
@@ -53,10 +74,55 @@ export class AuthService {
   //   }
   // }
 
+  private parseJwtPayload(token: string): any {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) {
+        return null;
+      }
+      const base64Url = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64Url.padEnd(base64Url.length + ((4 - (base64Url.length % 4)) % 4), '=');
+      const decoded = atob(padded);
+      return JSON.parse(decoded);
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  isTokenExpired(token: string | null): boolean {
+    if (!token) {
+      return true;
+    }
+
+    const payload = this.parseJwtPayload(token);
+    if (!payload || typeof payload.exp !== 'number') {
+      return true;
+    }
+
+    return payload.exp * 1000 <= Date.now();
+  }
+
+  clearExpiredSessionIfNeeded(returnUrl?: string): boolean {
+    const token = this.localStorageService.getApiToken();
+    if (!token || !this.isTokenExpired(token)) {
+      return false;
+    }
+
+    this.isAuthenticated = false;
+    this.roleAs = '';
+    return this.sessionExpiry.expire(token, returnUrl);
+  }
+
   getIsAuth() {
 
     let promise = new Promise((resolve, reject) => {
-      if (this.localStorageService.getApiToken() == '') {
+      if (this.clearExpiredSessionIfNeeded()) {
+        resolve({ isauth: false, role: '' });
+        return;
+      }
+
+      const token = this.localStorageService.getApiToken();
+      if (token == '') {
         resolve({ isauth: false, role: '' })
       } else {
         let apiURL = environment.apiBaseUrl + 'token/isvalid';
@@ -66,6 +132,9 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
+              if (err.status === 401 || err.status === 403) {
+                this.sessionExpiry.expire(token);
+              }
               resolve({ isauth: false, role: '' })
             },
             complete: () => {
@@ -99,7 +168,13 @@ export class AuthService {
   getUser() {
 
     let promise = new Promise((resolve, reject) => {
-      if (this.localStorageService.getApiToken() == '') {
+      if (this.clearExpiredSessionIfNeeded()) {
+        resolve({ isauth: false, name: '', nuid: '', role: '' });
+        return;
+      }
+
+      const token = this.localStorageService.getApiToken();
+      if (token == '') {
         resolve({ isauth: false, role: '' })
       } else {
         let apiURL = environment.apiBaseUrl + 'token/user';
@@ -109,6 +184,9 @@ export class AuthService {
               resolve(res);
             },
             error: (err: any) => {
+              if (err.status === 401 || err.status === 403) {
+                this.sessionExpiry.expire(token);
+              }
               resolve({ isauth: false, name: '', nuid: '' })
             },
             complete: () => {
@@ -152,6 +230,26 @@ export class AuthService {
     }
   }
 
+  /**
+   * OAuth counterpart to `login()`. Takes an IdP-issued id_token,
+   * exchanges it at the PIRO API, and completes the same local-state
+   * bookkeeping so downstream code (guards, interceptor, header) can't
+   * tell which auth mode is in use.
+   */
+  async loginWithIdToken(idToken: string, islog: boolean) {
+    const result: any = await this.generateTokenFromIdToken(idToken, islog);
+    if (result.body?.access_token) {
+      this.localStorageService.clear();
+      this.localStorageService.setApiToken(result.body?.access_token);
+      const userDetail = this.parseJwt(result.body?.access_token);
+      this.isAuthenticated = true;
+      this.roleAs = userDetail.role;
+      this.authStatusListener.next(true);
+      return { status: true, message: 'Login Successful.', role: this.roleAs };
+    }
+    return { status: false, message: 'invalid.', role: '' };
+  }
+
   //Logout User from system
   logout() {
     // localStorage.removeItem('api-token');
@@ -165,6 +263,33 @@ export class AuthService {
     return { 'status': true, 'message': 'Login Successful.' }
   }
 
+  /**
+   * Ask the API to record the logout and, in OAuth mode, hand back the
+   * IdP's RP-initiated logout URL so the caller can redirect the
+   * browser to it. The local session is cleared synchronously, before the
+   * request is awaited, so a stalled API can never keep the user signed in.
+   * Always resolves.
+   */
+  async logoutRemote(): Promise<{ endSessionUrl: string | null }> {
+    const token = this.localStorageService.getApiToken();
+    this.logout();
+    if (!token) {
+      return { endSessionUrl: null };
+    }
+
+    try {
+      const apiURL = environment.apiBaseUrl + 'token/logout';
+      // Carries the captured credential: local storage is already cleared.
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      const res: any = await firstValueFrom(
+        this.http.post(apiURL, {}, { headers })
+      );
+      return { endSessionUrl: res?.end_session_url ?? null };
+    } catch (_err) {
+      return { endSessionUrl: null };
+    }
+  }
+
 
   // getRole() {
   //   this.roleAs = localStorage.getItem('role');
@@ -174,7 +299,7 @@ export class AuthService {
   getAttestation() {
     let promise = new Promise((resolve, reject) => {
       let apiURL = environment.apiBaseUrl + environment.getAttestationUrl;
-      this.http.post(apiURL,{})
+      this.http.post(apiURL, {})
         .subscribe({
           next: (res: any) => {
             resolve(res);

@@ -51,6 +51,8 @@ import { SlideRequestFormComponent } from './components/slide-request/slide-requ
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
 
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
+import { SignedOutComponent } from './components/signed-out/signed-out.component';
 
 import { ExtractionSessionsComponent } from './components/extraction/extraction-sessions/extraction-sessions.component';
 import { ExtractionSchemaComponent } from './components/extraction/extraction-schema/extraction-schema.component';
@@ -58,6 +60,8 @@ import { ExtractionReviewComponent } from './components/extraction/extraction-re
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'auth/callback', component: AuthCallbackComponent },
+  { path: 'signed-out', component: SignedOutComponent },
   { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
   {
     path: 'search', component: SearchComponent, canActivate: [AuthGuard], data: {

@@ -23,8 +23,8 @@ describe('ToastComponent', () => {
   it('should create an error toast that does not disappear', () => {
     // given
     component.type = EventTypes.Error;
-    component.title = false;
-    component.message = false;
+    component.title = 'Error';
+    component.message = 'Something went wrong';
 
     // when
     fixture.detectChanges();
@@ -41,7 +41,7 @@ describe('ToastComponent', () => {
     component.title = 'infp';
     component.message = 'info';
     spyOn(component.disposeEvent, 'emit');
-    const button = debugElement.nativeElement.querySelector('button[class="btn-close"]');
+    const button = debugElement.nativeElement.querySelector('.close-alert');
 
     // when
     fixture.detectChanges();

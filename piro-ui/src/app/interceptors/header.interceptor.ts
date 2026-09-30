@@ -7,11 +7,34 @@ import { EventTypes } from '../models/event-types';
 import { environment } from '../../environments/environment';
 import { timeout } from 'rxjs/operators';
 import { LocalStorageService } from '../services/localStorage.service';
+import { SessionExpiryService } from '../services/session-expiry.service';
 @Injectable()
 export class HeaderInterceptor implements HttpInterceptor {
   constructor(private router: Router,
     private toastService: ToastService,
-    private localStorageService: LocalStorageService) { }
+    private localStorageService: LocalStorageService,
+    private sessionExpiry: SessionExpiryService) { }
+
+  /**
+   * True when `url` resolves under `environment.apiBaseUrl`, which may be
+   * relative (`/api/`) or absolute (`https://api.example.com/`). Comparison is
+   * segment-aware so `/apifoo` cannot match an `/api/` base.
+   */
+  private isApiRequest(url: string): boolean {
+    try {
+      const origin = window.location.origin;
+      const requestUrl = new URL(url, origin);
+      const apiBase = new URL(environment.apiBaseUrl || '/', origin);
+      const basePath = apiBase.pathname.endsWith('/')
+        ? apiBase.pathname
+        : `${apiBase.pathname}/`;
+      return requestUrl.origin === apiBase.origin &&
+        `${requestUrl.pathname}/`.startsWith(basePath);
+    } catch {
+      return false;
+    }
+  }
+
   showoast(type: EventTypes, message: string, data: any) {
     switch (type) {
       case EventTypes.Success:
@@ -36,7 +59,12 @@ export class HeaderInterceptor implements HttpInterceptor {
       timeoutMsec = 300000;
     }
     // return next.handle(req).timeout(timeout);
-    var isExcludeToken: Boolean = (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
+    // Allowlist: attach the PIRO JWT only to requests under the configured API
+    // base, so it can never reach the IdP or any other origin. A caller-supplied
+    // Authorization header always wins.
+    var isExcludeToken: Boolean = httpRequest.headers.has('Authorization') ||
+      !this.isApiRequest(httpRequest.url) ||
+      (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
     return next.handle((httpRequest.headers.get('Content-Type') == null && httpRequest.headers.get('ContentType') == null) ?
       httpRequest.clone(isExcludeToken ? {
         setHeaders:
@@ -54,7 +82,7 @@ export class HeaderInterceptor implements HttpInterceptor {
           if (event instanceof HttpResponse) {
             // console.log(event.status)
             if (event.status == 200) {
-              if (event.headers.has('Refreshtoken')) {
+              if (event.headers.has('Refreshtoken') && ACCESS_TOKEN === this.localStorageService.getApiToken()) {
                 this.localStorageService.setApiToken(event.headers.get("Refreshtoken"));
               }
             }
@@ -63,6 +91,18 @@ export class HeaderInterceptor implements HttpInterceptor {
           (err: any) => {
             if (err instanceof HttpErrorResponse) {
               console.log("Error: ", err);
+              const isAuthCheck = urlRequest.indexOf('/token/isvalid') > -1 ||
+                urlRequest.indexOf('/token/user') > -1;
+              const isExpiredSignature = typeof err.error === 'string' &&
+                /^Signature.*(failed|expired)/i.test(err.error);
+              if (ACCESS_TOKEN && !isExcludeToken &&
+                urlRequest.indexOf('/token/token') === -1 &&
+                urlRequest.indexOf('/token/logout') === -1 &&
+                (err.status === 401 || err.status === 403) &&
+                (isAuthCheck || isExpiredSignature) &&
+                this.sessionExpiry.expire(ACCESS_TOKEN)) {
+                return;
+              }
               const current = new Date();
               current.setMilliseconds(0);
               const timestamp: any = current.getTime();
@@ -74,15 +114,7 @@ export class HeaderInterceptor implements HttpInterceptor {
                 //   this.showoast(EventTypes.Error, environment.errorExceptionMessage, []);
                 // }
 
-                if (urlRequest.indexOf("/token") > 0) {
-                  localStorage.removeItem('api-token')
-                  this.router.navigate(['login']);
-                } else if (err.status == 403 || err.status == 401) {
-                  var re = new RegExp("^Signature.*(failed|expired)+.*$");
-                  if (re.test(err.error)) {
-                    this.router.navigate(['login']);
-                    return;
-                  }
+                if (err.status == 403 || err.status == 401) {
                   this.showoast(EventTypes.Error, environment.accessExceptionMessage, []);
                 } else if (err.status == 510) {
                   // console.log(err);

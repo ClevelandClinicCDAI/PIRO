@@ -5,8 +5,9 @@ import { ToastService } from '../../services/toast.service';
 import { EventTypes } from '../../models/event-types';
 import { LocalStorageService } from '../../services/localStorage.service';
 import { FilterService } from '../../services/filter.service';
-import {AivoteService} from '../../services/aivote.service';
+import { AivoteService } from '../../services/aivote.service';
 import { ToastrService } from 'ngx-toastr';
+import { OidcService } from '../../services/oidc.service';
 @Component({
   standalone: false,
   selector: 'app-header',
@@ -16,27 +17,28 @@ import { ToastrService } from 'ngx-toastr';
 export class HeaderComponent {
   token: any = '';
   isAuthenticated: Boolean = false;
-  role:string = '';
-  isSearch:Boolean = false;
-  isAdmin:Boolean = false;
-  isRequestForm:Boolean = false;
-  isRequestReview:Boolean = false;
-  isMyHistory:Boolean = false;
-  isAdminSecurity:Boolean = false;
-  canRequestSlides:Boolean = false;
-  canViewSlideQueue:Boolean = false;
+  role: string = '';
+  isSearch: Boolean = false;
+  isAdmin: Boolean = false;
+  isRequestForm: Boolean = false;
+  isRequestReview: Boolean = false;
+  isMyHistory: Boolean = false;
+  isAdminSecurity: Boolean = false;
+  canRequestSlides: Boolean = false;
+  canViewSlideQueue: Boolean = false;
 
   authListenerSubs: any;
   burgerChecked: boolean = false;
-  loginSubscription:any;
+  loginSubscription: any;
   setIntervalId: any;
   constructor(private authService: AuthService,
     private voteService: AivoteService,
     private router: Router,
     private toastService: ToastService,
-    private filterService:FilterService,
+    private filterService: FilterService,
     private toastr: ToastrService,
-    private localStorageService: LocalStorageService) {
+    private localStorageService: LocalStorageService,
+    private oidcService: OidcService) {
 
   }
 
@@ -49,9 +51,8 @@ export class HeaderComponent {
 
 
     this.setIntervalId = setInterval(async () => {
-      var auth: any = await this.authService.getIsAuth();
-      if(!auth?.isauth) {
-        this.logout();
+      if (this.isAuthenticated) {
+        await this.authService.getIsAuth();
       }
     }, 60000);
 
@@ -60,12 +61,12 @@ export class HeaderComponent {
         this.isAuthenticated = data.isAuth;
         this.role = data.role;
         this.setSecurity();
-        if(this.isAdmin) {
-            this.voteService.isPending().then((data: any) => {
-                if (data?.status && data?.data) {
-                  this.toastr.success('', 'There are AI annotation review pending. Please go to "AI Annotation Feedback" page.');
-                }
-            });
+        if (this.isAdmin) {
+          this.voteService.isPending().then((data: any) => {
+            if (data?.status && data?.data) {
+              this.toastr.success('', 'There are AI annotation review pending. Please go to "AI Annotation Feedback" page.');
+            }
+          });
         }
       }
     });
@@ -94,12 +95,35 @@ export class HeaderComponent {
     const resp = this.authService.logout();
     if (resp.status == true) {
       this.isAuthenticated = false;
-      this.router.navigate(['/login']);
+      this.router.navigate(['/signed-out']);
+    }
+  }
+
+  /**
+   * Notifies the API (which returns the IdP end-session URL when in
+   * OAuth mode) and, if provided, hands the browser off to the IdP for
+   * an RP-initiated logout. The local session and protected page are
+   * abandoned first, so a slow API cannot delay signing out.
+   */
+  async logoutAsync() {
+    this.burgerChecked = false;
+    // Clears local state synchronously; only the audit call is awaited.
+    const pending = this.authService.logoutRemote();
+    this.isAuthenticated = false;
+    await this.router.navigate(['/signed-out']);
+
+    try {
+      const { endSessionUrl } = await pending;
+      if (endSessionUrl) {
+        window.location.assign(this.oidcService.buildEndSessionUrl(endSessionUrl));
+      }
+    } catch (_err) {
+      // Local sign-out has already completed.
     }
   }
   ngOnDestroy() {
-    this.authListenerSubs.unsubscribe();
-    this.loginSubscription.unsubscribe();
+    this.authListenerSubs?.unsubscribe();
+    this.loginSubscription?.unsubscribe();
     if (this.setIntervalId) {
       clearInterval(this.setIntervalId);
     }

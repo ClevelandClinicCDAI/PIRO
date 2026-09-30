@@ -64,6 +64,48 @@ class Settings:
     AD_LDAP_PATH: str | None = os.getenv("AD_LDAP_PATH")
     AD_SECURITY_GROUP: str | None = os.getenv("AD_SECURITY_GROUP")
     AD_DOMAIN: str | None = os.getenv("AD_DOMAIN")
+
+    # Authentication mode selector. Supported values: "LDAP" (default,
+    # preserves the existing corporate-AD flow) or "OAUTH" (validates an
+    # OIDC id_token supplied by the client and mints a PIRO JWT from its
+    # claims). Case-insensitive; parsed once at import time.
+    AUTH_MODE: str = os.getenv("AUTH_MODE", "LDAP").upper()
+
+    # OIDC / OAuth settings. Only consulted when AUTH_MODE == "OAUTH".
+    OIDC_ISSUER: str | None = os.getenv("OIDC_ISSUER")
+    OIDC_AUDIENCE: str | None = os.getenv("OIDC_AUDIENCE")
+    # If OIDC_JWKS_URL is empty, oauth_auth derives it from OIDC_ISSUER via
+    # the standard /.well-known/openid-configuration discovery document.
+    OIDC_JWKS_URL: str | None = os.getenv("OIDC_JWKS_URL")
+    OIDC_ALGORITHMS: str = os.getenv("OIDC_ALGORITHMS", "RS256")
+    # Comma-separated list of group names; user is authorized if their
+    # `groups` claim intersects this list (OR semantics).
+    OIDC_ALLOWED_GROUPS: str = os.getenv("OIDC_ALLOWED_GROUPS", "")
+    # Comma-separated email domains permitted to sign in. PIRO stores only
+    # the local part of the username, so truncating the domain is unambiguous
+    # only while every accepted identity comes from a trusted domain.
+    OIDC_ALLOWED_EMAIL_DOMAINS: str = os.getenv(
+        "OIDC_ALLOWED_EMAIL_DOMAINS", ""
+    )
+    # Claim-name mapping so we can point at different IdPs (Entra ID,
+    # Ping, mock-oauth2-server, etc.) without code changes.
+    OIDC_NUID_CLAIM: str = os.getenv("OIDC_NUID_CLAIM", "preferred_username")
+    OIDC_GIVEN_NAME_CLAIM: str = os.getenv(
+        "OIDC_GIVEN_NAME_CLAIM", "given_name"
+    )
+    OIDC_FAMILY_NAME_CLAIM: str = os.getenv(
+        "OIDC_FAMILY_NAME_CLAIM", "family_name"
+    )
+    OIDC_GROUPS_CLAIM: str = os.getenv("OIDC_GROUPS_CLAIM", "groups")
+    OIDC_CLOCK_SKEW_SECONDS: int = int(
+        os.getenv("OIDC_CLOCK_SKEW_SECONDS", "60")
+    )
+    # Hardening default: do not auto-create PIRO users from OAuth claims
+    # unless this is explicitly enabled.
+    OAUTH_AUTO_PROVISION_USERS: bool = os.getenv(
+        "OAUTH_AUTO_PROVISION_USERS", "false"
+    ).lower() in {"1", "true", "yes", "on"}
+
     EXCEL_Template_DIRECTORY: str | None = os.getenv(
         "EXCEL_Template_DIRECTORY"
     )
@@ -115,7 +157,7 @@ class Settings:
     CONCENTRIQ_URL: str | None = os.getenv("CONCENTRIQ_URL")
 
     # ── Extraction Suite LLM settings ────────────────────────────────────────
-    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic | azure
+    # LLM_PROVIDER: ollama (default/HIPAA-safe) | openai | anthropic | generic | azure  # noqa:E501
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
     # Base URL for Ollama or generic OpenAI-compatible servers
     LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "http://localhost:11434")
@@ -129,6 +171,27 @@ class Settings:
     OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
     # Anthropic — requires Business Associate Agreement before use with PHI
     ANTHROPIC_API_KEY: str | None = os.getenv("ANTHROPIC_API_KEY")
+
+    def validate_auth_config(self) -> None:
+        """Fail startup when OAuth token validation is not fully configured."""
+
+        if self.AUTH_MODE == "OAUTH" and not (
+            self.OIDC_AUDIENCE and self.OIDC_AUDIENCE.strip()
+        ):
+            raise RuntimeError(
+                "OIDC_AUDIENCE is required when AUTH_MODE=OAUTH. "
+                "Set it to the client ID that requests the OIDC ID token."
+            )
+
+        if self.AUTH_MODE == "OAUTH" and not (
+            self.OIDC_ALLOWED_EMAIL_DOMAINS
+            and self.OIDC_ALLOWED_EMAIL_DOMAINS.strip()
+        ):
+            raise RuntimeError(
+                "OIDC_ALLOWED_EMAIL_DOMAINS is required when "
+                "AUTH_MODE=OAUTH. Set it to the comma-separated email "
+                "domains whose usernames map to PIRO accounts."
+            )
 
 
 settings = Settings()

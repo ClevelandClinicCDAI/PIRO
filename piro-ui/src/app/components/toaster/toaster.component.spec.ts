@@ -25,6 +25,7 @@ describe('ToasterComponent', () => {
         type: EventTypes.Info,
         title: 'info',
         message: 'info',
+        data: [],
       },
     ];
 

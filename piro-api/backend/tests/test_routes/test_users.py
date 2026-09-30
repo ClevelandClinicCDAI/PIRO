@@ -1,12 +1,10 @@
 import json
 from unittest import mock
 
-import pytest
 from logger import logger
 from tests.conftest import TestClient
 
 
-@pytest.mark.order(1)
 def test_create_user(
     client: TestClient,
     normal_user_token_headers,
@@ -28,7 +26,8 @@ def test_create_user(
             headers=normal_user_token_headers,
         )
         logger.info(
-            f"Input Data was: {data}\n\nOutput data is:" f" {response.json()}\n"
+            f"Input Data was: {data}\n\nOutput data is:"
+            f" {response.json()}\n"
         )
         assert response.status_code == 200
         assert response.json()["nuid"] == "testuser@nofoobar.com"

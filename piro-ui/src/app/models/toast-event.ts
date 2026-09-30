@@ -4,5 +4,5 @@ export interface ToastEvent {
   type: EventTypes;
   title: string;
   message: string;
-  data:[];
-} 
+  data: any[];
+}

@@ -14,6 +14,62 @@ This application - `piro-api` - is the back-end Python/FastAPI application that 
 
 * You can then access the API via this url: <http://localhost:8001/docs>.
 
+## Authentication Configuration
+
+`piro-api` supports two authentication back-ends, selected at
+process-start time by the `AUTH_MODE` environment variable
+(case-insensitive; defaults to `LDAP`).
+
+### AUTH_MODE=LDAP (default)
+
+The `/token/token` endpoint accepts `{username, password, islog}`,
+binds against Active Directory using the `AD_*` variables, and mints a
+PIRO JWT on success. This is the pre-existing flow — no configuration
+changes are required to keep it working.
+
+Relevant variables:
+
+| Variable | Purpose |
+| :---- | :---- |
+| `AD_LDAP_PATH` | LDAP URL (e.g. `ldap://ad.corp.example`). |
+| `AD_DOMAIN` | AD domain used to build the bind DN. |
+| `AD_SECURITY_GROUP` | Group membership required for access. |
+
+### AUTH_MODE=OAUTH
+
+The `/token/token` endpoint accepts `{id_token, islog}` instead. The
+API validates the id_token's signature against the IdP's JWKS,
+enforces issuer / audience / expiry / group-membership rules, and
+mints a PIRO JWT from the token's claims. The browser SPA (see
+`piro-ui/README.md`) drives the authorization-code + PKCE flow and
+posts the resulting id_token to this endpoint. `POST /token/logout`
+returns `{end_session_url}` — non-null only in OAUTH mode — so the
+SPA can perform IdP-side single-logout.
+
+| Variable | Default | Purpose |
+| :---- | :---- | :---- |
+| `OIDC_ISSUER` | *(unset)* | Issuer URL published in the id_token's `iss` claim. Also used to discover `end_session_endpoint` via `/.well-known/openid-configuration`. |
+| `OIDC_AUDIENCE` | *(required)* | Expected `aud` claim. The API refuses to start in OAuth mode when this is empty. Set it to the SPA/application client ID that requests the ID token. |
+| `OIDC_JWKS_URL` | *(derived)* | JWKS endpoint. If unset, `oauth_auth` derives it from `OIDC_ISSUER` via discovery. |
+| `OIDC_ALGORITHMS` | `RS256` | Comma-separated list of accepted JWS algorithms. |
+| `OIDC_ALLOWED_GROUPS` | *(empty)* | Comma-separated allowed groups. Empty **disables** the group check (any authenticated user passes). Non-empty uses OR semantics — one match is enough. Case-insensitive. |
+| `OIDC_ALLOWED_EMAIL_DOMAINS` | *(required)* | Comma-separated email domains allowed to sign in. The API refuses to start in OAuth mode when this is empty, and rejects any token whose username claim falls outside the list. Domains are matched exactly, so `notfoo.org` and `evil.foo.org` do not satisfy a `foo.org` entry. |
+| `OIDC_NUID_CLAIM` | `preferred_username` | Claim used as the PIRO `nuid` (user identifier). Only the local part is stored, so the claim must be an email/UPN in an allowed domain. |
+| `OIDC_GIVEN_NAME_CLAIM` | `given_name` | Claim used for `firstName`. Falls back to splitting `name` on whitespace when both name claims are absent. |
+| `OIDC_FAMILY_NAME_CLAIM` | `family_name` | Claim used for `lastName`. See fallback note above. |
+| `OIDC_GROUPS_CLAIM` | `groups` | Claim inspected for group membership. May be a JSON array or a single string. |
+| `OIDC_CLOCK_SKEW_SECONDS` | `60` | Leeway applied to `exp`/`nbf`/`iat` during signature validation. |
+| `OAUTH_AUTO_PROVISION_USERS` | `false` | Hardening switch for just-in-time PIRO user creation during OAuth login. Default `false` means OAuth logins must map to an existing PIRO user row; missing users are rejected instead of auto-created. |
+
+Sample values for the bundled `mock-oauth` compose service (see
+`docker-compose.yml`) are already wired in when you run
+`PIRO_AUTH_MODE=OAUTH docker compose up`.
+
+The API validates an ID token supplied by the browser; it does not act as an
+OAuth client or exchange the authorization code. Consequently,
+`OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI`, and
+`OIDC_SCOPES` are UI settings and are not API configuration options.
+
 ### Executing Unit Tests
 
 * Activate the 'venv' for the project
@@ -32,6 +88,16 @@ This application - `piro-api` - is the back-end Python/FastAPI application that 
 
     # example:
     pytest -s ./tests/test_routes/test_solr.py
+    ```
+
+  * The OAuth provider is covered by
+    `tests/test_core/test_oauth_auth.py`. Those tests are pure /
+    mock-based (they override the DB-bootstrap fixture, so they do
+    **not** need the sqlite scaffolding or sample-data JSON files) and
+    can also be executed inside the running api container:
+
+    ```powershell
+    docker exec -w /app piro-github-api-1 python -m pytest tests/test_core/test_oauth_auth.py -v
     ```
 
 ### Application Install on Localhost

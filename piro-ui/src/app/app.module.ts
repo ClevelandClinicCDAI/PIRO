@@ -117,6 +117,8 @@ import { SlideRequestFormComponent } from './components/slide-request/slide-requ
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
 
 import { EmailUsersComponent } from './components/Admin/email-users/email-users.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
+import { SignedOutComponent } from './components/signed-out/signed-out.component';
 
 export function initializeApp(appConfigService: AppConfigService) {
   return () => appConfigService.loadConfig();
@@ -218,7 +220,9 @@ import { SendToExtractionComponent } from './components/modal/send-to-extraction
     UserattestComponent,
     SlideRequestFormComponent,
     SlideRequestQueueComponent,
-    EmailUsersComponent
+    EmailUsersComponent,
+    AuthCallbackComponent,
+    SignedOutComponent
   ],
   imports: [
     CommonModule,
