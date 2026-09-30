@@ -14,6 +14,27 @@ export class HeaderInterceptor implements HttpInterceptor {
     private toastService: ToastService,
     private localStorageService: LocalStorageService,
     private sessionExpiry: SessionExpiryService) { }
+
+  /**
+   * True when `url` resolves under `environment.apiBaseUrl`, which may be
+   * relative (`/api/`) or absolute (`https://api.example.com/`). Comparison is
+   * segment-aware so `/apifoo` cannot match an `/api/` base.
+   */
+  private isApiRequest(url: string): boolean {
+    try {
+      const origin = window.location.origin;
+      const requestUrl = new URL(url, origin);
+      const apiBase = new URL(environment.apiBaseUrl || '/', origin);
+      const basePath = apiBase.pathname.endsWith('/')
+        ? apiBase.pathname
+        : `${apiBase.pathname}/`;
+      return requestUrl.origin === apiBase.origin &&
+        `${requestUrl.pathname}/`.startsWith(basePath);
+    } catch {
+      return false;
+    }
+  }
+
   showoast(type: EventTypes, message: string, data: any) {
     switch (type) {
       case EventTypes.Success:
@@ -38,11 +59,10 @@ export class HeaderInterceptor implements HttpInterceptor {
       timeoutMsec = 300000;
     }
     // return next.handle(req).timeout(timeout);
-    // Absolute URLs are cross-origin (e.g. OIDC discovery + token endpoint on the
-    // IdP). Never attach the PIRO JWT to those — the IdP shouldn't receive it,
-    // and it would also leak the token to a foreign origin.
-    var isAbsoluteUrl: boolean = /^https?:\/\//i.test(urlRequest);
-    var isExcludeToken: Boolean = isAbsoluteUrl || (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
+    // Allowlist: attach the PIRO JWT only to requests under the configured API
+    // base, so it can never reach the IdP or any other origin.
+    var isExcludeToken: Boolean = !this.isApiRequest(httpRequest.url) ||
+      (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
     return next.handle((httpRequest.headers.get('Content-Type') == null && httpRequest.headers.get('ContentType') == null) ?
       httpRequest.clone(isExcludeToken ? {
         setHeaders:
