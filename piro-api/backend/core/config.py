@@ -81,6 +81,12 @@ class Settings:
     # Comma-separated list of group names; user is authorized if their
     # `groups` claim intersects this list (OR semantics).
     OIDC_ALLOWED_GROUPS: str = os.getenv("OIDC_ALLOWED_GROUPS", "")
+    # Comma-separated email domains permitted to sign in. PIRO stores only
+    # the local part of the username, so truncating the domain is unambiguous
+    # only while every accepted identity comes from a trusted domain.
+    OIDC_ALLOWED_EMAIL_DOMAINS: str = os.getenv(
+        "OIDC_ALLOWED_EMAIL_DOMAINS", ""
+    )
     # Claim-name mapping so we can point at different IdPs (Entra ID,
     # Ping, mock-oauth2-server, etc.) without code changes.
     OIDC_NUID_CLAIM: str = os.getenv("OIDC_NUID_CLAIM", "preferred_username")
@@ -175,6 +181,16 @@ class Settings:
             raise RuntimeError(
                 "OIDC_AUDIENCE is required when AUTH_MODE=OAUTH. "
                 "Set it to the client ID that requests the OIDC ID token."
+            )
+
+        if self.AUTH_MODE == "OAUTH" and not (
+            self.OIDC_ALLOWED_EMAIL_DOMAINS
+            and self.OIDC_ALLOWED_EMAIL_DOMAINS.strip()
+        ):
+            raise RuntimeError(
+                "OIDC_ALLOWED_EMAIL_DOMAINS is required when "
+                "AUTH_MODE=OAUTH. Set it to the comma-separated email "
+                "domains whose usernames map to PIRO accounts."
             )
 
 

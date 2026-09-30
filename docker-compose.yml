@@ -59,7 +59,7 @@ services:
                   "match": "authorization_code",
                   "claims": {
                     "sub": "$${subject}",
-                    "preferred_username": "$${subject}",
+                    "preferred_username": "$${subject}@test.local",
                     "given_name": "Local",
                     "family_name": "Developer",
                     "name": "Local Developer",
@@ -73,7 +73,7 @@ services:
                   "match": "password",
                   "claims": {
                     "sub": "testuser",
-                    "preferred_username": "testuser",
+                    "preferred_username": "testuser@test.local",
                     "given_name": "Local",
                     "family_name": "Developer",
                     "name": "Local Developer",
@@ -172,6 +172,8 @@ services:
       OIDC_ISSUER: ${OIDC_ISSUER:-http://piro-auth:8888/piro}
       # Must match the client ID used by the UI to request the ID token.
       OIDC_AUDIENCE: ${OIDC_AUDIENCE:-${OIDC_UI_CLIENT_ID:-piro-ui}}
+      # Email domains whose usernames may map to PIRO accounts.
+      OIDC_ALLOWED_EMAIL_DOMAINS: ${OIDC_ALLOWED_EMAIL_DOMAINS:-test.local}
       OIDC_ALLOWED_GROUPS: ${OIDC_ALLOWED_GROUPS:-}
     extra_hosts:
       - "piro-auth:host-gateway"

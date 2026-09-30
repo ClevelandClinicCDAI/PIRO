@@ -131,6 +131,15 @@ def verify_oauth_token(
         create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
         return None
 
+    if not allowed_email_domains():
+        message = (
+            "OIDC_ALLOWED_EMAIL_DOMAINS not configured; refusing to "
+            "validate OAuth token."
+        )
+        logger.error(message)
+        create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
+        return None
+
     try:
         jwks_client = _get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(id_token)
@@ -181,7 +190,19 @@ def verify_oauth_token(
         create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
         return None
 
-    nuid = claims.get(settings.OIDC_NUID_CLAIM, "")
+    raw_nuid = claims.get(settings.OIDC_NUID_CLAIM)
+    if not is_allowed_identity(raw_nuid):
+        attempted = identity_domain(raw_nuid) or "<missing>"
+        message = (
+            "OAuth id_token rejected: identity domain "
+            f"'{' '.join(attempted.split())[:128]}' is not in "
+            "OIDC_ALLOWED_EMAIL_DOMAINS."
+        )
+        logger.error(message)
+        create_user_log("", -1, -1, ERROR, OAUTH, message, islog, db=db)
+        return None
+
+    nuid = normalize_nuid(raw_nuid)
     message = (
         f"OAuth id_token verified for '{nuid}' via issuer "
         f"'{settings.OIDC_ISSUER}'."
@@ -225,18 +246,52 @@ def extract_identity(claims: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def normalize_nuid(raw_nuid: Any) -> str:
-    """Normalize Entra-style usernames to PIRO's stored NUID format.
+def allowed_email_domains() -> list[str]:
+    """Return the configured email-domain allowlist, normalized."""
 
-    PIRO stores NUIDs as lowercase local parts (for example,
-    ``username@test.org`` -> ``username``). Values that do not look like email
-    addresses are preserved after trimming and lowercasing.
+    return [
+        domain.strip().lower().lstrip("@")
+        for domain in settings.OIDC_ALLOWED_EMAIL_DOMAINS.split(",")
+        if domain.strip()
+    ]
+
+
+def identity_domain(raw_nuid: Any) -> str | None:
+    """Return the domain of an email-style claim, or None when malformed."""
+
+    value = str(raw_nuid or "").strip().lower()
+    if value.count("@") != 1:
+        return None
+    local_part, _, domain = value.partition("@")
+    if not local_part or not domain:
+        return None
+    return domain
+
+
+def is_allowed_identity(raw_nuid: Any) -> bool:
+    """Whether the claim's domain matches an allowed domain exactly.
+
+    Matching is exact rather than suffix-based so that lookalikes such as
+    ``notfoo.org`` and ``evil.foo.org`` cannot satisfy a ``foo.org`` entry.
     """
 
-    nuid = str(raw_nuid or "").strip().lower()
-    if "@" in nuid:
-        nuid = nuid.split("@", 1)[0]
-    return nuid
+    domain = identity_domain(raw_nuid)
+    return domain is not None and domain in allowed_email_domains()
+
+
+def normalize_nuid(raw_nuid: Any) -> str:
+    """Normalize an IdP username to PIRO's stored NUID format.
+
+    PIRO stores NUIDs as the lowercase local part (``username@test.org`` ->
+    ``username``). Because that truncation would otherwise let two domains
+    resolve to one PIRO account, identities outside
+    ``OIDC_ALLOWED_EMAIL_DOMAINS`` — including bare usernames with no
+    verifiable domain — yield an empty NUID instead.
+    """
+
+    if not is_allowed_identity(raw_nuid):
+        return ""
+    return str(raw_nuid).strip().lower().partition("@")[0]
 
 
 def user_group(

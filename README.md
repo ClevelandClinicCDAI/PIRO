@@ -51,6 +51,7 @@ For localhost Docker development, the repository-root `.env` file is the primary
 - `OAUTH_LOGIN_UX` - controls the UI behavior in OAuth mode. `button` shows a "Sign in with SSO" button; `auto` immediately triggers the SSO flow when the user visits `/login`.
 - `MOCK_OAUTH_AD_GROUP` - the mock IdP group claim value used during local OAuth testing.
 - `OIDC_AUDIENCE` - required API-side ID-token audience. It must match the UI client ID; the local default is `piro-ui`.
+- `OIDC_ALLOWED_EMAIL_DOMAINS` - required comma-separated email domains allowed to sign in. The local default is `test.local`; servers use the organization domain.
 - `OIDC_ALLOWED_GROUPS` - the API-side allow-list used for group enforcement.
 
 For server-side deployments, additional configuration is still used in the app-specific config files:
@@ -126,6 +127,7 @@ The following values can be used to control localhost PIRO development via Docke
 - `OAUTH_LOGIN_UX` - OAuth UX mode for the UI; `button` requires the user to click SSO, `auto` immediately launches SSO when visiting `/login`.
 - `MOCK_OAUTH_AD_GROUP` - group claim value emitted by the local mock OAuth provider; should match `OIDC_ALLOWED_GROUPS` in OAuth mode.
 - `OIDC_AUDIENCE` - required expected ID-token audience for the API; defaults to the local UI client ID, `piro-ui`.
+- `OIDC_ALLOWED_EMAIL_DOMAINS` - required comma-separated email domains permitted to authenticate; defaults to `test.local` for the mock IdP.
 - `OIDC_ALLOWED_GROUPS` - comma-separated group names accepted by the API during OAuth authorization checks.
 - `PIRO_ACCESS_TOKEN_SECRET` - JWT signing secret for FastAPI (defaults to `change-me`).
 - `PIRO_MSSQL_SA_PASSWORD` - SQL `sa` password used by SQL Server and every dependent container (defaults to `P1ro!LocalDev`).

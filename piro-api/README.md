@@ -53,7 +53,8 @@ SPA can perform IdP-side single-logout.
 | `OIDC_JWKS_URL` | *(derived)* | JWKS endpoint. If unset, `oauth_auth` derives it from `OIDC_ISSUER` via discovery. |
 | `OIDC_ALGORITHMS` | `RS256` | Comma-separated list of accepted JWS algorithms. |
 | `OIDC_ALLOWED_GROUPS` | *(empty)* | Comma-separated allowed groups. Empty **disables** the group check (any authenticated user passes). Non-empty uses OR semantics — one match is enough. Case-insensitive. |
-| `OIDC_NUID_CLAIM` | `preferred_username` | Claim used as the PIRO `nuid` (user identifier). |
+| `OIDC_ALLOWED_EMAIL_DOMAINS` | *(required)* | Comma-separated email domains allowed to sign in. The API refuses to start in OAuth mode when this is empty, and rejects any token whose username claim falls outside the list. Domains are matched exactly, so `notfoo.org` and `evil.foo.org` do not satisfy a `foo.org` entry. |
+| `OIDC_NUID_CLAIM` | `preferred_username` | Claim used as the PIRO `nuid` (user identifier). Only the local part is stored, so the claim must be an email/UPN in an allowed domain. |
 | `OIDC_GIVEN_NAME_CLAIM` | `given_name` | Claim used for `firstName`. Falls back to splitting `name` on whitespace when both name claims are absent. |
 | `OIDC_FAMILY_NAME_CLAIM` | `family_name` | Claim used for `lastName`. See fallback note above. |
 | `OIDC_GROUPS_CLAIM` | `groups` | Claim inspected for group membership. May be a JSON array or a single string. |

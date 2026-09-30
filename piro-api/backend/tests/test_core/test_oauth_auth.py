@@ -41,6 +41,13 @@ def _reset_module_caches():
     oauth_auth._discovery_document = None
 
 
+@pytest.fixture(autouse=True)
+def _default_allowed_domains(monkeypatch):
+    """Most tests assume a configured allowlist; fail-closed cases override."""
+
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "ccf.org")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def create_test_database():
     """Override the parent conftest's DB-bootstrap fixture.
@@ -163,7 +170,7 @@ def test_verify_oauth_token_success_returns_claims(
     """Happy path: valid token -> claims dict is returned unchanged."""
 
     claims = {
-        "preferred_username": "jdoe",
+        "preferred_username": "jdoe@ccf.org",
         "iss": "https://idp.example.com/tenant",
         "aud": "piro-api",
         "groups": ["Group-A"],
@@ -206,6 +213,101 @@ def test_ldap_startup_validation_does_not_require_audience(monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
+# identity domain allowlist                                                   #
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "username",
+    [
+        "jdoe@external.example",  # unrelated domain
+        "jdoe@notccf.org",  # suffix near-miss
+        "jdoe@evil.ccf.org",  # subdomain is not the allowed domain
+        "jdoe",  # bare username: domain cannot be verified
+        "jdoe@",
+        "@ccf.org",
+        "jdoe@ccf.org@ccf.org",
+        "",
+        None,
+    ],
+)
+def test_verify_oauth_token_rejects_disallowed_identity(
+    issuer_configured, patch_jwks_client, monkeypatch, username
+):
+    monkeypatch.setattr(
+        pyjwt, "decode", Mock(return_value={"preferred_username": username})
+    )
+    db = _mock_db()
+    assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
+
+
+def test_verify_oauth_token_accepts_allowed_domain_case_insensitively(
+    issuer_configured, patch_jwks_client, monkeypatch
+):
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "CCF.org")
+    claims = {"preferred_username": "CumboJ@ccf.ORG"}
+    monkeypatch.setattr(pyjwt, "decode", Mock(return_value=claims))
+    db = _mock_db()
+    assert oauth_auth.verify_oauth_token("any", islog=False, db=db) == claims
+
+
+def test_verify_oauth_token_supports_multiple_allowed_domains(
+    issuer_configured, patch_jwks_client, monkeypatch
+):
+    monkeypatch.setattr(
+        settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "ccf.org, ccfmail.org"
+    )
+    claims = {"preferred_username": "jdoe@ccfmail.org"}
+    monkeypatch.setattr(pyjwt, "decode", Mock(return_value=claims))
+    db = _mock_db()
+    assert oauth_auth.verify_oauth_token("any", islog=False, db=db) == claims
+
+
+def test_verify_oauth_token_rejects_when_allowlist_unconfigured(
+    issuer_configured, patch_jwks_client, monkeypatch
+):
+    """Fail closed: an unset allowlist must not restore domain truncation."""
+
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "")
+    decode = Mock(return_value={"preferred_username": "jdoe@ccf.org"})
+    monkeypatch.setattr(pyjwt, "decode", decode)
+    db = _mock_db()
+    assert oauth_auth.verify_oauth_token("any", islog=False, db=db) is None
+    decode.assert_not_called()
+
+
+def test_disallowed_domain_cannot_inherit_existing_nuid(monkeypatch):
+    """The reported collision: two domains must not share one PIRO NUID."""
+
+    monkeypatch.setattr(settings, "OIDC_NUID_CLAIM", "preferred_username")
+    trusted = oauth_auth.extract_identity(
+        {"preferred_username": "review-admin@ccf.org"}
+    )
+    untrusted = oauth_auth.extract_identity(
+        {"preferred_username": "review-admin@external.example"}
+    )
+
+    assert trusted["nuid"] == "review-admin"
+    assert untrusted["nuid"] == ""
+
+
+def test_oauth_startup_validation_rejects_missing_email_domains(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_MODE", "OAUTH")
+    monkeypatch.setattr(settings, "OIDC_AUDIENCE", "piro-ui")
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "")
+
+    with pytest.raises(RuntimeError, match="OIDC_ALLOWED_EMAIL_DOMAINS"):
+        settings.validate_auth_config()
+
+
+def test_ldap_startup_validation_does_not_require_email_domains(monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_MODE", "LDAP")
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "")
+
+    settings.validate_auth_config()
+
+
+# --------------------------------------------------------------------------- #
 # extract_identity                                                            #
 # --------------------------------------------------------------------------- #
 
@@ -216,7 +318,7 @@ def test_extract_identity_uses_configured_claims(monkeypatch):
     monkeypatch.setattr(settings, "OIDC_FAMILY_NAME_CLAIM", "family_name")
     result = oauth_auth.extract_identity(
         {
-            "preferred_username": "jdoe",
+            "preferred_username": "jdoe@ccf.org",
             "given_name": "Jane",
             "family_name": "Doe",
         }
@@ -231,7 +333,7 @@ def test_extract_identity_falls_back_to_name_when_split_missing(monkeypatch):
     monkeypatch.setattr(settings, "OIDC_GIVEN_NAME_CLAIM", "given_name")
     monkeypatch.setattr(settings, "OIDC_FAMILY_NAME_CLAIM", "family_name")
     result = oauth_auth.extract_identity(
-        {"preferred_username": "jdoe", "name": "Jane Doe"}
+        {"preferred_username": "jdoe@ccf.org", "name": "Jane Doe"}
     )
     assert result == {"nuid": "jdoe", "firstName": "Jane", "lastName": "Doe"}
 
@@ -248,6 +350,7 @@ def test_extract_identity_honors_custom_nuid_claim(monkeypatch):
     """Different IdPs put the login at different claim names."""
 
     monkeypatch.setattr(settings, "OIDC_NUID_CLAIM", "upn")
+    monkeypatch.setattr(settings, "OIDC_ALLOWED_EMAIL_DOMAINS", "corp.example")
     result = oauth_auth.extract_identity(
         {
             "upn": "jdoe@corp.example",
@@ -275,7 +378,7 @@ def test_extract_identity_single_word_name_leaves_last_empty(monkeypatch):
     monkeypatch.setattr(settings, "OIDC_GIVEN_NAME_CLAIM", "given_name")
     monkeypatch.setattr(settings, "OIDC_FAMILY_NAME_CLAIM", "family_name")
     result = oauth_auth.extract_identity(
-        {"preferred_username": "prince", "name": "Prince"}
+        {"preferred_username": "prince@ccf.org", "name": "Prince"}
     )
     assert result == {"nuid": "prince", "firstName": "Prince", "lastName": ""}
 
