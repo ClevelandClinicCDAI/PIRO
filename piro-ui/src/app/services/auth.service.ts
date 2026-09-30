@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { firstValueFrom, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -266,23 +266,28 @@ export class AuthService {
   /**
    * Ask the API to record the logout and, in OAuth mode, hand back the
    * IdP's RP-initiated logout URL so the caller can redirect the
-   * browser to it. Always resolves — a failure to reach the API still
-   * clears local state.
+   * browser to it. The local session is cleared synchronously, before the
+   * request is awaited, so a stalled API can never keep the user signed in.
+   * Always resolves.
    */
   async logoutRemote(): Promise<{ endSessionUrl: string | null }> {
-    let endSessionUrl: string | null = null;
-    if (this.localStorageService.getApiToken()) {
-      try {
-        const apiURL = environment.apiBaseUrl + 'token/logout';
-        const res: any = await firstValueFrom(this.http.post(apiURL, {}));
-        endSessionUrl = res?.end_session_url ?? null;
-      } catch (_err) {
-        // Ignore: local logout still succeeds.
-        endSessionUrl = null;
-      }
-    }
+    const token = this.localStorageService.getApiToken();
     this.logout();
-    return { endSessionUrl };
+    if (!token) {
+      return { endSessionUrl: null };
+    }
+
+    try {
+      const apiURL = environment.apiBaseUrl + 'token/logout';
+      // Carries the captured credential: local storage is already cleared.
+      const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+      const res: any = await firstValueFrom(
+        this.http.post(apiURL, {}, { headers })
+      );
+      return { endSessionUrl: res?.end_session_url ?? null };
+    } catch (_err) {
+      return { endSessionUrl: null };
+    }
   }
 
 

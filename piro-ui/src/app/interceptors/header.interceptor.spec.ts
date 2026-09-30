@@ -5,71 +5,84 @@ import { environment } from '../../environments/environment';
 import { HeaderInterceptor } from './header.interceptor';
 
 describe('HeaderInterceptor', () => {
-  let http: HttpClient;
-  let httpMock: HttpTestingController;
-  const originalApiBaseUrl = environment.apiBaseUrl;
+    let http: HttpClient;
+    let httpMock: HttpTestingController;
+    const originalApiBaseUrl = environment.apiBaseUrl;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
-      ],
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
+            ],
+        });
+
+        http = TestBed.inject(HttpClient);
+        httpMock = TestBed.inject(HttpTestingController);
+        localStorage.setItem('api-token', 'piro-jwt');
     });
 
-    http = TestBed.inject(HttpClient);
-    httpMock = TestBed.inject(HttpTestingController);
-    localStorage.setItem('api-token', 'piro-jwt');
-  });
+    afterEach(() => {
+        httpMock.verify();
+        environment.apiBaseUrl = originalApiBaseUrl;
+        localStorage.clear();
+    });
 
-  afterEach(() => {
-    httpMock.verify();
-    environment.apiBaseUrl = originalApiBaseUrl;
-    localStorage.clear();
-  });
+    function authHeaderFor(url: string): string | null {
+        http.get(url).subscribe({ next: () => { }, error: () => { } });
+        const req = httpMock.expectOne(url);
+        const header = req.request.headers.get('Authorization');
+        req.flush({});
+        return header;
+    }
 
-  function authHeaderFor(url: string): string | null {
-    http.get(url).subscribe({ next: () => { }, error: () => { } });
-    const req = httpMock.expectOne(url);
-    const header = req.request.headers.get('Authorization');
-    req.flush({});
-    return header;
-  }
+    it('attaches the token when apiBaseUrl is relative', () => {
+        environment.apiBaseUrl = '/api/';
 
-  it('attaches the token when apiBaseUrl is relative', () => {
-    environment.apiBaseUrl = '/api/';
+        expect(authHeaderFor('/api/token/isvalid')).toBe('Bearer piro-jwt');
+    });
 
-    expect(authHeaderFor('/api/token/isvalid')).toBe('Bearer piro-jwt');
-  });
+    it('attaches the token when apiBaseUrl is an absolute URL', () => {
+        environment.apiBaseUrl = 'https://api.example.com:8082/';
 
-  it('attaches the token when apiBaseUrl is an absolute URL', () => {
-    environment.apiBaseUrl = 'https://api.example.com:8082/';
+        expect(authHeaderFor('https://api.example.com:8082/token/isvalid'))
+            .toBe('Bearer piro-jwt');
+    });
 
-    expect(authHeaderFor('https://api.example.com:8082/token/isvalid'))
-      .toBe('Bearer piro-jwt');
-  });
+    it('never attaches the token to the IdP on another origin', () => {
+        environment.apiBaseUrl = 'https://api.example.com:8082/';
 
-  it('never attaches the token to the IdP on another origin', () => {
-    environment.apiBaseUrl = 'https://api.example.com:8082/';
+        expect(authHeaderFor('https://login.example.com/tenant/oauth2/token'))
+            .toBeNull();
+    });
 
-    expect(authHeaderFor('https://login.example.com/tenant/oauth2/token'))
-      .toBeNull();
-  });
+    it('never attaches the token to non-API same-origin requests', () => {
+        environment.apiBaseUrl = '/api/';
 
-  it('never attaches the token to non-API same-origin requests', () => {
-    environment.apiBaseUrl = '/api/';
+        expect(authHeaderFor('assets/config.json')).toBeNull();
+    });
 
-    expect(authHeaderFor('assets/config.json')).toBeNull();
-  });
+    it('does not treat a lookalike path prefix as the API base', () => {
+        environment.apiBaseUrl = '/api/';
 
-  it('does not treat a lookalike path prefix as the API base', () => {
-    environment.apiBaseUrl = '/api/';
+        expect(authHeaderFor('/apifoo/token/isvalid')).toBeNull();
+    });
 
-    expect(authHeaderFor('/apifoo/token/isvalid')).toBeNull();
-  });
+    it('keeps the public endpoints unauthenticated', () => {
+        environment.apiBaseUrl = '/api/';
 
-  it('keeps the public endpoints unauthenticated', () => {
-    environment.apiBaseUrl = '/api/';
+        expect(authHeaderFor('/api/solr/lastdataupdated')).toBeNull();
+    });
 
-    expect(authHeaderFor('/api/solr/lastdataupdated')).toBeNull();
-  });
+    it('preserves an Authorization header supplied by the caller', () => {
+        environment.apiBaseUrl = '/api/';
+        localStorage.clear();
+
+        http.post('/api/token/logout', {}, {
+            headers: { Authorization: 'Bearer captured-jwt' },
+        }).subscribe({ next: () => { }, error: () => { } });
+
+        const req = httpMock.expectOne('/api/token/logout');
+        expect(req.request.headers.get('Authorization')).toBe('Bearer captured-jwt');
+        req.flush({});
+    });
 });

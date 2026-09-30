@@ -60,8 +60,10 @@ export class HeaderInterceptor implements HttpInterceptor {
     }
     // return next.handle(req).timeout(timeout);
     // Allowlist: attach the PIRO JWT only to requests under the configured API
-    // base, so it can never reach the IdP or any other origin.
-    var isExcludeToken: Boolean = !this.isApiRequest(httpRequest.url) ||
+    // base, so it can never reach the IdP or any other origin. A caller-supplied
+    // Authorization header always wins.
+    var isExcludeToken: Boolean = httpRequest.headers.has('Authorization') ||
+      !this.isApiRequest(httpRequest.url) ||
       (urlRequest.indexOf("/login") > -1 || urlRequest.indexOf("/lastdataupdated") > -1);
     return next.handle((httpRequest.headers.get('Content-Type') == null && httpRequest.headers.get('ContentType') == null) ?
       httpRequest.clone(isExcludeToken ? {

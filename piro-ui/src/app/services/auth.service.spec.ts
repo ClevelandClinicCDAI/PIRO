@@ -98,4 +98,46 @@ describe('AuthService', () => {
     expect(router.url).toBe('/login?returnUrl=%2Fsearch');
     expect(localStorage.getItem('api-token')).toBeNull();
   }));
+
+  it('clears the local session before the logout response arrives', fakeAsync(() => {
+    localStorage.setItem('api-token', 'piro-jwt');
+    service.isAuthenticated = true;
+
+    const pending = service.logoutRemote();
+
+    // Response deliberately left outstanding.
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}token/logout`);
+    expect(localStorage.getItem('api-token')).toBeNull();
+    expect(service.isAuthenticated).toBeFalse();
+    expect(req.request.headers.get('Authorization')).toBe('Bearer piro-jwt');
+
+    req.flush({ end_session_url: 'https://idp.example.com/logout' });
+    pending.then(result => {
+      expect(result.endSessionUrl).toBe('https://idp.example.com/logout');
+    });
+    tick();
+  }));
+
+  it('resolves without an end-session url when the logout request fails', fakeAsync(() => {
+    localStorage.setItem('api-token', 'piro-jwt');
+
+    let resolved: { endSessionUrl: string | null } | undefined;
+    service.logoutRemote().then(result => (resolved = result));
+
+    httpMock.expectOne(`${environment.apiBaseUrl}token/logout`).flush(
+      'boom', { status: 500, statusText: 'Server Error' }
+    );
+    tick();
+
+    expect(resolved).toEqual({ endSessionUrl: null });
+    expect(localStorage.getItem('api-token')).toBeNull();
+  }));
+
+  it('skips the remote call when there is no session to end', fakeAsync(() => {
+    let resolved: { endSessionUrl: string | null } | undefined;
+    service.logoutRemote().then(result => (resolved = result));
+    tick();
+
+    expect(resolved).toEqual({ endSessionUrl: null });
+  }));
 });

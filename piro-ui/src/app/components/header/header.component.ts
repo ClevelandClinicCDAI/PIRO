@@ -102,22 +102,24 @@ export class HeaderComponent {
   /**
    * Notifies the API (which returns the IdP end-session URL when in
    * OAuth mode) and, if provided, hands the browser off to the IdP for
-   * an RP-initiated logout. Falls back to the local-only `logout()` on
-   * any error.
+   * an RP-initiated logout. The local session and protected page are
+   * abandoned first, so a slow API cannot delay signing out.
    */
   async logoutAsync() {
     this.burgerChecked = false;
+    // Clears local state synchronously; only the audit call is awaited.
+    const pending = this.authService.logoutRemote();
+    this.isAuthenticated = false;
+    await this.router.navigate(['/signed-out']);
+
     try {
-      const { endSessionUrl } = await this.authService.logoutRemote();
-      this.isAuthenticated = false;
+      const { endSessionUrl } = await pending;
       if (endSessionUrl) {
         window.location.assign(this.oidcService.buildEndSessionUrl(endSessionUrl));
-        return;
       }
     } catch (_err) {
-      // AuthService.logoutRemote() already clears local state on error.
+      // Local sign-out has already completed.
     }
-    this.router.navigate(['/signed-out']);
   }
   ngOnDestroy() {
     this.authListenerSubs?.unsubscribe();
