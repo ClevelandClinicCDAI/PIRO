@@ -1,0 +1,35 @@
+<div class="location-page">
+  <div class="prototype-note"><span class="demo-label">SYNTHETIC PROTOTYPE</span> Physician work location <span class="note-end">Latest login evidence · America/New_York</span></div>
+  <div class="toolbar">
+    <label class="search-box"><span>Physician Name</span><input aria-label="Search physicians" placeholder="Search physicians by name, subspecialty, or region" [(ngModel)]="query" (ngModelChange)="page=1"><i class="bi bi-search"></i></label>
+    <button (click)="clear()">Clear Filter <i class="bi bi-x-circle"></i></button>
+    <button (click)="save()">Save <i class="bi bi-save"></i></button><button (click)="load()">Load <i class="bi bi-filter"></i></button>
+    <label class="date-control">Date <input aria-label="Observation date" type="date" [(ngModel)]="day" (ngModelChange)="changeDay()"></label>
+  </div>
+  <p *ngIf="notice" class="notice" role="status">{{notice}}</p>
+  <div class="layout">
+    <aside>
+      <section><h2>Anatomic Pathology Subspecialty <i class="bi bi-chevron-up"></i></h2><div class="options">
+        <label *ngFor="let item of specialtyOptions"><input type="checkbox" [checked]="specialties.has(item)" (change)="toggle(specialties,item)"><span>{{item}}</span><b>{{count('subspecialty',item)}}</b></label>
+      </div></section>
+      <section><h2>Region <i class="bi bi-chevron-up"></i></h2><div class="options">
+        <label *ngFor="let item of regionOptions"><input type="checkbox" [checked]="regions.has(item)" (change)="toggle(regions,item)"><span>{{item}}</span><b>{{count('region',item)}}</b></label>
+      </div></section>
+      <section><h2>Location</h2><div class="options"><label *ngFor="let item of ['', 'In Office','Remote','No Activity Today','Unknown']"><input type="radio" name="status" [value]="item" [(ngModel)]="status" (ngModelChange)="page=1"><span>{{item || 'All locations'}}</span></label></div></section>
+      <p class="facet-note">Counts show the synthetic roster. Region is organizational affiliation; observed site may differ.</p>
+    </aside>
+    <main>
+      <div class="title-row"><div><h1>Physician Location</h1><p>Showing {{first}} – {{last}} of {{filtered.length}} physicians</p></div><button (click)="refresh()" [disabled]="loading"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+      <div *ngIf="error" class="error" role="alert">{{error}}</div>
+      <div class="table-scroll"><table>
+        <thead><tr><th><button (click)="sort('name')">Physician Name ↕</button></th><th><button (click)="sort('subspecialty')">Subspecialty ↕</button></th><th><button (click)="sort('region')">Region ↕</button></th><th><button (click)="sort('status')">Location ↕</button></th><th>Observed Site</th><th><button (click)="sort('last_observed')">Last Observed ↕</button></th></tr></thead>
+        <tbody><ng-container *ngFor="let person of visible">
+          <tr><td><button class="person" (click)="expanded=expanded===person.physician_id?'':person.physician_id" [attr.aria-expanded]="expanded===person.physician_id"><i class="bi" [class.bi-chevron-right]="expanded!==person.physician_id" [class.bi-chevron-down]="expanded===person.physician_id"></i>{{person.name}}</button></td><td>{{person.subspecialty}}</td><td>{{person.region}}</td><td><span class="status" [ngClass]="badge(person.status)">{{person.status}}</span></td><td>{{person.site}}</td><td class="time">{{time(person.last_observed)}}</td></tr>
+          <tr *ngIf="expanded===person.physician_id" class="detail"><td colspan="6"><h3>Login timeline <span>{{person.events.length}} events · {{person.username}}</span></h3><p *ngIf="!person.events.length">No login events received for this date.</p><ol><li *ngFor="let event of person.events"><strong>{{time(event.occurred_at)}}</strong><span>{{event.device_id}}</span><span>{{event.session_type}} session</span><span>{{event.site}}</span><span class="status" [ngClass]="badge(event.status)">{{event.status}}</span></li></ol></td></tr>
+        </ng-container><tr *ngIf="!visible.length"><td colspan="6" class="empty">{{loading ? 'Loading physician roster…' : 'No physicians match these filters.'}}</td></tr></tbody>
+      </table></div>
+      <div class="bottom-row"><span class="refresh-note" role="status">{{loading ? 'Refreshing…' : 'Auto-refresh every 5 seconds'}}<span *ngIf="updated"> · Updated {{updated}}</span></span><label>Rows per page: <select aria-label="Rows per page" [(ngModel)]="pageSize" (ngModelChange)="page=1"><option [ngValue]="10">10</option><option [ngValue]="25">25</option></select></label><span>{{first}} – {{last}} of {{filtered.length}}</span><button aria-label="Previous page" [disabled]="currentPage<=1" (click)="page=currentPage-1">‹</button><button aria-label="Next page" [disabled]="currentPage>=pages" (click)="page=currentPage+1">›</button></div>
+      <p class="footnote">Location reflects the latest received login evidence for the selected day, ordered by event time. No Activity Today means no event received, not an absence from work. All names and signals are synthetic.</p>
+    </main>
+  </div>
+</div>

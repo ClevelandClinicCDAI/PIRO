@@ -1,0 +1,9 @@
+# The UI image needs only its source, not repository data or local credentials.
+**
+!piro-ui/
+!piro-ui/**
+piro-ui/node_modules/
+piro-ui/dist/
+piro-ui/.angular/
+piro-ui/.git/
+piro-ui/.env*

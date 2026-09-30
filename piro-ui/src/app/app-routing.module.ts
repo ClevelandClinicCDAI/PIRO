@@ -56,6 +56,7 @@ import { ExtractionSessionsComponent } from './components/extraction/extraction-
 import { ExtractionSchemaComponent } from './components/extraction/extraction-schema/extraction-schema.component';
 import { ExtractionReviewComponent } from './components/extraction/extraction-review/extraction-review.component';
 const routes: Routes = [
+  { path: 'physician-location', loadComponent: () => import('./components/physician-location/physician-location.component').then(m => m.PhysicianLocationComponent) },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },

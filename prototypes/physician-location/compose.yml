@@ -1,0 +1,23 @@
+services:
+  presence-api:
+    image: piro-api
+    platform: linux/amd64
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002"]
+    working_dir: /prototype
+    environment:
+      PRESENCE_PROTOTYPE_ENABLED: "true"
+      PRESENCE_INGEST_TOKEN: ${PRESENCE_INGEST_TOKEN:?Set the local prototype token}
+      PRESENCE_DB_PATH: /data/presence.sqlite3
+    volumes:
+      - ./prototypes/physician-location:/prototype:ro
+      - presence_data:/data
+    ports:
+      - "127.0.0.1:8002:8002"
+  ui:
+    entrypoint: ["nginx", "-g", "daemon off;"]
+    volumes:
+      - ./piro-ui/dist/piro:/usr/share/nginx/html:ro
+      - ./prototypes/physician-location/ui-config.json:/etc/piro-ui-config.json:ro
+      - ./prototypes/physician-location/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+volumes:
+  presence_data:
