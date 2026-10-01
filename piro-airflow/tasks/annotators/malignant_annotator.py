@@ -3,6 +3,8 @@ import json
 import requests
 import traceback
 import concurrent.futures
+import time
+import uuid
 from typing import Any, Generator, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -12,8 +14,10 @@ from airflow.sdk import Variable
 from tasks.utils.database_setup import get_piro_db_engine
 from tasks.utils.logging_setup import get_logger
 from tasks.utils.certificate_setup import get_application_root_directory
+from ccf_inference_audit import AuditClient, token_usage_from_response
 
 logger = get_logger()
+audit = AuditClient.from_env("piro")
 
 
 class MalignantAnnotator:
@@ -71,6 +75,7 @@ Interpret this pathology report:
         We do a single query to retrieve the source records (for performance),
         and then process the records in batches of 100."""
 
+        run_id = str(uuid.uuid4())
         _max_records_to_process: int = self._get_max_records_to_process(
             max_records_to_process
         )
@@ -84,6 +89,7 @@ Interpret this pathology report:
         source_data_batches = self._get_batches(source_records)
 
         counter: int = 0
+        failed_batches: int = 0
         for source_data_batch in source_data_batches:
 
             try:
@@ -115,12 +121,30 @@ Interpret this pathology report:
                 )
                 counter += batch_record_count
             except Exception as e:
+                failed_batches += 1
                 logger.error(f"Error processing a batch: {e}")
                 logger.error(traceback.format_exc())
                 if "Error in API call: 503" in str(e):
                     # if the LLM API is down abort
                     break
 
+        if failed_batches == 0:
+            run_status = "succeeded"
+        elif counter:
+            run_status = "partial"
+        else:
+            run_status = "failed"
+
+        audit.run(
+            status=run_status,
+            run_id=run_id,
+            event_name="malignant_annotation_run",
+            model_name=_model,
+            attributes={
+                "records_processed": counter,
+                "failed_batches": failed_batches,
+            },
+        )
         return {"total_records_processed": counter}
 
     def _get_max_records_to_process(
@@ -241,13 +265,24 @@ Interpret this pathology report:
         """Executes a sequence of function calls to call the Ollama API
         and process the results."""
 
-        raw_response: str = self._query_openai_endpoint(model, prompt)
+        raw_response: str = self._query_openai_endpoint(model, prompt, case_id)
         processed_response = self._process_response(raw_response)
-        return self._parse_json(
+        result = self._parse_json(
             model, text=processed_response, case_id=case_id
         )
+        audit.work_item(
+            status="succeeded" if result else "failed",
+            work_item_type="pathology_report",
+            work_item_id=case_id,
+            provider="ollama-openai-compatible",
+            model_name=model,
+            metric_name="reports_classified" if result else None,
+            metric_value=1 if result else None,
+            error_code=None if result else "classification_parse_failed",
+        )
+        return result
 
-    def _query_openai_endpoint(self, model: str, prompt: str) -> str:
+    def _query_openai_endpoint(self, model: str, prompt: str, case_id: int) -> str:
         headers = {
             "Authorization": f"Bearer {self._api_token}",
             "Content-Type": "application/json",
@@ -263,17 +298,42 @@ Interpret this pathology report:
             "top_p": 0.1,
         }
 
-        response = requests.post(
-            self._api_url,
-            json=payload,
-            headers=headers,
-            timeout=3 * 60,
-            verify=self._api_verify,
-        )
-        response.raise_for_status()
-
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+        started_at = time.perf_counter()
+        try:
+            response = requests.post(
+                self._api_url,
+                json=payload,
+                headers=headers,
+                timeout=3 * 60,
+                verify=self._api_verify,
+            )
+            response.raise_for_status()
+            data = response.json()
+            raw_response = data["choices"][0]["message"]["content"]
+            usage = token_usage_from_response(data)
+            audit.inference(
+                status="succeeded",
+                work_item_type="pathology_report",
+                work_item_id=case_id,
+                provider="ollama-openai-compatible",
+                model_name=model,
+                duration_ms=(time.perf_counter() - started_at) * 1000,
+                provider_request_id=response.headers.get("x-request-id"),
+                **usage,
+            )
+            return raw_response
+        except Exception as exc:
+            audit.inference(
+                status="failed",
+                work_item_type="pathology_report",
+                work_item_id=case_id,
+                provider="ollama-openai-compatible",
+                model_name=model,
+                duration_ms=(time.perf_counter() - started_at) * 1000,
+                error_category=type(exc).__name__,
+                error_code="classification_request_failed",
+            )
+            raise
 
     def _process_response(self, raw_response: str) -> str:
         """Normalize model output into a JSON-like string.
