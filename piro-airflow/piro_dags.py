@@ -30,6 +30,9 @@ from tasks.ssis_data_load_task import (
     ssis_delta_load_job_task,
     ssis_full_load_task,
 )
+from tasks.linked_order_backfill_task import (
+    linked_order_backfill_task,
+)
 from tasks.utils.logging_setup import get_logger
 
 logger = get_logger()
@@ -376,6 +379,27 @@ def ssis_full_load():
     ssis_full_load_task()
 
 
+###############################################################################
+@dag(
+    description=(
+        "DAG for backfilling missing linked order records from Clarity into"
+        " the PIRO database."
+    ),
+    schedule="0 22 * * *",  # 10:00PM Eastern Daily
+    start_date=pendulum.datetime(2025, 1, 1, tz="US/Eastern"),
+    max_active_runs=1,
+    catchup=False,
+    tags=["Backfill", "LinkedOrder"],
+    default_args={
+        "email": DEVELOPER_EMAILS,
+        "email_on_failure": EMAIL_ON_FAILURE,
+    },
+)
+def linked_order_backfill():
+
+    linked_order_backfill_task()
+
+
 # DAG Instantiation
 piro_annotations()
 solr_cohort_load()
@@ -391,3 +415,4 @@ concentriq_load()
 concentriq_reset()
 ssis_delta_load()
 ssis_full_load()
+linked_order_backfill()
