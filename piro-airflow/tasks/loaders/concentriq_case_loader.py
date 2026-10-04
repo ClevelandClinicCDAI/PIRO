@@ -1,160 +1,91 @@
+"""Synchronize cases with ready whole-slide images from PostgreSQL to PIRO."""
+
 import json
-import requests
+
 from sqlalchemy import text
-from sqlalchemy.engine.base import Engine, Connection
 from sqlalchemy.orm import Session
-from tasks.utils.database_setup import get_piro_db_engine, get_piro_db_session
-from tasks.utils.logging_setup import get_logger
-from tasks.utils.certificate_setup import get_certificate_path_concentriq
+
+from tasks.loaders.concentriq_catalog import iter_catalog_batches
 from tasks.utils.concentriq_setup import (
-    get_concentriq_case_details_import_url,
-    get_concentriq_header_auth,
+    get_concentriq_db_engine,
     get_concentriq_case_page_size,
 )
+from tasks.utils.logging_setup import get_logger
 
 logger = get_logger()
 
 
 class ConcentriqCaseLoader:
-    """Class for loading case data into SOLR. The source data table is CohortCase_Delta. SOLR import handler is triggered for the data load"""  # noqa: E501
+    def __init__(self, piro_engine=None):
+        if piro_engine is None:
+            from tasks.utils.database_setup import get_piro_db_engine
+            piro_engine = get_piro_db_engine()
+        self._piro_db_engine = piro_engine
+        self._piro_db_session = Session(bind=piro_engine)
 
-    def __init__(self):
-        logger.info("ConcentriqCaseLoader constructor-Start")
+    def should_we_process_concentriq_data(self):
+        value = self._piro_db_session.execute(text("""
+            SELECT [Value] FROM dbo.ConcentriqConfig
+            WHERE [Key] = 'CaseDetails.Get.Enabled' AND IsActive = 1
+        """)).scalar()
+        return str(value).strip().lower() in ("1", "true", "yes", "enabled")
 
-        self._piro_db_engine: Engine = get_piro_db_engine()
-        self._piro_db_connection: Connection = self._piro_db_engine.connect()
-        self._piro_db_session: Session = get_piro_db_session(
-            engine=self._piro_db_engine
-        )
-
-        self._authentication_header = get_concentriq_header_auth()
-        self.concentriq_loader_url = get_concentriq_case_details_import_url()
-        self._certificates_path: str = get_certificate_path_concentriq()
-        self._pageSize: int | None = get_concentriq_case_page_size()
-        logger.info("ConcentriqCaseLoader constructor-Start")
-
-    def should_we_process_concentriq_data(self) -> bool:
-
-        select_query = text(
-            """Select [VALUE] from [dbo].[ConcentriqConfig] WHERE [KEY] = 'CaseDetails.Get.Enabled' And IsActive = 1"""  # noqa: E501
-        )  # noqa: E501
-        isEnabled = self._piro_db_connection.execute(select_query).scalar()
-        if isEnabled is None:
-            logger.info(
-                (
-                    "CaseDetails.Get.Enabled not configured. "
-                    "Please configure and enable in the dbo.ConcentriqConfig table."  # noqa: E501
-                )
-            )  # noqa: E501
-        return False if isEnabled is None else True
-
-    def close_db_connection(self) -> None:
-        """Close any connections to the database."""
-
+    def close_db_connection(self):
         self._piro_db_session.close()
-        self._piro_db_connection.close()
+        self._piro_db_engine.dispose()
 
     def associate_concentriq_records_with_cases(self):
-        """Associates records in the ConcentriqCase table with records in the
-        main Case table."""
-
-        sql = text("""EXEC [dbo].[P_AIRFLOW_Concentriq_Case_Load]""")
-        self._piro_db_session.execute(sql)
-        self._piro_db_session.commit()
+        try:
+            self._piro_db_session.execute(text(
+                "EXEC dbo.P_AIRFLOW_Concentriq_Case_Load"
+            ))
+            self._piro_db_session.commit()
+        except Exception:
+            self._piro_db_session.rollback()
+            raise
         return True
 
     def delete_concentriq_case_data(self):
-        """Deletes all Concentriq records in the PIRO database."""
-
-        sql = text("""EXEC dbo.[P_AIRFLOW_Concentriq_Case_Delete]""")
-        self._piro_db_session.execute(sql)
-        self._piro_db_session.commit()
+        try:
+            self._piro_db_session.execute(text(
+                "EXEC dbo.P_AIRFLOW_Concentriq_Case_Delete"
+            ))
+            self._piro_db_session.commit()
+        except Exception:
+            self._piro_db_session.rollback()
+            raise
         return True
 
-    def _get_case_key_max(self) -> int:
+    def get_concentriq_data(self):
+        """Stage a full snapshot; publish only after every batch succeeds."""
+        engine = get_concentriq_db_engine()
+        count = 0
         try:
-            select_query = text("""
-                select Max(ConcentriqCaseId) ConcentriqCase
-                from dbo.ConcentriqCase
-                """)
-            data = self._piro_db_connection.execute(select_query).scalar()
-
-            if data is None:
-                data = 0
-
-            return data
-        except Exception as e:
-            logger.error(f"Error processing _get_case_key_max: {e}")
-            return 0
-
-    def get_concentriq_data(self) -> bool:
-        """Retrieves data from Concentriq and adds it to the ConcentriqCase
-        table in the PIRO database."""
-
-        key = self._get_case_key_max()
-        if key is None:
-            return False
-        process_data: bool = True
-
-        while process_data:
-            # key = 10
-            logger.info(f"key: {key}")
-            data = {
-                "eager": {"$where": {"id": {"$gt": key}}},
-                "limit": self._pageSize,
-                "offset": 0,
-                "fields": ["id", "accessionDate", "accessionId"],
-                "order": [{"column": "id", "order": "asc"}],
-            }
-            json_string = json.dumps(data)
-            logger.info(f"json_string: {json_string}")
-            concentriq_url = (
-                f"{self.concentriq_loader_url}?filter={json_string}"
-            )
-            if data is None:
-                return True
-
-            headers = {
-                "Authorization": f"Basic {self._authentication_header}",
-                "Content-Type": "application/json",
-            }
-            load_url = f"{concentriq_url}"
-            logger.info(f"load_url: {load_url}")
-            # TODO: consider passing a 'param' argument instead of building the
-            # URL with query parameters
-            response = requests.get(
-                load_url,
-                headers=headers,
-                verify=self._certificates_path,  # noqa: E501
-            )
-            logger.info(f"response.status_code: {response.status_code}")
-            if response.status_code != 200:
-                logger.error(
-                    f"Error processing a batch: {response.status_code}"
-                    f"{response.text}"
+            batch_size = get_concentriq_case_page_size()
+            self._piro_db_session.execute(text("""
+                CREATE TABLE #ConcentriqCatalog (
+                    ConcentriqCaseId int NOT NULL,
+                    CaseNumber varchar(100) COLLATE DATABASE_DEFAULT NOT NULL PRIMARY KEY,
+                    AccessionDate datetime NULL
                 )
-                raise Exception(
-                    f"Error in API data load call: {response.status_code}, Reason: {response.reason}, Decrease the batch size and try"  # noqa: E501
-                )
-            else:
-                response_json = response.json()
-                logger.info(f"response_json: {response_json}")
-                response_items_json = response_json.get("items", [])
-                logger.info(
-                    f"Concentriq items returned: {len(response_items_json)}"
-                )
-                if len(response_items_json) == 0:
-                    logger.info("No more data to process")
-                    process_data = False
-                else:
-                    response_items_str = json.dumps(response_items_json)
-                    sql = text(
-                        "EXEC [dbo].[P_AIRFLOW_Concentriq_Case_Insert] :items"  # noqa: E501
-                    )
-                    self._piro_db_session.execute(  # noqa: E501
-                        sql, {"items": response_items_str}
-                    )
-                    self._piro_db_session.commit()
-                    key = response_items_json[-1]["id"]
-
+            """))
+            for items in iter_catalog_batches(engine, batch_size):
+                self._piro_db_session.execute(text(
+                    "EXEC dbo.P_AIRFLOW_Concentriq_Case_Sync @json_string=:items"
+                ), {"items": json.dumps(items)})
+                count += len(items)
+                logger.info("Concentriq catalog records staged: %s", count)
+            if count == 0:
+                raise ValueError("Empty Concentriq image catalog; existing PIRO data retained")
+            self._piro_db_session.execute(text(
+                "EXEC dbo.P_AIRFLOW_Concentriq_Case_Sync @finalize=1"
+            ))
+            self._piro_db_session.execute(text("DROP TABLE #ConcentriqCatalog"))
+            self._piro_db_session.commit()
+            logger.info("Concentriq catalog synchronized: %s records", count)
+        except Exception:
+            self._piro_db_session.rollback()
+            raise
+        finally:
+            engine.dispose()
         return True

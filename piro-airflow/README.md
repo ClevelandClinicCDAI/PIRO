@@ -28,21 +28,15 @@ Notes:
 {
     "CONCENTRIQ_CASE_DB_RELOAD_DATA": 0,
     "CONCENTRIQ_CASE_DETAIL_PAGE_SIZE": {
-        "description": "Case Details API call batch size",
+        "description": "PostgreSQL catalog batch size",
         "value": 1000
     },
-    "CONCENTRIQ_CASE_DETAIL_URL_DATA_IMPORT": {
-        "description": "Case Details API URL",
-        "value": "https://[concentriq_url]/api/v2/caseDetails/worklist"
-    },
-    "CONCENTRIQ_CERTIFICAT_NAME": {
-        "description": "CONCENTRIQ SSL Cert name",
-        "value": ""
-    },
-    "CONCENTRIQ_HEADER_AUTH": {
-        "description": "BASIC Auth header",
-        "value": ""
-    },
+    "CONCENTRIQ_DB_SERVER": "",
+    "CONCENTRIQ_DB_PORT": "5432",
+    "CONCENTRIQ_DB_NAME": "dx",
+    "CONCENTRIQ_DB_USER": "",
+    "CONCENTRIQ_DB_PASSWORD": "",
+    "CONCENTRIQ_DB_SSLMODE": "prefer",
     "DEVELOPER_EMAILS": {
         "description": "Email recipients for DAG failure notifications (JSON list of strings)",
         "value": []
@@ -98,3 +92,68 @@ Notes:
     "SSIS_PIRO_DB_SERVER": "",
     "SSIS_PIRO_DB_USERNAME": ""
 }
+
+## Concentriq whole-slide image catalog
+
+The `concentriq_load` DAG reads PostgreSQL instead of the Concentriq HTTP API.
+It runs nightly at 12:30 AM Eastern (`30 0 * * *`), with one active run at a
+time and catchup disabled. The existing `solr_case_load` DAG publishes pending
+search updates at 6:00 AM Eastern; this is a separate scheduled DAG.
+It selects cases with at least one `public.images` record in `ready` status,
+linked through `public.slides.case_detail_id` to `public.case_details.id`.
+Only the Concentriq case ID, accession number, and accession date are read;
+patient details and image files are not retrieved. The source connection uses
+a read-only repeatable-read snapshot.
+
+Every run scans the full image-bearing catalog, so images added to old cases
+are picked up. The catalog is staged in a SQL Server temporary table and only
+published after all batches succeed. Missing cases become inactive; matching
+`CaseSolr` rows have their flags and Concentriq IDs updated, and changed rows
+are queued in `CaseSolr_Delta` for the regular `solr_case_load` DAG. Existing
+pending delta payloads are preserved. An empty catalog or duplicate accession
+aborts the refresh and retains the previous catalog.
+The Solr case uploader includes the first pending case, including queues with
+only one image-availability update.
+
+Deployment:
+
+1. Deploy `piro-sql/Table/dbo.ConcentriqCase.Table.sql` and
+   `dbo.ConcentriqConfig.Table.sql` (existing tables are retained).
+2. Deploy the `P_AIRFLOW_Concentriq_Case_Load`,
+   `P_AIRFLOW_Concentriq_Case_Delete`, and `P_AIRFLOW_Concentriq_Case_Sync`
+   procedures from `piro-sql/Airflow/PROCS/`. Update
+   `P_SSIS_LoadCaseSolr` from `piro-sql/SSIS/PROCS/LOADER-SOLR/` so subsequent
+   SSIS loads respect inactive catalog records.
+3. Configure the `CONCENTRIQ_DB_*` Airflow Variables listed above, or use
+   their `AIRFLOW_VAR_` environment equivalents from `.env_template`.
+   The inspected server does not support SSL; `prefer` is compatible.
+   Use `require` or `verify-full` for a server configured with TLS.
+4. Set the active `dbo.ConcentriqConfig` row with key
+   `CaseDetails.Get.Enabled` to value `true` (or `1`).
+5. Set API `CONCENTRIQ_URL` to the browser case-link prefix ending immediately
+   before the Concentriq case ID. Run `concentriq_load`, followed by
+   `solr_case_load` to publish the image filter and links.
+
+The old API URL, Basic Auth header, and Concentriq API certificate variables
+are no longer used by the catalog loader. SQL Server remains PIRO's primary
+database; these PostgreSQL settings are a separate source connection.
+
+Local inspection using the ignored repository-root override file:
+
+```bash
+cd piro-airflow
+python sync_concentriq.py
+```
+
+This command only reports the source count. It accepts `POSTGRES_SERVER`
+(including `host,port`), `POSTGRES_DATABASE`, `POSTGRES_USER`, and
+`POSTGRES_PASSWORD` from `services.api.environment`. `CONCENTRIQ_DB_*`
+settings are also accepted. After deploying the procedures and enabling the
+configuration row, use `python sync_concentriq.py --apply` to synchronize PIRO.
+It queues search updates; the Solr DAG publishes them.
+
+Focused tests (no live databases or Airflow required):
+
+```bash
+python -m pytest tests -q
+```

@@ -247,6 +247,9 @@ class SolrCaseDataLoader:
         if key is None:
             return False
 
+        # _get_case_data uses a strict > cursor; include the first pending case.
+        key -= 1
+
         data_record_count: int = self.batch_size
         process_data: bool = True
         retry_index: int = 0

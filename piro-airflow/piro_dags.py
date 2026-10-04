@@ -299,10 +299,10 @@ def solr_staff_suggest_queue_reload():
 
 ###############################################################################
 @dag(
-    description="DAG for loading Concentriq data into PIRO.",
-    schedule="30 12 * * *",  # 12:30AM Eastern Daily
+    description="Synchronize Concentriq PostgreSQL image availability into PIRO.",
+    schedule="30 0 * * *",  # 12:30AM Eastern Daily
     start_date=pendulum.datetime(2025, 1, 1, tz="US/Eastern"),
-    max_active_runs=5,
+    max_active_runs=1,
     catchup=False,
     tags=["Concentriq"],
     default_args={
