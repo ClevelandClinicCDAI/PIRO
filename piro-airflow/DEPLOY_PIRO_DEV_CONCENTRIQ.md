@@ -1,6 +1,6 @@
 # PIRO-DEV: Deploy the Concentriq PostgreSQL catalog integration
 
-The integration reads cases with ready whole-slide images from Concentriq's PostgreSQL database, matches them to PIRO by accession number, and updates the existing image filter and viewer links. Each refresh reconciles the full catalog, including images added to older cases and cases whose images are no longer available.
+The integration reads cases with ready whole-slide images from Concentriq's PostgreSQL database, matches them to PIRO by accession number, and updates the existing image filter and viewer links. By default, each refresh reconciles the full catalog. A configurable limit supports advancing through smaller sets of cases during testing.
 
 ## 1. Prepare the deployment
 
@@ -26,14 +26,16 @@ The integration reads cases with ready whole-slide images from Concentriq's Post
 | 1 | `piro-sql/Table/dbo.ConcentriqCase.Table.sql` | Retain the existing table and add the `CaseNumber` matching index |
 | 2 | `piro-sql/Table/dbo.ConcentriqConfig.Table.sql` | Create the configuration table only if absent |
 | 3 | `piro-sql/Airflow/PROCS/dbo.P_AIRFLOW_Concentriq_Case_Load.StoredProcedure.sql` | Update case associations, image flags, and Solr delta records |
-| 4 | `piro-sql/Airflow/PROCS/dbo.P_AIRFLOW_Concentriq_Case_Delete.StoredProcedure.sql` | Update reset behavior |
-| 5 | `piro-sql/Airflow/PROCS/dbo.P_AIRFLOW_Concentriq_Case_Sync.StoredProcedure.sql` | Add transactional catalog synchronization |
+| 4 | `piro-sql/Airflow/PROCS/dbo.P_AIRFLOW_Concentriq_Case_Delete.StoredProcedure.sql` | Reset the catalog and saved progress |
+| 5 | `piro-sql/Airflow/PROCS/dbo.P_AIRFLOW_Concentriq_Case_Sync.StoredProcedure.sql` | Synchronize full or limited runs and commit progress with catalog updates |
 | 6 | `piro-sql/SSIS/PROCS/LOADER-SOLR/dbo.P_SSIS_LoadCaseSolr.StoredProcedure.sql` | Ensure subsequent SSIS loads respect inactive catalog records |
 
 - [ ] Confirm the Airflow SQL account can execute the procedures, read the configuration, and perform the table operations required by the dynamic SQL that populates `CaseSolr_Delta`.
 - [ ] Create or update one active row in `dbo.ConcentriqConfig` with `[Key]='CaseDetails.Get.Enabled'`, `[Value]='true'`, and `IsActive=1`.
 
 No new columns are required in the existing PIRO-DEV tables. Staging uses temporary tables. No PostgreSQL schema changes are required.
+The updated Sync and Delete procedures are required for the per-run limit, even
+if an earlier version of this integration has already been deployed.
 
 ## 3. Deploy Airflow code
 
@@ -76,12 +78,23 @@ python -m pytest tests -q
 | `CONCENTRIQ_DB_PASSWORD` | Supplied PostgreSQL password |
 | `CONCENTRIQ_DB_SSLMODE` | `prefer` — the inspected server does not support SSL |
 | `CONCENTRIQ_CASE_DETAIL_PAGE_SIZE` | `1000` |
+| `CONCENTRIQ_MAX_CASES` | For example, `1000` for testing; `0` or unset for a full refresh |
 | `CONCENTRIQ_CASE_DB_RELOAD_DATA` | `0` |
 
 - [ ] Confirm the existing `PIRO_DB_*` Variables target `PIRO_DEV` and the existing Solr Variables target the DEV `PIROCase` core.
 - [ ] Verify connectivity from the Airflow execution host to both databases and Solr. Verify SELECT access to PostgreSQL `public.case_details`, `public.slides`, and `public.images`.
 
 The workstation's `docker-compose.override.yml` does not configure the Airflow server. The old Concentriq API URL, Basic Auth header, and API certificate settings are no longer used by this loader.
+
+For localhost, put `AIRFLOW_VAR_CONCENTRIQ_MAX_CASES=1000` in
+`piro-airflow/.env`, following `piro-airflow/.env_template`.
+Positive limits advance through qualifying cases in Concentriq ID order across
+successful runs, restarting from the beginning after the end of the catalog.
+`CaseDetails.Get.LastCaseId` in `dbo.ConcentriqConfig` stores progress automatically;
+do not configure it as an Airflow Variable. Failed runs retain their checkpoint.
+Limited runs preserve cases outside the retrieved slice. Use `CONCENTRIQ_MAX_CASES=0`
+for a full reconciliation that deactivates cases with no remaining ready images
+and resets progress. Page size controls batch size, not the total per-run limit.
 
 ## 5. Configure viewer links and confirm Solr
 
@@ -95,7 +108,7 @@ The running DEV server was verified as Solr **9.8.1**, with field definitions ma
 
 - [ ] Choose a window without another Solr load or SSIS delta refresh modifying the shared staging tables.
 - [ ] Manually trigger `concentriq_load` in Airflow. No date parameters or reset are needed.
-- [ ] Wait for success and review the staged/synchronized record count. The source contained **85,902 cases with ready images** when inspected; this count can change and is not the number necessarily matched to PIRO.
+- [ ] Wait for success and review the staged/synchronized record count and checkpoint. A limited run retrieves at most `CONCENTRIQ_MAX_CASES` cases. The source contained **85,902 cases with ready images** when inspected; this count can change and is not the number necessarily matched to PIRO.
 - [ ] Inspect the PIRO results:
 
 ```sql
@@ -116,10 +129,11 @@ FROM dbo.CaseSolr_Delta;
 
 - [ ] Trigger `solr_case_load` after the catalog refresh succeeds, and wait for success.
 - [ ] Verify known matched cases have `isconcentriq=true` and the correct `concentriqid` in Solr. Confirm PIRO's Yes/No filter and Concentriq links work.
-- [ ] Re-run `concentriq_load` and confirm it completes without duplicate catalog entries.
+- [ ] Re-run `concentriq_load` and confirm it completes without duplicate catalog entries. With a positive limit, verify the next run advances from the saved checkpoint.
 
 ## 7. Enable nightly operation
 
+- [ ] Set `CONCENTRIQ_MAX_CASES=0` when ready for full nightly reconciliation, or retain a positive limit while testing successive slices.
 - [ ] Unpause `concentriq_load`. Confirm **12:30 AM Eastern** (`30 0 * * *`), `max_active_runs=1`, and `catchup=False`.
 - [ ] Confirm the separate `solr_case_load` DAG remains enabled at **6:00 AM Eastern**.
 - [ ] Check these schedules against existing SSIS and Solr refresh windows to avoid simultaneous staging-table changes.

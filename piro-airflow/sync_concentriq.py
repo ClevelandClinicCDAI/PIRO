@@ -10,7 +10,11 @@ from sqlalchemy.engine import URL
 
 from tasks.loaders.concentriq_catalog import iter_catalog_batches
 from tasks.loaders.concentriq_case_loader import ConcentriqCaseLoader
-from tasks.utils.concentriq_setup import get_concentriq_db_engine, get_concentriq_case_page_size
+from tasks.utils.concentriq_setup import (
+    get_concentriq_db_engine,
+    get_concentriq_case_page_size,
+    get_concentriq_max_cases,
+)
 
 
 def main():
@@ -21,12 +25,14 @@ def main():
     args = parser.parse_args()
     environment = yaml.safe_load(args.override.read_text())["services"]["api"]["environment"]
     for key, value in environment.items():
-        if key.startswith(("POSTGRES_", "CONCENTRIQ_DB_", "CONCENTRIQ_CASE_")):
+        if key.startswith(("POSTGRES_", "CONCENTRIQ_")):
             os.environ[key] = str(value)
     if not args.apply:
         engine = get_concentriq_db_engine()
         try:
-            count = sum(len(items) for items in iter_catalog_batches(engine, get_concentriq_case_page_size()))
+            count = sum(len(items) for items in iter_catalog_batches(
+                engine, get_concentriq_case_page_size(), get_concentriq_max_cases()
+            ))
             print(f"Concentriq cases with ready images: {count}. PIRO unchanged.")
         finally:
             engine.dispose()

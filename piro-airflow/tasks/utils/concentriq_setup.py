@@ -1,11 +1,14 @@
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
 
 def _setting(name, default=None, aliases=()):
     """Support Airflow Variables and local environment settings."""
+    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
     for key in (name, *aliases):
         value = os.getenv(f"AIRFLOW_VAR_{key}") or os.getenv(key)
         if value:
@@ -59,3 +62,20 @@ def get_concentriq_case_page_size():
     if size <= 0:
         raise ValueError("CONCENTRIQ_CASE_DETAIL_PAGE_SIZE must be positive")
     return size
+
+
+def get_concentriq_max_cases(max_cases_to_process: int | None = None):
+    """Resolve an explicit limit or configuration; zero means unlimited."""
+    value = max_cases_to_process
+    if value is None:
+        value = _setting("CONCENTRIQ_MAX_CASES", "0")
+    message = "CONCENTRIQ_MAX_CASES must be a non-negative integer (0 = unlimited)"
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        raise ValueError(message)
+    try:
+        limit = int(value)
+    except ValueError as error:
+        raise ValueError(message) from error
+    if limit < 0:
+        raise ValueError(message)
+    return limit or None

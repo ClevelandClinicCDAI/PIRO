@@ -1,6 +1,6 @@
 """
 Airflow task for loading the cases from Concentriq into PIRO.
-Each successful run reconciles the complete PostgreSQL image catalog.
+Runs can reconcile the complete catalog or advance through a limited slice.
 """
 
 from airflow.sdk import task
@@ -13,7 +13,7 @@ logger = get_logger()
 
 
 @task
-def concentriq_load_task():
+def concentriq_load_task(max_cases_to_process: int | None = None):
     """Load cases from Concentriq into PIRO.
 
     Checks whether there are records to process and, if so, fetches the data
@@ -22,7 +22,7 @@ def concentriq_load_task():
     loader = ConcentriqCaseLoader()
     try:
         if loader.should_we_process_concentriq_data():
-            loader.get_concentriq_data()
+            loader.get_concentriq_data(max_cases_to_process)
         else:
             logger.info("Concentriq configuration not set up to allow loading.")
     finally:

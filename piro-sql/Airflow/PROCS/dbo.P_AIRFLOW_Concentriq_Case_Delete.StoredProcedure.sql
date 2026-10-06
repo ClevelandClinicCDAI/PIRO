@@ -12,6 +12,9 @@ BEGIN
         IF @lock_result < 0
             THROW 50004, 'Could not acquire Concentriq synchronization lock.', 1;
         TRUNCATE TABLE dbo.ConcentriqCase;
+        UPDATE dbo.ConcentriqConfig
+            SET [Value] = '0', UpdateDate = GETDATE(), UpdateBy = USER_NAME()
+        WHERE [Key] = 'CaseDetails.Get.LastCaseId';
         EXEC dbo.P_AIRFLOW_Concentriq_Case_Load;
         COMMIT TRANSACTION;
     END TRY
