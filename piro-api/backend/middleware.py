@@ -15,6 +15,14 @@ async def log_request_middleware(request: Request, call_next):
     E.g. log:
     0.0.0.0:1234 - GET /ping 200 OK 1.00ms
     """
+    # Avoid token processing and logging for external API requests.
+    path = request.scope["path"]
+    root_path = request.scope.get("root_path", "")
+    if root_path and (path == root_path or path.startswith(root_path + "/")):
+        path = path[len(root_path) :]  # noqa:E203
+    if path == "/external" or path.startswith("/external/"):
+        return await call_next(request)
+
     url = (
         f"{request.url.path}?{request.query_params}"
         if request.query_params
@@ -42,8 +50,8 @@ async def log_request_middleware(request: Request, call_next):
         except ValueError:
             status_phrase = ""
         logger.info(
-            f'{datetime.now()} {nuid} {host}:{port} - "{request.method} {url}" '
-            f"{response.status_code} {status_phrase} {formatted_process_time}ms"
+            f'{datetime.now()} {nuid} {host}:{port} - "{request.method} {url}" '  # noqa:E501
+            f"{response.status_code} {status_phrase} {formatted_process_time}ms"  # noqa:E501
         )
         if access_token != "":
             refreshToken = refresh_jwt(jwtoken=access_token, checkExpiry=False)

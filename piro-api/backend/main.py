@@ -1,4 +1,5 @@
 from apis.base import api_router
+from apis.external_api.app import mount_external_api
 from core.config import settings
 from db.base_class import Base
 from db.session import SessionLocal, engine_inst
@@ -73,6 +74,7 @@ def start_application():
     )
     add_pagination(app)
     include_router(app)
+    mount_external_api(app)
     if settings.DATABASE == "SQLITE":
         create_tables()
     return app
@@ -121,6 +123,9 @@ async def app_startup():
 
 @app.on_event("shutdown")
 async def app_shutdown():
+    external_service = app.state.external_api.state.service
+    if external_service is not None:
+        external_service.engine.dispose()
     await check_db_disconnected()
 
 
