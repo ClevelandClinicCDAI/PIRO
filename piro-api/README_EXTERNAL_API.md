@@ -12,12 +12,7 @@ hostname and TLS termination.
    the PIRO SQL Server database. It creates only five integration tables in a
    transaction and can be run again. Individual definitions are also maintained
    in `piro-sql/Table/dbo.ExternalApi*.Table.sql`. It does not change clinical
-   tables or ETL. If the initial UTC schema has already been deployed, stop all
-   API workers/admin commands, run
-   [migrate_external_api_eastern.sql](../piro-sql/migrate_external_api_eastern.sql),
-   then deploy this schema and restart with the updated application. Do not run
-   the old application against converted tables. New installations do not need
-   the migration.
+   tables or ETL.
 3. Provision an integration and issue a key using the commands below.
 4. Set `EXTERNAL_API_ENABLED=true` in the API environment and restart all API
    workers. For Compose, the root `.env` variables are forwarded to the API.
@@ -136,7 +131,7 @@ SQL decimal(38,5) precision; parse it with Python's `decimal.Decimal` if needed.
 Each distinct submitted case number has a summary:
 
 | Status | Meaning |
-|---|---|
+| --- | --- |
 | matched | One or more matching linked orders were returned. |
 | no_matching_orders | PIRO has the case number, but no orders match the filter (or no linked orders exist). |
 | case_not_found | PIRO has no case matching that submitted number. |
@@ -157,7 +152,7 @@ and was not changed.
 ## Limits and errors
 
 | Environment variable | Default |
-|---|---:|
+| --- | ---: |
 | EXTERNAL_API_ENABLED | false |
 | EXTERNAL_API_MAX_CASES | 100 |
 | EXTERNAL_API_MAX_RECORDS | 5000 |
@@ -201,7 +196,7 @@ Errors use a stable envelope:
 ```
 
 | HTTP | Codes / handling |
-|---|---|
+| --- | --- |
 | 401 | invalid_api_key; provision/update the credential. |
 | 403 | integration_disabled, insufficient_scope; contact the administrator. |
 | 404 | external_api_disabled, or unavailable route. |
@@ -345,4 +340,3 @@ at `/external/v1/docs` (prepend the proxy prefix when appropriate). These
 metadata routes are available without a key while the feature is enabled.
 They are not merged into the UI OpenAPI document. Breaking contract changes
 require a new external version; v1 remains stable.
-
