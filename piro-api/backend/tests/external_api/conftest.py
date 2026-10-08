@@ -54,8 +54,8 @@ def postgres_engine() -> Iterator[Engine]:
                 pass
         except SQLAlchemyError:
             pytest.fail(
-                "Cannot connect to localhost PostgreSQL. Set PIRO_EXTERNAL_TEST_POSTGRES_URL "
-                "or POSTGRES_* test settings; the role needs CREATE SCHEMA permission.",
+                "Cannot connect to localhost PostgreSQL. Set PIRO_EXTERNAL_TEST_POSTGRES_URL "  # noqa:E501
+                "or POSTGRES_* test settings; the role needs CREATE SCHEMA permission.",  # noqa:E501
                 pytrace=False,
             )
         yield engine
@@ -76,7 +76,7 @@ def api(postgres_engine: Engine) -> Iterator[ApiFixture]:
         integration_metadata.create_all(engine)
         source_metadata.create_all(engine)
         config: ExternalAPISettings = ExternalAPISettings(
-            enabled=True, _env_file=None
+            enabled=True, _env_file=None  # type: ignore[attr-defined]
         )
         client_id: str = create_client(engine, "Airflow test", "pytest")
         credential: dict[str, str] = issue_key(engine, client_id, "pytest")

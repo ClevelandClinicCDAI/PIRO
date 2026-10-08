@@ -1,4 +1,6 @@
-"""Shared engine construction for PIRO's UI and integration connection pools."""
+"""
+Shared engine construction for PIRO's UI and integration connection pools.
+"""
 
 from typing import Any
 
@@ -35,7 +37,7 @@ def create_database_engine(
             # A startup option survives transaction rollbacks and applies to
             # every connection in this pool without affecting other pools.
             options["connect_args"] = {
-                "options": f"-c statement_timeout={query_timeout_seconds * 1000}"
+                "options": f"-c statement_timeout={query_timeout_seconds * 1000}"  # noqa:E501
             }
         elif url.get_driver_name() != "pyodbc":
             raise ValueError("Bounded SQL Server queries require pyodbc.")

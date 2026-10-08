@@ -8,7 +8,8 @@ class ExternalAPIError(Exception):
         message: str,
         retry_after: int | None = None,
     ) -> None:
-        """Describe a public failure without exposing internal exception details."""
+        """Describe a public failure without exposing internal exception
+        details."""
         self.status: int = status
         self.code: str = code
         self.message: str = message
