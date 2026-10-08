@@ -1,3 +1,7 @@
 .env.local
 __pycache__/
 *.sqlite3
+
+# Local case-derived roster contains real staff names; regenerate from PIRO.
+roster.local.json
+roster.local.tmp

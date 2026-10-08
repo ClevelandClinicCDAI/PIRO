@@ -23,7 +23,7 @@ class PresenceTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def event(self, **kwargs):
-        return dict(event_id=str(uuid4()), physician_id='synthetic-001', username=module.PHYSICIANS[0]['username'],
+        return dict(event_id=str(uuid4()), physician_id=module.PHYSICIANS[0]['physician_id'], username=module.PHYSICIANS[0]['username'],
                     device_id='DEMO-MAIN-01', occurred_at='2026-09-29T16:00:00Z', synthetic=True,
                     session_type='console', network_context='onsite', **kwargs)
 

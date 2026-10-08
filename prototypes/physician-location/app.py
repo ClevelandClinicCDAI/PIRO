@@ -1,4 +1,4 @@
-"""Isolated, synthetic-only presence API. Never imports PIRO's shared DB session."""
+"""Isolated simulated-presence API. Never imports PIRO's shared DB session."""
 import hmac
 import json
 import os
@@ -29,10 +29,15 @@ PHYSICIANS = [{"physician_id": f"synthetic-{i+1:03}", "name": name + ", MD",
                "username": "DEMO\\" + name.lower().replace(" ", "."),
                "subspecialty": SPECIALTIES[i % len(SPECIALTIES)],
                "region": REGIONS[i % len(REGIONS)]} for i, name in enumerate(NAMES)]
+ROSTER_METADATA = {"source": "Fictional demo roster", "real_names": False}
+roster_path = Path(os.environ.get("PRESENCE_ROSTER_PATH", str(Path(__file__).with_name("roster.local.json"))))
+if roster_path.exists():
+    snapshot = json.loads(roster_path.read_text())
+    PHYSICIANS = snapshot["physicians"]
+    ROSTER_METADATA = {key: value for key, value in snapshot.items() if key != "physicians"}
 ROSTER = {p["physician_id"]: p for p in PHYSICIANS}
-DEVICES = {"DEMO-AKRON-01": "Akron", "DEMO-MAIN-01": "NE Ohio",
-           "DEMO-WESTON-01": "Weston", "DEMO-MERCY-01": "Mercy",
-           "DEMO-IR-01": "Indian River"}
+# Distinct Building values from computer_list.xlsx, Onsite!E2:E151.
+DEVICES = json.loads(Path(__file__).with_name("buildings.json").read_text())
 
 
 @contextmanager
@@ -106,7 +111,7 @@ def classify(event):
 def ingest(event: LoginEvent):
     person = ROSTER.get(event.physician_id)
     if not person or person["username"] != event.username:
-        raise HTTPException(422, "Use an identity from the synthetic roster")
+        raise HTTPException(422, "Use a demo identity from the prototype roster")
     payload = json.loads(event.json())
     canonical = json.dumps(payload, sort_keys=True)
     with connect() as conn:
@@ -143,4 +148,5 @@ def physicians(day: date | None = None):
         last = events[0] if events else None
         result.append({**person, "events": events, "status": last["status"] if last else "No Activity Today",
                        "site": last["site"] if last else "—", "last_observed": last["occurred_at"] if last else None})
-    return {"synthetic": True, "day": str(selected), "timezone": "America/New_York", "physicians": result}
+    return {"synthetic": True, "simulated_locations": True, "roster": ROSTER_METADATA,
+            "day": str(selected), "timezone": "America/New_York", "physicians": result}

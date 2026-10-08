@@ -4,9 +4,11 @@ services:
     platform: linux/amd64
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002"]
     working_dir: /prototype
+    restart: unless-stopped
+    env_file:
+      - ./prototypes/physician-location/.env.local
     environment:
       PRESENCE_PROTOTYPE_ENABLED: "true"
-      PRESENCE_INGEST_TOKEN: ${PRESENCE_INGEST_TOKEN:?Set the local prototype token}
       PRESENCE_DB_PATH: /data/presence.sqlite3
     volumes:
       - ./prototypes/physician-location:/prototype:ro
@@ -14,6 +16,7 @@ services:
     ports:
       - "127.0.0.1:8002:8002"
   ui:
+    restart: unless-stopped
     entrypoint: ["nginx", "-g", "daemon off;"]
     volumes:
       - ./piro-ui/dist/piro:/usr/share/nginx/html:ro

@@ -1,5 +1,6 @@
 <div class="location-page">
-  <div class="prototype-note"><span class="demo-label">SYNTHETIC PROTOTYPE</span> Physician work location <span class="note-end">Latest login evidence · America/New_York</span></div>
+  <div class="prototype-note"><span class="demo-label">SIMULATED LOCATIONS</span> Physician work location <span class="note-end">Simulated login evidence · America/New_York</span></div>
+  <p *ngIf="roster.real_names" class="roster-note">Showing {{physicians.length}} of {{roster.candidate_staff_count}} pathologists with an explicit staff-pathologist role in a sample of {{roster.sample_cases | number}} completed PIRO cases, accessioned {{roster.earliest_accession | slice:0:10}} through {{roster.latest_accession | slice:0:10}}. Profiles are selected by case count. Subspecialties are inferred from case mix, not verified staff assignments. All work locations and login events are simulated.</p>
   <div class="toolbar">
     <label class="search-box"><span>Physician Name</span><input aria-label="Search physicians" placeholder="Search physicians by name, subspecialty, or region" [(ngModel)]="query" (ngModelChange)="page=1"><i class="bi bi-search"></i></label>
     <button (click)="clear()">Clear Filter <i class="bi bi-x-circle"></i></button>
@@ -9,27 +10,33 @@
   <p *ngIf="notice" class="notice" role="status">{{notice}}</p>
   <div class="layout">
     <aside>
-      <section><h2>Anatomic Pathology Subspecialty <i class="bi bi-chevron-up"></i></h2><div class="options">
+      <section><h2>{{roster.real_names ? 'Case-derived Subspecialty' : 'Anatomic Pathology Subspecialty'}} <i class="bi bi-chevron-up"></i></h2><div class="options">
         <label *ngFor="let item of specialtyOptions"><input type="checkbox" [checked]="specialties.has(item)" (change)="toggle(specialties,item)"><span>{{item}}</span><b>{{count('subspecialty',item)}}</b></label>
       </div></section>
-      <section><h2>Region <i class="bi bi-chevron-up"></i></h2><div class="options">
+      <section><h2>{{roster.real_names ? 'Case Region' : 'Region'}} <i class="bi bi-chevron-up"></i></h2><div class="options">
         <label *ngFor="let item of regionOptions"><input type="checkbox" [checked]="regions.has(item)" (change)="toggle(regions,item)"><span>{{item}}</span><b>{{count('region',item)}}</b></label>
       </div></section>
       <section><h2>Location</h2><div class="options"><label *ngFor="let item of ['', 'In Office','Remote','No Activity Today','Unknown']"><input type="radio" name="status" [value]="item" [(ngModel)]="status" (ngModelChange)="page=1"><span>{{item || 'All locations'}}</span></label></div></section>
-      <p class="facet-note">Counts show the synthetic roster. Region is organizational affiliation; observed site may differ.</p>
+      <p class="facet-note">{{roster.real_names ? 'Counts show the prototype roster. Case region is the most frequent hospital region in recent cases; it does not establish staff affiliation or work location.' : 'Counts show the synthetic roster. Region is organizational affiliation; observed site may differ.'}}</p>
     </aside>
     <main>
       <div class="title-row"><div><h1>Physician Location</h1><p>Showing {{first}} – {{last}} of {{filtered.length}} physicians</p></div><button (click)="refresh()" [disabled]="loading"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
       <div *ngIf="error" class="error" role="alert">{{error}}</div>
       <div class="table-scroll"><table>
-        <thead><tr><th><button (click)="sort('name')">Physician Name ↕</button></th><th><button (click)="sort('subspecialty')">Subspecialty ↕</button></th><th><button (click)="sort('region')">Region ↕</button></th><th><button (click)="sort('status')">Location ↕</button></th><th>Observed Site</th><th><button (click)="sort('last_observed')">Last Observed ↕</button></th></tr></thead>
+        <thead><tr><th><button (click)="sort('name')">Physician Name ↕</button></th><th><button (click)="sort('subspecialty')">{{roster.real_names ? 'Case-derived Subspecialty' : 'Subspecialty'}} ↕</button></th><th><button (click)="sort('region')">{{roster.real_names ? 'Case Region' : 'Region'}} ↕</button></th><th><button (click)="sort('status')">Simulated Location ↕</button></th><th>Simulated Site</th><th><button (click)="sort('last_observed')">Last Simulated Login ↕</button></th></tr></thead>
         <tbody><ng-container *ngFor="let person of visible">
           <tr><td><button class="person" (click)="expanded=expanded===person.physician_id?'':person.physician_id" [attr.aria-expanded]="expanded===person.physician_id"><i class="bi" [class.bi-chevron-right]="expanded!==person.physician_id" [class.bi-chevron-down]="expanded===person.physician_id"></i>{{person.name}}</button></td><td>{{person.subspecialty}}</td><td>{{person.region}}</td><td><span class="status" [ngClass]="badge(person.status)">{{person.status}}</span></td><td>{{person.site}}</td><td class="time">{{time(person.last_observed)}}</td></tr>
-          <tr *ngIf="expanded===person.physician_id" class="detail"><td colspan="6"><h3>Login timeline <span>{{person.events.length}} events · {{person.username}}</span></h3><p *ngIf="!person.events.length">No login events received for this date.</p><ol><li *ngFor="let event of person.events"><strong>{{time(event.occurred_at)}}</strong><span>{{event.device_id}}</span><span>{{event.session_type}} session</span><span>{{event.site}}</span><span class="status" [ngClass]="badge(event.status)">{{event.status}}</span></li></ol></td></tr>
+          <tr *ngIf="expanded===person.physician_id" class="detail"><td colspan="6">
+            <ng-container *ngIf="person.subspecialty_source">
+              <h3>Recent case mix</h3><p>{{person.recent_case_count | number}} linked cases; {{person.classified_case_count | number}} have a mapped clinical specialty. The leading specialty is shown above.</p>
+              <p>Staff-pathologist responsibility is recorded on {{person.role_evidence_cases}} sampled cases in the current import.</p>
+              <ol><li *ngFor="let item of person.case_mix"><span>{{item.subspecialty}}</span><strong>{{item.cases | number}} cases</strong></li></ol>
+            </ng-container>
+            <h3>Simulated login timeline <span>{{person.events.length}} events · {{person.username}}</span></h3><p *ngIf="!person.events.length">No simulated login events received for this date.</p><ol><li *ngFor="let event of person.events"><strong>{{time(event.occurred_at)}}</strong><span>{{event.device_id}}</span><span>{{event.session_type}} session</span><span>{{event.site}}</span><span class="status" [ngClass]="badge(event.status)">{{event.status}}</span></li></ol></td></tr>
         </ng-container><tr *ngIf="!visible.length"><td colspan="6" class="empty">{{loading ? 'Loading physician roster…' : 'No physicians match these filters.'}}</td></tr></tbody>
       </table></div>
       <div class="bottom-row"><span class="refresh-note" role="status">{{loading ? 'Refreshing…' : 'Auto-refresh every 5 seconds'}}<span *ngIf="updated"> · Updated {{updated}}</span></span><label>Rows per page: <select aria-label="Rows per page" [(ngModel)]="pageSize" (ngModelChange)="page=1"><option [ngValue]="10">10</option><option [ngValue]="25">25</option></select></label><span>{{first}} – {{last}} of {{filtered.length}}</span><button aria-label="Previous page" [disabled]="currentPage<=1" (click)="page=currentPage-1">‹</button><button aria-label="Next page" [disabled]="currentPage>=pages" (click)="page=currentPage+1">›</button></div>
-      <p class="footnote">Location reflects the latest received login evidence for the selected day, ordered by event time. No Activity Today means no event received, not an absence from work. All names and signals are synthetic.</p>
+      <p class="footnote">Location reflects the latest simulated login for the selected day, ordered by event time. No Activity Today means no event received, not an absence from work. {{roster.real_names ? 'Names and case-mix summaries come from PIRO. The case sample stays fixed when the observation date changes. All locations and login signals are simulated.' : 'All names and signals are synthetic.'}}</p>
     </main>
   </div>
 </div>

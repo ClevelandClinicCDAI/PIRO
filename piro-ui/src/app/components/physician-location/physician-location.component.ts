@@ -7,6 +7,12 @@ import { firstValueFrom } from 'rxjs';
 interface Physician {
   physician_id: string; name: string; username: string; subspecialty: string; region: string;
   status: string; site: string; last_observed: string | null; events: any[];
+  subspecialty_source?: string; recent_case_count?: number; classified_case_count?: number;
+  role_evidence_cases?: number;
+  case_mix?: {subspecialty: string; cases: number}[];
+}
+interface RosterMetadata {
+  real_names: boolean; sample_cases?: number; earliest_accession?: string; latest_accession?: string; candidate_staff_count?: number;
 }
 @Component({
   standalone: true, selector: 'app-physician-location', imports: [CommonModule, FormsModule],
@@ -14,6 +20,7 @@ interface Physician {
 })
 export class PhysicianLocationComponent implements OnInit, OnDestroy {
   physicians: Physician[] = []; query = ''; specialties = new Set<string>(); regions = new Set<string>();
+  roster: RosterMetadata = {real_names: false};
   status = ''; day = new Intl.DateTimeFormat('en-CA', {timeZone:'America/New_York'}).format(new Date());
   page = 1; pageSize = 25; sortKey: keyof Physician = 'name'; ascending = true;
   expanded = ''; error = ''; loading = false; updated = ''; notice = ''; timer?: ReturnType<typeof setInterval>;
@@ -27,7 +34,7 @@ export class PhysicianLocationComponent implements OnInit, OnDestroy {
     const requestedDay = this.day;
     try {
       const data: any = await firstValueFrom(this.http.get('/api/work-location/physicians', {params:{day:requestedDay}}));
-      if (requestedDay === this.day) { this.physicians = data.physicians; this.error = ''; this.updated = new Date().toLocaleTimeString(); }
+      if (requestedDay === this.day) { this.physicians = data.physicians; this.roster = data.roster || {real_names: false}; this.error = ''; this.updated = new Date().toLocaleTimeString(); }
     } catch { this.error = 'Location service unavailable. Displayed observations may be out of date. Start the local prototype services and retry.'; }
     finally { this.loading = false; }
   }
