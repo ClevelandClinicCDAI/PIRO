@@ -7,7 +7,14 @@ import pytest
 from apis.external_api.admin import issue_key, revoke_key, set_client_active
 from apis.external_api.app import create_external_app, mount_external_api
 from apis.external_api.config import ExternalAPISettings
-from apis.external_api.models import audits, cases, keys, leases, orders, usage
+from apis.external_api.models import (
+    Case,
+    ExternalApiAudit,
+    ExternalApiKey,
+    ExternalApiLease,
+    ExternalApiUsage,
+    LinkedOrder,
+)
 from apis.external_api.service import ExternalService
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
@@ -23,7 +30,7 @@ def seed(api: ApiFixture) -> None:
     """Populate duplicate cases and representative linked-order fixtures."""
     with api["engine"].begin() as connection:
         connection.execute(
-            insert(cases),
+            insert(Case),
             [
                 {"CaseId": 1, "CaseNumber": "S26-1"},
                 {"CaseId": 2, "CaseNumber": "S26-1"},
@@ -52,7 +59,7 @@ def seed(api: ApiFixture) -> None:
                     "OrdNumValue": Decimal("12.34000"),
                 }
             )
-        connection.execute(insert(orders), values)
+        connection.execute(insert(LinkedOrder), values)
 
 
 def search(
@@ -112,7 +119,9 @@ def test_complete_batch_joins_all_cases_and_filters_each_description(
     with api["engine"].connect() as connection:
         audit = (
             connection.execute(
-                select(audits).where(audits.c.RequestId == body["request_id"])
+                select(ExternalApiAudit).where(
+                    ExternalApiAudit.RequestId == body["request_id"]
+                )
             )
             .mappings()
             .one()
@@ -125,8 +134,8 @@ def test_complete_batch_joins_all_cases_and_filters_each_description(
             "MISSING",
         ]
         assert json.loads(audit.CaseResultsJson) == body["cases"]
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 3
-        assert connection.scalar(select(leases.c.RequestId)) is None
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 3
+        assert connection.scalar(select(ExternalApiLease.RequestId)) is None
 
 
 def test_omitted_filter_and_duplicate_records_are_preserved(
@@ -137,14 +146,14 @@ def test_omitted_filter_and_duplicate_records_are_preserved(
     with api["engine"].begin() as connection:
         source = dict(
             connection.execute(
-                select(orders).where(orders.c.LinkedOrderId == 1)
+                select(LinkedOrder).where(LinkedOrder.LinkedOrderId == 1)
             )
             .mappings()
             .one()
         )
         source["LinkedOrderId"] = 7
-        connection.execute(insert(orders).values(**source))
-        connection.execute(update(orders).values(OrdNumValue=None))
+        connection.execute(insert(LinkedOrder).values(**source))
+        connection.execute(update(LinkedOrder).values(OrdNumValue=None))
     response = search(api)
     assert response.status_code == 200
     assert response.json()["record_count"] == 5
@@ -157,9 +166,9 @@ def test_literal_search_does_not_expand_wildcards_or_sql(
 ) -> None:
     """Verify literal search does not expand wildcards or sql."""
     with api["engine"].begin() as connection:
-        connection.execute(insert(cases).values(CaseId=1, CaseNumber="S26-1"))
+        connection.execute(insert(Case).values(CaseId=1, CaseNumber="S26-1"))
         connection.execute(
-            insert(orders),
+            insert(LinkedOrder),
             [
                 {
                     "LinkedOrderId": 1,
@@ -214,8 +223,8 @@ def test_invalid_input_does_not_return_data_and_releases_lease(
     assert response.status_code == 422
     assert "data" not in response.json()
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(leases.c.RequestId)) is None
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 0
+        assert connection.scalar(select(ExternalApiLease.RequestId)) is None
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 0
 
 
 def test_request_body_limit_including_streamed_body(api: ApiFixture) -> None:
@@ -244,8 +253,8 @@ def test_batch_and_record_limits_never_return_partial_results(
     assert response.json()["error"]["code"] == "result_limit_exceeded"
     assert "data" not in response.json()
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 0
-        assert connection.scalar(select(leases.c.RequestId)) is None
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 0
+        assert connection.scalar(select(ExternalApiLease.RequestId)) is None
 
 
 def test_quota_counts_successful_retries_and_rejects_whole_batch(
@@ -261,7 +270,7 @@ def test_quota_counts_successful_retries_and_rejects_whole_batch(
     assert int(response.headers["retry-after"]) > 0
     assert "data" not in response.json()
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 4
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 4
 
 
 def test_rate_limit(api: ApiFixture) -> None:
@@ -291,8 +300,8 @@ def test_invalid_keys_and_ui_tokens_are_rejected_and_audited(
     with api["engine"].connect() as connection:
         audit = (
             connection.execute(
-                select(audits).where(
-                    audits.c.RequestId == response.json()["request_id"]
+                select(ExternalApiAudit).where(
+                    ExternalApiAudit.RequestId == response.json()["request_id"]
                 )
             )
             .mappings()
@@ -306,7 +315,7 @@ def test_key_hash_rotation_revocation_and_disable(api: ApiFixture) -> None:
     """Verify key hash rotation revocation and disable."""
     credential: dict[str, str] = api["credential"]
     with api["engine"].connect() as connection:
-        row = connection.execute(select(keys)).mappings().one()
+        row = connection.execute(select(ExternalApiKey)).mappings().one()
         assert row.SecretHash != credential["api_key"]
         assert len(row.SecretHash) == 64
         assert credential["api_key"] not in str(row)
@@ -324,7 +333,9 @@ def test_expired_key(api: ApiFixture) -> None:
     """Verify expired key."""
 
     with api["engine"].begin() as connection:
-        connection.execute(update(keys).values(ExpiresAt=datetime(2000, 1, 1)))
+        connection.execute(
+            update(ExternalApiKey).values(ExpiresAt=datetime(2000, 1, 1))
+        )
     assert search(api).status_code == 401
 
 
@@ -368,13 +379,13 @@ def test_success_is_withheld_if_audit_insert_fails(
     assert response.status_code == 503
     assert "data" not in response.json()
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 0
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 0
 
 
 def test_openapi_is_separate_and_disabled_mode_has_no_db_dependency() -> None:
     """Verify openapi is separate and disabled mode has no db dependency."""
     app = create_external_app(
-        ExternalAPISettings(enabled=False, _env_file=None)
+        ExternalAPISettings(enabled=False, _env_file=None)  # type: ignore
     )
     with TestClient(app) as client:
         assert client.get("/docs").status_code == 404

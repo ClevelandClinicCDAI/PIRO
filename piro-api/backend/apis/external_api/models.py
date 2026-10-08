@@ -1,14 +1,15 @@
-"""Separate integration metadata and read projections of existing PIRO tables.
+"""ORM models for use with the external API.
 
-Only integration_metadata is deployed. Never create source_metadata in
-production. Timestamps are naive America/New_York values. Security deadlines
-and rate windows retain their UTC offsets to distinguish the repeated DST hour.
+We make a distinction between models used directly with the external API
+(integration models) and read-only source models.
 """
+
+from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Column,
     Date,
     DateTime,
     ForeignKey,
@@ -17,107 +18,140 @@ from sqlalchemy import (
     MetaData,
     Numeric,
     String,
-    Table,
     Unicode,
     UnicodeText,
-    column,
 )
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-integration_metadata: MetaData = MetaData()
-clients: Table = Table(
-    "ExternalApiClient",
-    integration_metadata,
-    Column("ClientId", String(32), primary_key=True),
-    Column("Name", Unicode(100), nullable=False, unique=True),
-    Column("IsActive", Boolean, nullable=False),
-    Column("Scope", String(100), nullable=False),
-    Column("CreatedAt", DateTime, nullable=False),
-    Column("CreatedBy", Unicode(100), nullable=False),
-)
-keys: Table = Table(
-    "ExternalApiKey",
-    integration_metadata,
-    Column("KeyId", String(32), primary_key=True),
-    Column(
-        "ClientId", String(32), ForeignKey(clients.c.ClientId), nullable=False
-    ),
-    Column("SecretHash", String(64), nullable=False),
-    Column("CreatedAt", DateTime, nullable=False),
-    Column("ExpiresAt", DateTime, nullable=False),
-    Column("ExpiresAtOffsetMinutes", Integer, nullable=False),
-    CheckConstraint(column("ExpiresAtOffsetMinutes").in_((-300, -240))),
-    Column("RevokedAt", DateTime),
-    Column("CreatedBy", Unicode(100), nullable=False),
-    Index("IX_ExternalApiKey_ClientId", "ClientId"),
-)
-usage: Table = Table(
-    "ExternalApiUsage",
-    integration_metadata,
-    Column(
-        "ClientId",
-        String(32),
-        ForeignKey(clients.c.ClientId),
-        primary_key=True,
-    ),
-    Column("QuotaDay", Date, nullable=False),
-    Column("ReturnedRecords", Integer, nullable=False),
-    Column("Minute", DateTime, nullable=False),
-    Column("MinuteOffsetMinutes", Integer, nullable=False),
-    CheckConstraint(column("MinuteOffsetMinutes").in_((-300, -240))),
-    Column("RequestCount", Integer, nullable=False),
-    CheckConstraint(column("ReturnedRecords") >= 0),
-    CheckConstraint(column("RequestCount") >= 0),
-)
-leases: Table = Table(
-    "ExternalApiLease",
-    integration_metadata,
-    Column("RequestId", String(32), primary_key=True),
-    Column(
-        "ClientId", String(32), ForeignKey(clients.c.ClientId), nullable=False
-    ),
-    Column("ExpiresAt", DateTime, nullable=False),
-    Column("ExpiresAtOffsetMinutes", Integer, nullable=False),
-    CheckConstraint(column("ExpiresAtOffsetMinutes").in_((-300, -240))),
-    Index("IX_ExternalApiLease_ClientExpiry", "ClientId", "ExpiresAt"),
-)
-audits: Table = Table(
-    "ExternalApiAudit",
-    integration_metadata,
-    Column("RequestId", String(32), primary_key=True),
-    Column("ClientId", String(32)),
-    Column("KeyId", String(32)),
-    Column("Event", String(32), nullable=False),
-    Column("Method", String(10)),
-    Column("Route", String(200)),
-    Column("OccurredAt", DateTime, nullable=False),
-    Column("Actor", Unicode(100)),
-    Column("SourceAddress", String(100)),
-    Column("CaseNumbersJson", UnicodeText),
-    Column("TestType", Unicode(200)),
-    Column("CaseResultsJson", UnicodeText),
-    Column("RecordCount", Integer, nullable=False),
-    Column("StatusCode", Integer, nullable=False),
-    Column("ErrorCode", String(64)),
-    Column("ElapsedMs", Integer, nullable=False),
-    Index("IX_ExternalApiAudit_ClientTime", "ClientId", "OccurredAt"),
-)
 
-source_metadata: MetaData = MetaData()
-cases: Table = Table(
-    "Case",
-    source_metadata,
-    Column("CaseId", Integer, primary_key=True),
-    Column("CaseNumber", String(100), nullable=False),
-)
-orders: Table = Table(
-    "LinkedOrder",
-    source_metadata,
-    Column("LinkedOrderId", Integer),
-    Column("CaseId", Integer),
-    Column("ComponentName", String(1000)),
-    Column("ComponentExternalName", String(1000)),
-    Column("ProcedureDesc", String(1000)),
-    Column("DefaultUnit", String(1000)),
-    Column("OrdValue", String(1000)),
-    Column("OrdNumValue", Numeric(38, 5)),
-)
+class IntegrationBase(DeclarativeBase):
+    pass
+
+
+class SourceBase(DeclarativeBase):
+    pass
+
+
+integration_metadata: MetaData = IntegrationBase.metadata
+source_metadata: MetaData = SourceBase.metadata
+
+
+class ExternalApiClient(IntegrationBase):
+    __tablename__ = "ExternalApiClient"
+
+    ClientId: Mapped[str] = mapped_column(String(32), primary_key=True)
+    Name: Mapped[str] = mapped_column(
+        Unicode(100), nullable=False, unique=True
+    )
+    IsActive: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    Scope: Mapped[str] = mapped_column(String(100), nullable=False)
+    CreatedAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    CreatedBy: Mapped[str] = mapped_column(Unicode(100), nullable=False)
+
+
+class ExternalApiKey(IntegrationBase):
+    __tablename__ = "ExternalApiKey"
+
+    KeyId: Mapped[str] = mapped_column(String(32), primary_key=True)
+    ClientId: Mapped[str] = mapped_column(
+        String(32), ForeignKey("ExternalApiClient.ClientId"), nullable=False
+    )
+    SecretHash: Mapped[str] = mapped_column(String(64), nullable=False)
+    CreatedAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ExpiresAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ExpiresAtOffsetMinutes: Mapped[int] = mapped_column(
+        Integer, nullable=False
+    )
+    RevokedAt: Mapped[datetime | None] = mapped_column(DateTime)
+    CreatedBy: Mapped[str] = mapped_column(Unicode(100), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(ExpiresAtOffsetMinutes.in_((-300, -240))),
+        Index("IX_ExternalApiKey_ClientId", "ClientId"),
+    )
+
+
+class ExternalApiUsage(IntegrationBase):
+    __tablename__ = "ExternalApiUsage"
+
+    ClientId: Mapped[str] = mapped_column(
+        String(32), ForeignKey("ExternalApiClient.ClientId"), primary_key=True
+    )
+    QuotaDay: Mapped[date] = mapped_column(Date, nullable=False)
+    ReturnedRecords: Mapped[int] = mapped_column(Integer, nullable=False)
+    Minute: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    MinuteOffsetMinutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    RequestCount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(MinuteOffsetMinutes.in_((-300, -240))),
+        CheckConstraint(ReturnedRecords >= 0),
+        CheckConstraint(RequestCount >= 0),
+    )
+
+
+class ExternalApiLease(IntegrationBase):
+    __tablename__ = "ExternalApiLease"
+
+    RequestId: Mapped[str] = mapped_column(String(32), primary_key=True)
+    ClientId: Mapped[str] = mapped_column(
+        String(32), ForeignKey("ExternalApiClient.ClientId"), nullable=False
+    )
+    ExpiresAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    ExpiresAtOffsetMinutes: Mapped[int] = mapped_column(
+        Integer, nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(ExpiresAtOffsetMinutes.in_((-300, -240))),
+        Index("IX_ExternalApiLease_ClientExpiry", "ClientId", "ExpiresAt"),
+    )
+
+
+class ExternalApiAudit(IntegrationBase):
+    __tablename__ = "ExternalApiAudit"
+
+    RequestId: Mapped[str] = mapped_column(String(32), primary_key=True)
+    ClientId: Mapped[str | None] = mapped_column(String(32))
+    KeyId: Mapped[str | None] = mapped_column(String(32))
+    Event: Mapped[str] = mapped_column(String(32), nullable=False)
+    Method: Mapped[str | None] = mapped_column(String(10))
+    Route: Mapped[str | None] = mapped_column(String(200))
+    OccurredAt: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    Actor: Mapped[str | None] = mapped_column(Unicode(100))
+    SourceAddress: Mapped[str | None] = mapped_column(String(100))
+    CaseNumbersJson: Mapped[str | None] = mapped_column(UnicodeText)
+    TestType: Mapped[str | None] = mapped_column(Unicode(200))
+    CaseResultsJson: Mapped[str | None] = mapped_column(UnicodeText)
+    RecordCount: Mapped[int] = mapped_column(Integer, nullable=False)
+    StatusCode: Mapped[int] = mapped_column(Integer, nullable=False)
+    ErrorCode: Mapped[str | None] = mapped_column(String(64))
+    ElapsedMs: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        Index("IX_ExternalApiAudit_ClientTime", "ClientId", "OccurredAt"),
+    )
+
+
+class Case(SourceBase):
+    __tablename__ = "Case"
+
+    CaseId: Mapped[int] = mapped_column(Integer, primary_key=True)
+    CaseNumber: Mapped[str] = mapped_column(String(100), nullable=False)
+
+
+class LinkedOrder(SourceBase):
+    """Read projection with mapper identity, without adding a database key."""
+
+    __tablename__ = "LinkedOrder"
+
+    LinkedOrderId: Mapped[int] = mapped_column(Integer, nullable=True)
+    CaseId: Mapped[int | None] = mapped_column(Integer)
+    ComponentName: Mapped[str | None] = mapped_column(String(1000))
+    ComponentExternalName: Mapped[str | None] = mapped_column(String(1000))
+    ProcedureDesc: Mapped[str | None] = mapped_column(String(1000))
+    DefaultUnit: Mapped[str | None] = mapped_column(String(1000))
+    OrdValue: Mapped[str | None] = mapped_column(String(1000))
+    OrdNumValue: Mapped[Decimal | None] = mapped_column(Numeric(38, 5))
+
+    __mapper_args__ = {"primary_key": [LinkedOrderId]}

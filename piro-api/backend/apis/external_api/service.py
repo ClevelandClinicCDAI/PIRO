@@ -23,7 +23,15 @@ from sqlalchemy.sql.selectable import Subquery
 from .config import ExternalAPISettings
 from .context import RequestContext
 from .errors import ExternalAPIError
-from .models import audits, cases, clients, keys, leases, orders, usage
+from .models import (
+    Case,
+    ExternalApiAudit,
+    ExternalApiClient,
+    ExternalApiKey,
+    ExternalApiLease,
+    ExternalApiUsage,
+    LinkedOrder,
+)
 from .security import SCOPE, Principal, authenticate
 from .timeutil import (
     database_now,
@@ -36,7 +44,7 @@ from .timeutil import (
 from .v1.schemas import (
     CaseResult,
     CaseStatus,
-    LinkedOrder,
+    LinkedOrder as LinkedOrderRecord,
     SearchRequest,
     SearchResponse,
 )
@@ -47,9 +55,9 @@ def lock_client(connection: Connection, client_id: str) -> None:
     # The UPDATE holds a row lock on SQL Server/PostgreSQL and serializes
     # writers on SQLite, including other workers and rotated keys.
     result = connection.execute(
-        update(clients)
-        .where(clients.c.ClientId == client_id)
-        .values(IsActive=clients.c.IsActive)
+        update(ExternalApiClient)
+        .where(ExternalApiClient.ClientId == client_id)
+        .values(IsActive=ExternalApiClient.IsActive)
     )
     if result.rowcount != 1:
         raise ExternalAPIError(
@@ -64,10 +72,12 @@ def insert_request_audit(
     code: str | None = None,
     response: SearchResponse | None = None,
 ) -> None:
-    """Write request metadata without credentials or clinical result values."""
+    """Write request metadata.
+
+    Metadata is recorded without credentials or clinical result values."""
     principal: Principal | None = context.get("principal")
     connection.execute(
-        insert(audits).values(
+        insert(ExternalApiAudit).values(
             RequestId=context["request_id"],
             ClientId=principal.client_id if principal else None,
             KeyId=principal.key_id if principal else context.get("key_id"),
@@ -92,7 +102,7 @@ def insert_request_audit(
 
 
 def escape_like(value: str) -> str:
-    """Escape literal substrings for LIKE on supported database dialects."""
+    """Escape literal substrings for use in SQL `LIKE` queries."""
     # Backslash is our explicit ESCAPE character; '[' is also special on MSSQL.
     for char in ("\\", "%", "_", "["):
         value = value.replace(char, "\\" + char)
@@ -100,7 +110,12 @@ def escape_like(value: str) -> str:
 
 
 class ExternalService:
-    """Coordinate linked-order reads, application access, limits, and audits."""
+    """
+    Service class for handling external API requests, authentication, and
+    auditing.
+
+    Coordinates reads, application access, limits, and audits.
+    """
 
     def __init__(self, engine: Engine, config: ExternalAPISettings) -> None:
         """Bind an isolated pool and the external API resource limits."""
@@ -108,24 +123,29 @@ class ExternalService:
         self.config: ExternalAPISettings = config
 
     def authenticate(self, value: str | None) -> Principal:
-        """Verify an application key without human authentication dependencies."""
+        """
+        Verify an application key without human authentication dependencies.
+        """
         with self.engine.connect() as connection:
             return authenticate(connection, value)
 
     def admit(self, principal: Principal, request_id: str) -> None:
-        """Check shared limits and reserve a bounded concurrent request slot."""
+        """
+        Check shared limits and reserve a bounded concurrent request slot."""
         error: ExternalAPIError | None = None
         with self.engine.begin() as connection:
             lock_client(connection, principal.client_id)
             now: datetime = database_now(connection)
             active: bool | None = connection.scalar(
-                select(clients.c.IsActive).where(
-                    clients.c.ClientId == principal.client_id
+                select(ExternalApiClient.IsActive).where(
+                    ExternalApiClient.ClientId == principal.client_id
                 )
             )
             key: RowMapping = (
                 connection.execute(
-                    select(keys).where(keys.c.KeyId == principal.key_id)
+                    select(ExternalApiKey).where(
+                        ExternalApiKey.KeyId == principal.key_id
+                    )
                 )
                 .mappings()
                 .one()
@@ -147,8 +167,8 @@ class ExternalService:
                 )
             state: RowMapping = (
                 connection.execute(
-                    select(usage).where(
-                        usage.c.ClientId == principal.client_id
+                    select(ExternalApiUsage).where(
+                        ExternalApiUsage.ClientId == principal.client_id
                     )
                 )
                 .mappings()
@@ -169,8 +189,8 @@ class ExternalService:
                 state.ReturnedRecords if state.QuotaDay == day else 0
             )
             connection.execute(
-                update(usage)
-                .where(usage.c.ClientId == principal.client_id)
+                update(ExternalApiUsage)
+                .where(ExternalApiUsage.ClientId == principal.client_id)
                 .values(
                     QuotaDay=day,
                     ReturnedRecords=returned,
@@ -182,11 +202,12 @@ class ExternalService:
                 )
             )
             # At most max_concurrent leases survive each admission. Compare
-            # real instants in Python so both database dialects handle DST alike.
+            # real instants in Python so both database dialects handle DST
+            # alike.
             existing: Sequence[RowMapping] = (
                 connection.execute(
-                    select(leases).where(
-                        leases.c.ClientId == principal.client_id
+                    select(ExternalApiLease).where(
+                        ExternalApiLease.ClientId == principal.client_id
                     )
                 )
                 .mappings()
@@ -202,7 +223,9 @@ class ExternalService:
             ]
             if expired:
                 connection.execute(
-                    delete(leases).where(leases.c.RequestId.in_(expired))
+                    delete(ExternalApiLease).where(
+                        ExternalApiLease.RequestId.in_(expired)
+                    )
                 )
             active_count: int = len(existing) - len(expired)
             if count >= self.config.requests_per_minute:
@@ -231,7 +254,7 @@ class ExternalService:
                     seconds=2 * self.config.query_timeout_seconds + 60
                 )
                 connection.execute(
-                    insert(leases).values(
+                    insert(ExternalApiLease).values(
                         RequestId=request_id,
                         ClientId=principal.client_id,
                         ExpiresAt=eastern_naive(expiry),
@@ -264,34 +287,35 @@ class ExternalService:
         # collation. No Python lowercasing can incorrectly merge distinct
         # cases.
         case_query: Select[Any] = (
-            select(requested.c.position, cases.c.CaseId)
+            select(requested.c.position, Case.CaseId)
             .select_from(
-                requested.join(cases, cases.c.CaseNumber == requested.c.number)
+                requested.join(Case, Case.CaseNumber == requested.c.number)
             )
             .limit(self.config.max_records + 1)
         )
         query: Select[Any] = (
             select(
-                cases.c.CaseNumber,
-                cases.c.CaseId,
-                orders.c.ComponentName,
-                orders.c.ComponentExternalName,
-                orders.c.ProcedureDesc,
-                orders.c.DefaultUnit,
-                orders.c.OrdValue,
-                orders.c.OrdNumValue,
+                Case.CaseNumber,
+                Case.CaseId,
+                LinkedOrder.ComponentName,
+                LinkedOrder.ComponentExternalName,
+                LinkedOrder.ProcedureDesc,
+                LinkedOrder.DefaultUnit,
+                LinkedOrder.OrdValue,
+                LinkedOrder.OrdNumValue,
             )
-            .select_from(cases.join(orders, cases.c.CaseId == orders.c.CaseId))
-            .where(cases.c.CaseNumber.in_(body.case_numbers))
-            .order_by(cases.c.CaseId, orders.c.LinkedOrderId)
+            .select_from(Case)
+            .join(LinkedOrder, Case.CaseId == LinkedOrder.CaseId)
+            .where(Case.CaseNumber.in_(body.case_numbers))
+            .order_by(Case.CaseId, LinkedOrder.LinkedOrderId)
             .limit(self.config.max_records + 1)
         )
         if body.test_type is not None:
             pattern: str = escape_like(body.test_type)
             columns = (
-                orders.c.ComponentName,
-                orders.c.ComponentExternalName,
-                orders.c.ProcedureDesc,
+                LinkedOrder.ComponentName,
+                LinkedOrder.ComponentExternalName,
+                LinkedOrder.ProcedureDesc,
             )
             if self.engine.dialect.name == "mssql":
                 predicates = [
@@ -327,13 +351,13 @@ class ExternalService:
         for position, case_id in found:
             matched_ids[position].add(case_id)
         counts: Counter[int] = Counter(row.CaseId for row in rows)
-        data: list[LinkedOrder] = []
+        data: list[LinkedOrderRecord] = []
         for row in rows:
             value: dict[str, Any] = dict(row)
             value.pop("CaseId")
             if value["OrdNumValue"] is not None:
                 value["OrdNumValue"] = format(value["OrdNumValue"], ".5f")
-            data.append(LinkedOrder(**value))
+            data.append(LinkedOrderRecord(**value))
         summaries: list[CaseResult] = []
         for position, number in enumerate(body.case_numbers):
             total: int = sum(
@@ -363,30 +387,40 @@ class ExternalService:
     def complete(
         self, context: RequestContext, response: SearchResponse
     ) -> None:
-        """Commit quota consumption and audit before releasing successful data."""
-        principal: Principal = context["principal"]
+        """
+        Commit quota consumption and audit before releasing successful data.
+        """
+        principal: Principal | None = (
+            context["principal"] if "principal" in context else None
+        )
+        if principal is None:
+            raise ExternalAPIError(
+                500,
+                "internal_error",
+                "Principal is not available in the context.",
+            )
         error: ExternalAPIError | None = None
         with self.engine.begin() as connection:
             lock_client(connection, principal.client_id)
             now: datetime = database_now(connection)
             lease: RowMapping | None = (
                 connection.execute(
-                    select(leases).where(
-                        leases.c.RequestId == context["request_id"]
+                    select(ExternalApiLease).where(
+                        ExternalApiLease.RequestId == context["request_id"]
                     )
                 )
                 .mappings()
                 .first()
             )
             connection.execute(
-                delete(leases).where(
-                    leases.c.RequestId == context["request_id"]
+                delete(ExternalApiLease).where(
+                    ExternalApiLease.RequestId == context["request_id"]
                 )
             )
             state: RowMapping = (
                 connection.execute(
-                    select(usage).where(
-                        usage.c.ClientId == principal.client_id
+                    select(ExternalApiUsage).where(
+                        ExternalApiUsage.ClientId == principal.client_id
                     )
                 )
                 .mappings()
@@ -419,8 +453,8 @@ class ExternalService:
                 )
             else:
                 connection.execute(
-                    update(usage)
-                    .where(usage.c.ClientId == principal.client_id)
+                    update(ExternalApiUsage)
+                    .where(ExternalApiUsage.ClientId == principal.client_id)
                     .values(
                         QuotaDay=eastern_day(now),
                         ReturnedRecords=returned + response.record_count,
@@ -436,14 +470,16 @@ class ExternalService:
     def record_failure(
         self, context: RequestContext, status: int, code: str
     ) -> None:
-        """Release a request lease and durably audit an unsuccessful request."""
+        """
+        Release a request lease and durably audit an unsuccessful request.
+        """
         with self.engine.begin() as connection:
             principal: Principal | None = context.get("principal")
             if principal:
                 lock_client(connection, principal.client_id)
                 connection.execute(
-                    delete(leases).where(
-                        leases.c.RequestId == context["request_id"]
+                    delete(ExternalApiLease).where(
+                        ExternalApiLease.RequestId == context["request_id"]
                     )
                 )
             insert_request_audit(connection, context, status, code)

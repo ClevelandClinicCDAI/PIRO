@@ -31,7 +31,9 @@ api_key_header = APIKeyHeader(
 def error_response(
     error: ExternalAPIError, context: RequestContext
 ) -> JSONResponse:
-    """Build the stable public error envelope and retry headers."""
+    """Build an error response.
+
+    Builds the stable public error envelope and retry headers."""
     context["error_code"] = error.code
     headers: dict[str, str] = {
         "Cache-Control": "no-store",
@@ -218,7 +220,8 @@ class ExternalBoundary:
 def create_external_app(
     config: ExternalAPISettings | None = None, engine: Engine | None = None
 ) -> FastAPI:
-    """Create the independent v1 application, schema, and security boundary."""
+    """Create the FastAPI application for the external API, including schema
+    and security boundary."""
     config = config or ExternalAPISettings()
     service: ExternalService | None = (
         ExternalService(

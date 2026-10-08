@@ -6,7 +6,13 @@ from uuid import uuid4
 import pytest
 from apis.external_api.admin import create_client, issue_key, revoke_key
 from apis.external_api.errors import ExternalAPIError
-from apis.external_api.models import audits, clients, keys, leases, usage
+from apis.external_api.models import (
+    ExternalApiAudit,
+    ExternalApiClient,
+    ExternalApiKey,
+    ExternalApiLease,
+    ExternalApiUsage,
+)
 from apis.external_api.service import ExternalService
 from apis.external_api.timeutil import (
     eastern_naive,
@@ -21,7 +27,9 @@ from tests.external_api.types import ApiFixture
 
 
 def set_clock(monkeypatch: pytest.MonkeyPatch, instant: datetime) -> None:
-    """Use the same deterministic aware database clock in all API components."""
+    """
+    Use the same deterministic aware database clock in all API components.
+    """
     for module in ("admin", "security", "service"):
         monkeypatch.setattr(
             f"apis.external_api.{module}.database_now",
@@ -32,7 +40,9 @@ def set_clock(monkeypatch: pytest.MonkeyPatch, instant: datetime) -> None:
 def test_administrative_timestamps_are_naive_eastern(
     api: ApiFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Store local timestamps while the CLI expiry retains an explicit offset."""
+    """
+    Store local timestamps while the CLI expiry retains an explicit offset.
+    """
     now: datetime = datetime(2026, 10, 31, 6, 30, tzinfo=timezone.utc)
     set_clock(monkeypatch, now)
     client_id: str = create_client(api["engine"], "DST client", "pytest")
@@ -41,12 +51,16 @@ def test_administrative_timestamps_are_naive_eastern(
     )
     revoke_key(api["engine"], credential["key_id"], "pytest")
     with api["engine"].connect() as connection:
-        created: datetime = connection.scalar(
-            select(clients.c.CreatedAt).where(clients.c.ClientId == client_id)
+        created: datetime | None = connection.scalar(
+            select(ExternalApiClient.CreatedAt).where(
+                ExternalApiClient.ClientId == client_id
+            )
         )
         row = (
             connection.execute(
-                select(keys).where(keys.c.KeyId == credential["key_id"])
+                select(ExternalApiKey).where(
+                    ExternalApiKey.KeyId == credential["key_id"]
+                )
             )
             .mappings()
             .one()
@@ -57,12 +71,14 @@ def test_administrative_timestamps_are_naive_eastern(
             == row.RevokedAt
             == datetime(2026, 10, 31, 2, 30)
         )
-        assert created.tzinfo is None
+        assert created and created.tzinfo is None
         assert row.ExpiresAt == datetime(2026, 11, 1, 1, 30)
         assert row.ExpiresAtOffsetMinutes == -300
         assert credential["expires_at"] == "2026-11-01T01:30:00-05:00"
         times = connection.scalars(
-            select(audits.c.OccurredAt).where(audits.c.ClientId == client_id)
+            select(ExternalApiAudit.OccurredAt).where(
+                ExternalApiAudit.ClientId == client_id
+            )
         ).all()
         assert len(times) == 3
         assert all(
@@ -74,7 +90,9 @@ def test_administrative_timestamps_are_naive_eastern(
 def test_key_expiry_is_unambiguous_through_repeated_hour(
     api: ApiFixture, monkeypatch: pytest.MonkeyPatch, hour: int, offset: int
 ) -> None:
-    """An expired key cannot revive, and a second-fold key cannot expire early."""
+    """
+    An expired key cannot revive, and a second-fold key cannot expire early.
+    """
     issued: datetime = datetime(2026, 10, 31, hour, 30, tzinfo=timezone.utc)
     expiry: datetime = issued + timedelta(days=1)
     set_clock(monkeypatch, issued)
@@ -85,8 +103,8 @@ def test_key_expiry_is_unambiguous_through_repeated_hour(
     with api["engine"].connect() as connection:
         assert (
             connection.scalar(
-                select(keys.c.ExpiresAtOffsetMinutes).where(
-                    keys.c.KeyId == credential["key_id"]
+                select(ExternalApiKey.ExpiresAtOffsetMinutes).where(
+                    ExternalApiKey.KeyId == credential["key_id"]
                 )
             )
             == offset
@@ -121,7 +139,7 @@ def test_lease_duration_survives_both_dst_transitions(
     old = context(principal)
     service.admit(principal, old["request_id"])
     with api["engine"].connect() as connection:
-        lease = connection.execute(select(leases)).mappings().one()
+        lease = connection.execute(select(ExternalApiLease)).mappings().one()
         assert lease.ExpiresAt.tzinfo is None
         assert restore_instant(
             lease.ExpiresAt, lease.ExpiresAtOffsetMinutes
@@ -158,7 +176,7 @@ def test_repeated_minutes_have_distinct_rate_windows(
         with pytest.raises(ExternalAPIError, match="rate_limit_exceeded"):
             service.admit(principal, uuid4().hex)
         with api["engine"].connect() as connection:
-            row = connection.execute(select(usage)).mappings().one()
+            row = connection.execute(select(ExternalApiUsage)).mappings().one()
             assert row.Minute == datetime(2026, 11, 1, 1, 30)
             assert row.MinuteOffsetMinutes == offset
 

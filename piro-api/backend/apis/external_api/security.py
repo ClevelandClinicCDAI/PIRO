@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Connection, RowMapping
 
 from .errors import ExternalAPIError
-from .models import clients, keys
+from .models import ExternalApiClient, ExternalApiKey
 from .timeutil import database_now, restore_instant
 
 SCOPE: str = "linked-orders:read"
@@ -31,7 +31,9 @@ def hash_key(value: str) -> str:
 
 
 def key_id(value: str | None) -> str | None:
-    """Extract the public identifier only from a well-formed credential."""
+    """Extract the public identifier only from a key.
+
+    Only well-formed credentials will yield a public identifier."""
     match: re.Match[str] | None = KEY_PATTERN.fullmatch(value or "")
     return match.group(1) if match else None
 
@@ -45,9 +47,16 @@ def authenticate(connection: Connection, value: str | None) -> Principal:
         )
     row: RowMapping | None = (
         connection.execute(
-            select(keys, clients.c.IsActive, clients.c.Scope)
-            .join(clients, keys.c.ClientId == clients.c.ClientId)
-            .where(keys.c.KeyId == identifier)
+            select(
+                ExternalApiKey,
+                ExternalApiClient.IsActive,
+                ExternalApiClient.Scope,
+            )
+            .join(
+                ExternalApiClient,
+                ExternalApiKey.ClientId == ExternalApiClient.ClientId,
+            )
+            .where(ExternalApiKey.KeyId == identifier)
         )
         .mappings()
         .first()

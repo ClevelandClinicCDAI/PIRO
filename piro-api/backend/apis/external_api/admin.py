@@ -1,6 +1,7 @@
 """Administrator Command Line Interface (CLI) for the External API.
 
-Run from backend: python -m apis.external_api.admin --help."""
+Run from the `backend` directory: `python -m apis.external_api.admin --help`.
+"""
 
 import argparse
 import getpass
@@ -18,7 +19,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .config import ExternalAPISettings
 from .errors import ExternalAPIError
-from .models import audits, clients, keys, usage
+from .models import (
+    ExternalApiAudit,
+    ExternalApiClient,
+    ExternalApiKey,
+    ExternalApiUsage,
+)
 from .security import SCOPE, hash_key
 from .service import lock_client
 from .timeutil import (
@@ -42,7 +48,7 @@ def admin_audit(
     This logging happens in the same transaction as the change that triggered
     it."""
     connection.execute(
-        insert(audits).values(
+        insert(ExternalApiAudit).values(
             RequestId=uuid4().hex,
             ClientId=client_id,
             KeyId=key_identifier,
@@ -76,7 +82,7 @@ def create_client(engine: Engine, name: str, actor: str) -> str:
     with engine.begin() as connection:
         now: datetime = database_now(connection)
         connection.execute(
-            insert(clients).values(
+            insert(ExternalApiClient).values(
                 ClientId=identifier,
                 Name=name,
                 IsActive=True,
@@ -87,7 +93,7 @@ def create_client(engine: Engine, name: str, actor: str) -> str:
         )
 
         connection.execute(
-            insert(usage).values(
+            insert(ExternalApiUsage).values(
                 ClientId=identifier,
                 QuotaDay=eastern_day(now),
                 ReturnedRecords=0,
@@ -116,13 +122,15 @@ def issue_key(
     with engine.begin() as connection:
         lock_client(connection, client_id)
         if not connection.scalar(
-            select(clients.c.IsActive).where(clients.c.ClientId == client_id)
+            select(ExternalApiClient.IsActive).where(
+                ExternalApiClient.ClientId == client_id
+            )
         ):
             raise ValueError("Enable the integration before issuing a key.")
         now: datetime = database_now(connection)
         expiry: datetime = now + timedelta(days=expires_days)
         connection.execute(
-            insert(keys).values(
+            insert(ExternalApiKey).values(
                 KeyId=identifier,
                 ClientId=client_id,
                 SecretHash=hash_key(token),
@@ -149,8 +157,8 @@ def set_client_active(
     with engine.begin() as connection:
         lock_client(connection, client_id)
         connection.execute(
-            update(clients)
-            .where(clients.c.ClientId == client_id)
+            update(ExternalApiClient)
+            .where(ExternalApiClient.ClientId == client_id)
             .values(IsActive=active)
         )
         admin_audit(
@@ -166,16 +174,18 @@ def revoke_key(engine: Engine, identifier: str, actor: str) -> None:
     actor = validate_label(actor, "Actor")
     with engine.begin() as connection:
         client_id = connection.scalar(
-            select(keys.c.ClientId).where(keys.c.KeyId == identifier)
+            select(ExternalApiKey.ClientId).where(
+                ExternalApiKey.KeyId == identifier
+            )
         )
         if client_id is None:
             raise ValueError("Unknown key ID.")
         lock_client(connection, client_id)
         connection.execute(
-            update(keys)
+            update(ExternalApiKey)
             .where(
-                keys.c.KeyId == identifier,
-                keys.c.RevokedAt.is_(None),
+                ExternalApiKey.KeyId == identifier,
+                ExternalApiKey.RevokedAt.is_(None),
             )
             .values(RevokedAt=eastern_naive(database_now(connection)))
         )
@@ -237,20 +247,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
                 query = (
                     select(
-                        clients.c.ClientId,
-                        clients.c.Name,
-                        clients.c.IsActive,
-                        clients.c.Scope,
+                        ExternalApiClient.ClientId,
+                        ExternalApiClient.Name,
+                        ExternalApiClient.IsActive,
+                        ExternalApiClient.Scope,
                     )
                     if args.command == "list-clients"
                     else select(
-                        keys.c.KeyId,
-                        keys.c.ClientId,
-                        keys.c.CreatedAt,
-                        keys.c.ExpiresAt,
-                        keys.c.ExpiresAtOffsetMinutes,
-                        keys.c.RevokedAt,
-                    ).where(keys.c.ClientId == args.client_id)
+                        ExternalApiKey.KeyId,
+                        ExternalApiKey.ClientId,
+                        ExternalApiKey.CreatedAt,
+                        ExternalApiKey.ExpiresAt,
+                        ExternalApiKey.ExpiresAtOffsetMinutes,
+                        ExternalApiKey.RevokedAt,
+                    ).where(ExternalApiKey.ClientId == args.client_id)
                 )
 
                 result = [

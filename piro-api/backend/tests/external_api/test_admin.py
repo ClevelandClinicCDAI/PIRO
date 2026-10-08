@@ -2,7 +2,7 @@ import json
 
 import pytest
 from apis.external_api.admin import main
-from apis.external_api.models import audits, keys
+from apis.external_api.models import ExternalApiAudit, ExternalApiKey
 from sqlalchemy import select
 
 from tests.external_api.types import ApiFixture
@@ -40,13 +40,13 @@ def test_cli_lists_metadata_without_disclosing_keys_and_audits_changes(
     with api["engine"].connect() as connection:
         assert (
             connection.scalar(
-                select(keys.c.RevokedAt).where(
-                    keys.c.KeyId == issued["key_id"]
+                select(ExternalApiKey.RevokedAt).where(
+                    ExternalApiKey.KeyId == issued["key_id"]
                 )
             )
             is not None
         )
         events = connection.execute(
-            select(audits.c.Event, audits.c.Actor)
+            select(ExternalApiAudit.Event, ExternalApiAudit.Actor)
         ).all()
         assert ("key_revoked", "tester") in events

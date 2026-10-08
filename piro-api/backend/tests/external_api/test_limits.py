@@ -7,7 +7,7 @@ from uuid import uuid4
 import pytest
 from apis.external_api.context import RequestContext
 from apis.external_api.errors import ExternalAPIError
-from apis.external_api.models import leases, usage
+from apis.external_api.models import ExternalApiLease, ExternalApiUsage
 from apis.external_api.security import Principal
 from apis.external_api.service import ExternalService
 from apis.external_api.timeutil import eastern_day, seconds_until_reset
@@ -67,12 +67,12 @@ def test_concurrency_limit_is_shared_across_independent_pools_and_keys(
             "concurrency_limit_exceeded",
         ]
         with api["engine"].connect() as connection:
-            assert len(connection.execute(select(leases)).all()) == 1
+            assert len(connection.execute(select(ExternalApiLease)).all()) == 1
         for status, ctx in results:
             if status == "admitted":
                 services[0].record_failure(ctx, 503, "test_cleanup")
         with api["engine"].connect() as connection:
-            assert len(connection.execute(select(leases)).all()) == 0
+            assert len(connection.execute(select(ExternalApiLease)).all()) == 0
     finally:
         second_engine.dispose()
 
@@ -112,8 +112,8 @@ def test_simultaneous_completions_cannot_overspend_daily_quota(
         result = list(pool.map(complete, contexts))
     assert sorted(result) == ["daily_quota_exceeded", "success"]
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(usage.c.ReturnedRecords)) == 1
-        assert connection.scalar(select(leases.c.RequestId)) is None
+        assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 1
+        assert connection.scalar(select(ExternalApiLease.RequestId)) is None
 
 
 def test_expired_worker_lease_is_recovered_and_old_worker_cannot_complete(
@@ -128,7 +128,7 @@ def test_expired_worker_lease_is_recovered_and_old_worker_cannot_complete(
     service.admit(principal, old["request_id"])
     with api["engine"].begin() as connection:
         connection.execute(
-            update(leases).values(ExpiresAt=datetime(2000, 1, 1))
+            update(ExternalApiLease).values(ExpiresAt=datetime(2000, 1, 1))
         )
     new = context(principal)
     service.admit(principal, new["request_id"])
@@ -184,7 +184,9 @@ def test_quota_and_minute_reset_and_midnight_completion(
     service.admit(principal, ctx["request_id"])
     with api["engine"].begin() as connection:
         connection.execute(
-            update(usage).values(ReturnedRecords=api["config"].daily_records)
+            update(ExternalApiUsage).values(
+                ReturnedRecords=api["config"].daily_records
+            )
         )
     now += timedelta(seconds=2)
     service.complete(
@@ -194,13 +196,13 @@ def test_quota_and_minute_reset_and_midnight_completion(
         ),
     )
     with api["engine"].connect() as connection:
-        row = connection.execute(select(usage)).mappings().one()
+        row = connection.execute(select(ExternalApiUsage)).mappings().one()
         assert str(row.QuotaDay) == "2026-10-06"
         assert row.ReturnedRecords == 1
     next_request = context(principal)
     service.admit(principal, next_request["request_id"])
     with api["engine"].connect() as connection:
-        assert connection.scalar(select(usage.c.RequestCount)) == 1
+        assert connection.scalar(select(ExternalApiUsage.RequestCount)) == 1
     service.record_failure(next_request, 503, "test_cleanup")
 
 
