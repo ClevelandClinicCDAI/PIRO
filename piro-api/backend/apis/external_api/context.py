@@ -1,6 +1,9 @@
 """Request metadata shared by the HTTP boundary and audit service."""
 
-from typing import NotRequired, TypedDict
+try:
+    from typing import NotRequired, TypedDict
+except ImportError:
+    from typing_extensions import NotRequired, TypedDict
 
 from .security import Principal
 
