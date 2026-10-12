@@ -9,6 +9,9 @@ from tasks.loaders.solr_cohort_data_delete import SolrCohortDataDelete
 from tasks.loaders.solr_case_suggest_loader import SolrCaseSuggestLoader
 from tasks.loaders.solr_case_staff_loader import SolrCaseStaffLoader
 from tasks.loaders.concentriq_case_loader import ConcentriqCaseLoader
+from tasks.loaders.linked_order_backfill_loader import (
+    LinkedOrderBackfillLoader,
+)
 
 runRTFToText: bool = False
 runMalignant: bool = False
@@ -19,6 +22,7 @@ runCaseSuggest: bool = False
 runCaseStaffSuggest: bool = False
 runConcentriqCase: bool = False
 runConcentriqCaseReload: bool = False
+runLinkedOrderBackfill: bool = False
 
 if runRTFToText:
     print("----------------------------------------------")
@@ -137,5 +141,15 @@ if runConcentriqCaseReload:
     result = case_loader.delete_concentriq_case_data()
     print(f"result: {result}")
     print(case_loader.close_db_connection())
+    print("Debug - End")
+    print("")
+
+
+if runLinkedOrderBackfill:
+    print("----------------------------------------------")
+    print("Debug - Start")
+    linked_order_backfill_loader = LinkedOrderBackfillLoader()
+    linked_order_backfill_loader.load(max_requisition_ids_to_process=2500)
+    linked_order_backfill_loader.close_db_connections()
     print("Debug - End")
     print("")
