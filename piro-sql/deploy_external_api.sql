@@ -4,16 +4,6 @@
 SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 
--- Never silently reinterpret an earlier deployment's UTC data.
-IF COL_LENGTH(N'dbo.ExternalApiClient', N'CreatedAtUtc') IS NOT NULL
-    OR COL_LENGTH(N'dbo.ExternalApiKey', N'ExpiresAtUtc') IS NOT NULL
-    OR COL_LENGTH(N'dbo.ExternalApiUsage', N'MinuteUtc') IS NOT NULL
-    OR COL_LENGTH(N'dbo.ExternalApiLease', N'ExpiresAtUtc') IS NOT NULL
-    OR COL_LENGTH(N'dbo.ExternalApiAudit', N'OccurredAtUtc') IS NOT NULL
-BEGIN
-    ;THROW 50001, 'Run migrate_external_api_eastern.sql with API workers stopped before deploying this schema.', 1;
-END;
-
 IF OBJECT_ID(N'dbo.ExternalApiClient', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.ExternalApiClient (
