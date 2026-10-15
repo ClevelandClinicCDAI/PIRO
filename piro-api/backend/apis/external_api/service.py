@@ -150,9 +150,14 @@ class ExternalService:
                 .mappings()
                 .one()
             )
+            if not active:
+                raise ExternalAPIError(
+                    403,
+                    "integration_disabled",
+                    "This integration is disabled.",
+                )
             if (
-                not active
-                or key.RevokedAt is not None
+                key.RevokedAt is not None
                 or restore_instant(key.ExpiresAt, key.ExpiresAtOffsetMinutes)
                 <= now
             ):
