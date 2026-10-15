@@ -476,3 +476,7 @@ Perform all the following at a Powershell prompt:
 
         * Execute the following to turn on the log rotation: `sudo logrotate /etc/logrotate.d/gunicorn`
         * Restart the piro-api service: `sudo systemctl restart piro-api`
+
+## External integration API
+
+In addition to the main internal API, we also have a separate "external" API for use by external applications.  The external API uses PIRO-managed application keys, independently of LDAP/OAuth user login. See [README_EXTERNAL_API.md](README_EXTERNAL_API.md) for information.
