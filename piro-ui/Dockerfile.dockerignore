@@ -1,0 +1,7 @@
+**
+!piro-ui/
+!piro-ui/**
+piro-ui/node_modules/
+piro-ui/.angular/
+piro-ui/dist/
+piro-ui/coverage/

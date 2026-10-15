@@ -5,20 +5,32 @@ This application - `piro-ui` - acts as the user interface for the PIRO applicati
 ## Running on Localhost
 
 * Navigate to the `piro-ui` directory on your computer.
-  * If any new packages have been added to the `package.json` file, execute `npm install`.
-* Execute `ng serve`.
+* After pulling dependency changes, execute `npm ci`.
+* Execute `npm start`.
 * The application will now be available at [http://localhost:4201/home](http://localhost:4201/home).
 
 ### Application Install on Localhost
 
 #### Prerequisites
 
-* node js must be installed.
+* Use Node.js **22.23.3**, pinned in `.nvmrc` and the Docker build image.
+    The supported range is Node 22.x starting at 22.12.0, compatible with both
+    Angular 19 and the planned Angular 20 upgrade. Node 24 is not supported for
+    the Angular 19 baseline.
+* Use npm **10.x or 11.x**. The baseline was verified with npm 11.6.2.
+* With nvm on macOS/Linux, run `nvm install` and `nvm use` from `piro-ui`.
+    With nvm-windows, run `nvm install 22.23.3` and `nvm use 22.23.3` explicitly.
+    Alternatively, install that Node version directly.
+* Confirm the active versions with `node --version` and `npm --version`.
+    The `engines` declarations in `package.json` report unsupported versions;
+    they do not automatically install or switch Node.
 
 #### Steps
 
 * Clone the codebase into a directory on your computer.
-* Execute `npm install` to install the necessary packages.
+* Navigate to `piro-ui` and execute `npm ci` to install the locked dependencies.
+    Use `npm install` only when intentionally changing dependencies, and include
+    the updated lockfile with those changes.
 * Create a configuration file - `config.json` - in the `piro-ui/src/assets` directory (next to the `config.example.json` file).  See the `config.example.json` file for an example of the file format and values.
 
 ### Runtime Configuration (`config.json`)
