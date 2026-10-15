@@ -102,16 +102,13 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              //"buildTarget": "PIRO:build:production",
-              "browserTarget": "PIRO:build:production"
+              "buildTarget": "PIRO:build:production"
             },
             "development": {
-              //"buildTarget": "PIRO:build:development",
-              "browserTarget": "PIRO:build:development"
+              "buildTarget": "PIRO:build:development"
             },
             "local": {
-              //"buildTarget": "PIRO:build:local",
-              "browserTarget": "PIRO:build:local"
+              "buildTarget": "PIRO:build:local"
             }
           },
           "defaultConfiguration": "local",
@@ -122,8 +119,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            //"buildTarget": "PIRO:build",
-            "browserTarget": "PIRO:build"
+            "buildTarget": "PIRO:build"
           }
         },
         "test": {
@@ -154,7 +150,9 @@
   },
   "cli": {
     "analytics": false,
-    "defaultCollection": "@ngrx/schematics"
+    "schematicCollections": [
+      "@ngrx/schematics"
+    ]
   },
   "schematics": {
     "@schematics/angular:component": {
