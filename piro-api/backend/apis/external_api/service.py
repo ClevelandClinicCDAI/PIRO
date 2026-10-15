@@ -240,13 +240,6 @@ class ExternalService:
                     "Request rate limit exceeded.",
                     60 - now.second,
                 )
-            elif returned >= self.config.daily_records:
-                error = ExternalAPIError(
-                    429,
-                    "daily_quota_exceeded",
-                    "Daily returned-record quota exceeded.",
-                    seconds_until_reset(now),
-                )
             elif active_count >= self.config.max_concurrent:
                 error = ExternalAPIError(
                     429,
