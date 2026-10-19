@@ -10,7 +10,7 @@ RUN case "$TARGETARCH" in \
   esac
 COPY piro-ui/ .
 RUN npm run build:prod
-FROM nginx:1.27-alpine
+FROM nginx:1.30.6-alpine
 COPY piro-ui/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist/piro /usr/share/nginx/html
 COPY piro-ui/docker-entrypoint.sh /docker-entrypoint.sh
