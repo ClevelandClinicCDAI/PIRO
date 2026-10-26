@@ -1,0 +1,52 @@
+<div class="modal-header">
+  <h5 class="modal-title" id="case-cart-title"><i class="bi bi-cart3 me-2" aria-hidden="true"></i>Case cart ({{cart.count}})</h5>
+  <button type="button" class="btn-close" aria-label="Close case cart" [disabled]="busy" (click)="modal.dismiss()"></button>
+</div>
+<form (ngSubmit)="save()">
+  <div class="modal-body">
+    <p>Select cases while searching, then add them to a case set.</p>
+    <div class="alert alert-danger" role="alert" *ngIf="error">{{error}}</div>
+    <ul class="list-group cart-cases mb-3" aria-label="Cases in cart">
+      <li class="list-group-item d-flex align-items-center justify-content-between" *ngFor="let item of cart.items">
+        <span>{{item.label}} <small class="text-muted">(case ID {{item.caseId}})</small></span>
+        <button class="btn btn-sm btn-outline-secondary ms-2" type="button" [disabled]="busy"
+          [attr.aria-label]="'Remove ' + item.label + ' from cart'" (click)="cart.remove([item.caseId])">Remove</button>
+      </li>
+    </ul>
+    <p *ngIf="!cart.count" role="status">Your cart is empty. Close this window and select cases from the search results.</p>
+    <fieldset [disabled]="busy" *ngIf="cart.count">
+      <legend class="fs-6">Add cases to</legend>
+      <div class="d-flex gap-4 mb-3">
+        <label class="form-check"><input class="form-check-input" type="radio" name="cartMode" value="NEW" [(ngModel)]="mode"> New case set</label>
+        <label class="form-check"><input class="form-check-input" type="radio" name="cartMode" value="EXISTING" [(ngModel)]="mode"> Existing case set</label>
+      </div>
+      <div *ngIf="mode === 'NEW'">
+        <label for="cart-set-name" class="form-label">Case set name</label>
+        <input id="cart-set-name" class="form-control mb-3" name="setName" [(ngModel)]="name" maxlength="250" required>
+        <label for="cart-set-description" class="form-label">Description (optional)</label>
+        <textarea id="cart-set-description" class="form-control" name="description" [(ngModel)]="description" maxlength="2000" rows="2"></textarea>
+      </div>
+      <div *ngIf="mode === 'EXISTING'">
+        <p *ngIf="loading" role="status">Loading case sets…</p>
+        <div *ngIf="targetsError" class="alert alert-danger" role="alert">{{targetsError}}
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="loadTargets()">Retry</button>
+        </div>
+        <label for="cart-target" class="form-label">Case set</label>
+        <select id="cart-target" class="form-select" name="targetId" [(ngModel)]="targetId" [disabled]="loading || !!targetsError" required>
+          <option [ngValue]="null">Choose a case set</option>
+          <option *ngFor="let target of targets" [ngValue]="target.id">{{target.name}}</option>
+        </select>
+        <p class="small text-muted mt-2" *ngIf="!loading && !targetsError && !targets.length">You have no completed, active case sets. Create a new set instead.</p>
+        <p class="small text-muted mt-2">Cases already in the set are skipped, including excluded cases. Their review decisions and specimen selections are kept.</p>
+      </div>
+      <p class="small text-muted mt-3 mb-0">New cases start Unreviewed. Your cart is cleared after the cases are saved.</p>
+    </fieldset>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary me-auto" [disabled]="busy || !cart.count" (click)="cart.clear()">Clear cart</button>
+    <button type="button" class="btn btn-secondary" [disabled]="busy" (click)="modal.dismiss()">Keep browsing</button>
+    <button type="submit" class="btn btn-primary" [disabled]="busy || !cart.count || (mode === 'NEW' ? !name.trim() : !targetId || loading || !!targetsError)">
+      {{busy ? 'Saving…' : mode === 'NEW' ? 'Create case set' : 'Add to case set'}}
+    </button>
+  </div>
+</form>

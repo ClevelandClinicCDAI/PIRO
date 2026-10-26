@@ -1,0 +1,104 @@
+<main class="case-set-page">
+  <div class="set-toolbar"><h1>Case sets</h1><div class="set-actions"><a routerLink="/teaching-sets" class="btn btn-outline-primary">Browse teaching sets</a><a routerLink="/case-sets/operations" class="btn btn-outline-primary">Case set operations</a></div></div>
+  <p class="text-muted">Capture a fixed collection of cases, review each case, and return to your work later.</p>
+  <div *ngIf="error" class="alert alert-danger" role="alert">{{error}} <button class="btn btn-sm btn-outline-danger" (click)="load()" [disabled]="busy">Reload</button></div>
+  <p *ngIf="notice" class="text-success" role="status">{{notice}}</p>
+
+  <section class="set-panel" aria-labelledby="create-set-title">
+    <h2 id="create-set-title" class="h4">Create a case set</h2>
+    <form (ngSubmit)="create()" #createForm="ngForm">
+      <fieldset [disabled]="creating">
+        <div class="row g-3">
+          <div class="col-md-3"><label for="source-type" class="form-label">Start from</label>
+            <select id="source-type" name="sourceType" class="form-select" [(ngModel)]="sourceType" (change)="changeType()">
+              <option value="SAVED_SEARCH">Saved search</option><option value="COHORT">Existing cohort</option>
+            </select>
+          </div>
+          <div class="col-md-5"><label for="set-source" class="form-label">{{sourceType === 'SAVED_SEARCH' ? 'Saved search' : 'Cohort'}}</label>
+            <select id="set-source" name="sourceId" class="form-select" [(ngModel)]="sourceId" (change)="chooseSource()" required>
+              <option [ngValue]="null">Choose a source</option>
+              <option *ngFor="let source of availableSources" [ngValue]="source.id">{{source.name}}</option>
+            </select>
+          </div>
+          <div class="col-md-4"><label for="set-name" class="form-label">Set name</label>
+            <input id="set-name" name="name" class="form-control" [(ngModel)]="name" required maxlength="250">
+          </div>
+          <div class="col-12"><label for="set-description" class="form-label">Description <span class="text-muted">(optional)</span></label>
+            <textarea id="set-description" name="description" class="form-control" [(ngModel)]="description" rows="2" maxlength="2000"></textarea>
+          </div>
+        </div>
+        <p class="small text-muted mt-3" *ngIf="sourceType === 'SAVED_SEARCH'">All matching cases will be captured, including results beyond the current search page. Later edits to the search will not change this set.</p>
+        <p class="small text-muted mt-3" *ngIf="sourceType === 'COHORT'">The cohort's current case IDs will be copied into this set. Later changes to the cohort will not change this set.</p>
+        <p *ngIf="!availableSources.length" class="small">No sources available. <a routerLink="/search">Save a search</a> or <a routerLink="/cohort">create a cohort</a> first.</p>
+        <button type="submit" class="btn btn-primary" [disabled]="createForm.invalid || !name.trim() || creating">{{creating ? 'Creating…' : 'Create case set'}}</button>
+      </fieldset>
+    </form>
+  </section>
+
+  <section class="set-panel" *ngIf="editItem">
+    <h2 class="h4">Edit set details</h2>
+    <form (ngSubmit)="saveEdit()">
+      <label for="edit-set-name" class="form-label">Name</label><input id="edit-set-name" name="editName" class="form-control" [(ngModel)]="editName" required maxlength="250">
+      <label for="edit-set-description" class="form-label mt-2">Description</label><textarea id="edit-set-description" name="editDescription" class="form-control" [(ngModel)]="editDescription" maxlength="2000"></textarea>
+      <div class="set-actions mt-3"><button class="btn btn-primary" [disabled]="busy || !editName.trim()">Save details</button><button type="button" class="btn btn-outline-secondary" (click)="editItem=null" [disabled]="busy">Cancel</button></div>
+    </form>
+  </section>
+
+  <section class="set-panel" *ngIf="sharingItem" aria-labelledby="sharing-title">
+    <h2 class="h4" id="sharing-title">Sharing: {{sharingItem.name}}</h2>
+    <div *ngIf="sharingError" class="alert alert-danger" role="alert">{{sharingError}}
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="sharingItem=null;load()" [disabled]="sharingBusy">Reload sets</button>
+    </div>
+    <form (ngSubmit)="saveSharing()">
+      <fieldset [disabled]="sharingBusy">
+        <label class="form-check"><input type="checkbox" name="isPublic" class="form-check-input" [(ngModel)]="isPublic"> Public teaching set</label>
+        <p class="small text-muted">Public sets are discoverable by all signed-in PIRO users. Included and Unreviewed cases are visible; Excluded cases stay hidden. Only you can edit this set.</p>
+        <div *ngIf="isPublic">
+          <label for="sharing-specialty" class="form-label">Specialty category</label>
+          <select id="sharing-specialty" name="specialtyCategory" class="form-select" [(ngModel)]="specialtyCategory" required>
+            <option value="">Choose a specialty</option><option *ngFor="let category of specialties" [value]="category">{{category}}</option>
+          </select>
+          <p *ngIf="!sharingBusy && !specialties.length && !categoriesError" class="text-muted mt-2">No specialty categories are available. Contact your PIRO administrator.</p>
+          <div *ngIf="categoriesError" class="alert alert-danger mt-2" role="alert">{{categoriesError}}
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="startSharing(sharingItem)">Retry</button>
+          </div>
+          <p *ngIf="sharingItem.archived || sharingItem.captureState!=='READY'" class="text-muted mt-2">Complete capture and restore this set before making it public.</p>
+        </div>
+        <div class="set-actions mt-3">
+          <button type="submit" class="btn btn-primary" [disabled]="sharingBusy || (isPublic && (!specialtyCategory || !!categoriesError || sharingItem.archived || sharingItem.captureState!=='READY'))">{{sharingBusy ? 'Saving…' : 'Save sharing settings'}}</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="sharingItem=null">Cancel</button>
+        </div>
+      </fieldset>
+    </form>
+  </section>
+
+  <div class="set-toolbar"><h2 class="h4 mb-0">My case sets</h2>
+    <label><input type="checkbox" [(ngModel)]="archived" (change)="page=1;load()" [disabled]="busy"> Show archived sets</label>
+  </div>
+  <p *ngIf="busy" role="status">Loading case sets…</p>
+  <p *ngIf="!busy && !error && !items.length" class="set-panel text-muted">{{archived ? 'No archived sets.' : 'Your case sets will appear here.'}}</p>
+  <article *ngFor="let item of items" class="set-panel">
+    <div class="set-toolbar">
+      <div><h3 class="h5"><a *ngIf="!item.archived; else archivedTitle" [routerLink]="['/case-sets',item.caseSetId]">{{item.name}}</a><ng-template #archivedTitle>{{item.name}}</ng-template></h3>
+        <p class="text-muted mb-1">{{item.sourceType === 'SAVED_SEARCH' ? 'Saved search' : item.sourceType === 'COHORT' ? 'Cohort' : item.sourceType === 'MANUAL' ? 'Selected cases' : 'Case set operations'}}: {{item.sourceName}} · Created {{item.createdAt | date:'mediumDate'}}</p>
+        <span class="badge" [class.text-bg-primary]="item.isPublic" [class.text-bg-light]="!item.isPublic">{{item.isPublic ? 'Public · ' + item.specialtyCategory : 'Private'}}</span>
+        <small *ngIf="item.isPublic && item.archived" class="ms-2 text-muted">Hidden while archived</small>
+      </div>
+      <span class="badge text-bg-secondary" *ngIf="item.archived">Archived</span>
+    </div>
+    <p *ngIf="item.description" class="set-description">{{item.description}}</p>
+    <p *ngIf="item.captureState==='READY'"><strong>{{item.total - item.unreviewed}} / {{item.total}}</strong> reviewed · {{item.included}} included · {{item.excluded}} excluded · {{item.unreviewed}} unreviewed</p>
+    <p *ngIf="item.captureState!=='READY'">{{item.captureState==='FAILED' ? 'Capture needs attention' : 'Capture in progress'}} · {{item.total}} cases saved so far</p>
+    <div class="set-actions">
+      <a *ngIf="!item.archived" class="btn btn-primary btn-sm" [routerLink]="['/case-sets',item.caseSetId]">{{item.captureState==='READY' ? 'Open / Resume review' : 'Continue capture'}}</a>
+      <button class="btn btn-outline-secondary btn-sm" (click)="startEdit(item)" [disabled]="busy">Edit details</button>
+      <button class="btn btn-outline-primary btn-sm" (click)="startSharing(item)" [disabled]="busy || sharingBusy">Sharing</button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="archive(item)" [disabled]="busy">{{item.archived ? 'Restore' : 'Archive'}}</button>
+      <button type="button" class="btn btn-outline-danger btn-sm" (click)="remove(item)" [disabled]="busy || creating" [attr.aria-label]="'Delete case set ' + item.name">Delete</button>
+    </div>
+  </article>
+  <nav class="set-toolbar" aria-label="Case set pages" *ngIf="total>25">
+    <button class="btn btn-outline-secondary" (click)="page=page-1;load()" [disabled]="busy || page<=1">Previous</button>
+    <span>Page {{page}}</span><button class="btn btn-outline-secondary" (click)="page=page+1;load()" [disabled]="busy || page*25>=total">Next</button>
+  </nav>
+</main>

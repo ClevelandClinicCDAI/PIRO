@@ -1,7 +1,7 @@
-a.nav-link{
+.nav-link{
     color:#fff;
 }
-a.nav-link.active {
+.nav-link.active {
 	color:#fff;
     text-decoration: underline;
 }

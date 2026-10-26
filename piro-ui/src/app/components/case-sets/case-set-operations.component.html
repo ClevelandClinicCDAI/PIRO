@@ -1,0 +1,58 @@
+<main class="case-set-page">
+  <a routerLink="/case-sets">← My case sets</a>
+  <h1 class="mt-3">Case set operations</h1>
+  <p>Combine or compare two case sets and save the result as a new set. Your source sets stay unchanged.</p>
+  <div *ngIf="error" class="alert alert-danger" role="alert">{{error}}</div>
+  <p *ngIf="busy" role="status">Working…</p>
+  <section class="set-panel" aria-labelledby="operation-heading">
+    <div class="set-toolbar mb-3">
+      <h2 id="operation-heading" class="h4 mb-0">Choose two sets</h2>
+      <button class="btn btn-outline-secondary btn-sm" (click)="loadSources()" [disabled]="busy">Refresh sets</button>
+    </div>
+    <p class="small text-muted">Completed, active case sets are available here, including results of earlier operations.</p>
+    <p *ngIf="!busy && !error && !sources.length">No completed sets available. <a routerLink="/case-sets">Create a case set</a> or finish capturing an existing set first.</p>
+    <form (ngSubmit)="previewOperation()">
+      <fieldset [disabled]="busy">
+        <div class="row g-3">
+          <div class="col-md-6"><label for="operation-left" class="form-label">Set A</label>
+            <select id="operation-left" class="form-select" name="left" [(ngModel)]="leftSetId" (ngModelChange)="invalidate()" required>
+              <option [ngValue]="null">Select set A</option><option *ngFor="let set of sources" [ngValue]="set.id">{{set.name}} (#{{set.id}})</option>
+            </select>
+          </div>
+          <div class="col-md-6"><label for="operation-right" class="form-label">Set B</label>
+            <select id="operation-right" class="form-select" name="right" [(ngModel)]="rightSetId" (ngModelChange)="invalidate()" required>
+              <option [ngValue]="null">Select set B</option><option *ngFor="let set of sources" [ngValue]="set.id">{{set.name}} (#{{set.id}})</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm my-3" (click)="swap()" [disabled]="!leftSetId || !rightSetId">Swap A and B</button>
+        <label for="set-operation" class="form-label d-block">Operation</label>
+        <select id="set-operation" class="form-select" name="operation" [(ngModel)]="operation" (ngModelChange)="invalidate()" aria-describedby="operation-explanation">
+          <option *ngFor="let item of operations" [ngValue]="item.value">{{item.label}}</option>
+        </select>
+        <p id="operation-explanation" class="mt-2">{{explanation}}</p>
+        <label for="operation-membership" class="form-label">Cases to use from each set</label>
+        <select id="operation-membership" class="form-select" name="membership" [(ngModel)]="membership" (ngModelChange)="invalidate()" aria-describedby="membership-explanation">
+          <option value="NOT_EXCLUDED">Included and Unreviewed</option><option value="INCLUDED_ONLY">Included only</option>
+        </select>
+        <p id="membership-explanation" class="small text-muted mt-2">Excluded cases are always omitted. Choose Included only to use just the cases you have approved.</p>
+        <button type="submit" class="btn btn-primary" [disabled]="!leftSetId || !rightSetId || busy">Preview result</button>
+      </fieldset>
+    </form>
+  </section>
+  <section *ngIf="preview as result" class="set-panel" aria-labelledby="result-heading">
+    <h2 id="result-heading" class="h4">Result: {{result.total | number}} cases</h2>
+    <p>A: {{result.left.name}} — {{result.left.eligible | number}} eligible cases · B: {{result.right.name}} — {{result.right.eligible | number}} eligible cases</p>
+    <p *ngIf="result.total===0" class="alert alert-info">No cases match this operation. You can save an empty set or change your selections.</p>
+    <p>All result cases start Unreviewed. Review decisions and later changes to the source sets do not change this saved result.</p>
+    <form #resultForm="ngForm" (ngSubmit)="save()">
+      <fieldset [disabled]="busy">
+        <label for="operation-name" class="form-label">New case set name</label>
+        <input id="operation-name" name="name" class="form-control" [(ngModel)]="name" required maxlength="250">
+        <label for="operation-description" class="form-label mt-3">Description (optional)</label>
+        <textarea id="operation-description" name="description" class="form-control" [(ngModel)]="description" maxlength="2000"></textarea>
+        <button type="submit" class="btn btn-primary mt-3" [disabled]="busy || resultForm.invalid || !name.trim()">Save as new case set</button>
+      </fieldset>
+    </form>
+  </section>
+</main>

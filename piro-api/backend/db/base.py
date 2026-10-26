@@ -4,6 +4,7 @@ from db.models.AuditTrailSearch import AuditTrailSearch  # noqa
 from db.models.AuditTrailCaseInfo import AuditTrailCaseInfo  # noqa
 from db.models.AuditTrailSearchRequest import AuditTrailSearchRequest  # noqa
 from db.models.Case import Case  # noqa
+from db.models.CaseSet import CaseSet, CaseSetCase, CaseSetSpecimen  # noqa
 from db.models.CaseComment import CaseComment  # noqa
 from db.models.CommentType import CommentType  # noqa
 from db.models.DataField import DataField  # noqa
@@ -23,7 +24,7 @@ from db.models.SearchRequestExtractionCase import (  # noqa
 )
 from db.models.SearchRequestReason import SearchRequestReason  # noqa
 from db.models.SearchRequestStatus import SearchRequestStatus  # noqa
-from db.models.SearchRequestDataField import SearchRequest  # noqa
+from db.models.SearchRequestDataField import SearchRequestDataField  # noqa
 from db.models.Specimen import Specimen  # noqa
 from db.models.SpecimenSource import SpecimenSource  # noqa
 from db.models.SpecimenType import SpecimenType  # noqa

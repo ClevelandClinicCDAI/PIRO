@@ -1,0 +1,122 @@
+<main class="case-set-page">
+  <a routerLink="/case-sets">← My case sets</a>
+  <h1 class="mt-3">{{set?.name || 'Review case set'}}</h1>
+  <p *ngIf="set" class="text-muted">From {{set.sourceName}} <span *ngIf="set.captureFinishedAt">· Captured {{set.captureFinishedAt | date:'medium'}}</span></p>
+  <p *ngIf="set?.description" class="set-description">{{set?.description}}</p>
+  <div *ngIf="error && (set?.captureState!=='READY' || set?.archived)" class="alert alert-danger" role="alert">{{error}} <button class="btn btn-sm btn-outline-danger" (click)="reload()" [disabled]="busy || capturing || pendingCaseId!==null">Reload</button></div>
+  <p *ngIf="busy && !set" role="status">Loading…</p>
+  <p *ngIf="set?.archived" class="alert alert-info">This set is archived. Restore it from My case sets to continue reviewing.</p>
+
+  <section *ngIf="set && !set.archived && set.captureState!=='READY'" class="set-panel" aria-labelledby="capture-title">
+    <h2 id="capture-title" class="h4">Capturing cases</h2>
+    <p role="status">{{set.total}} distinct cases saved<span *ngIf="set.captureExpected!==null"> · {{set.captureSeen}} of {{set.captureExpected}} search results processed</span>.</p>
+    <p>You can leave this page and return to continue capture. Review becomes available when all results have been captured.</p>
+    <button *ngIf="capturing" class="btn btn-outline-secondary" (click)="pauseRequested=true" [disabled]="pauseRequested">{{pauseRequested ? 'Pausing after this batch…' : 'Pause capture'}}</button>
+    <button *ngIf="!capturing" class="btn btn-primary" (click)="capture()">{{set.captureState==='FAILED' ? 'Retry capture' : 'Continue capture'}}</button>
+  </section>
+
+  <ng-container *ngIf="set && !set.archived && set.captureState==='READY'">
+    <section class="set-panel" aria-label="Review progress">
+      <div class="set-toolbar"><strong>{{reviewed}} of {{set.total}} reviewed</strong><span>{{set.included}} included · {{set.excluded}} excluded · {{set.unreviewed}} unreviewed</span></div>
+      <div class="progress my-2" role="progressbar" aria-label="Case review progress" [attr.aria-valuenow]="reviewed" aria-valuemin="0" [attr.aria-valuemax]="set.total || 1">
+        <div class="progress-bar" [style.width.%]="progress"></div>
+      </div>
+      <p class="small text-muted mb-0">Decisions and your place are saved automatically. Excluded cases stay in the set so you can change your decision later.</p>
+    </section>
+    <section class="set-panel review-controls" aria-label="Case review controls">
+      <div class="review-controls-row">
+        <div class="set-actions" role="group" aria-label="Review decision">
+          <button type="button" class="btn btn-outline-success review-decision" (click)="currentMember && decide(currentMember,'INCLUDED')" [disabled]="controlsDisabled || !currentMember || currentMember.state==='INCLUDED'">Include</button>
+          <button type="button" class="btn btn-outline-danger review-decision" (click)="currentMember && decide(currentMember,'EXCLUDED')" [disabled]="controlsDisabled || !currentMember || currentMember.state==='EXCLUDED'">Exclude</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="currentMember && decide(currentMember,'UNREVIEWED')" [disabled]="controlsDisabled || !currentMember || currentMember.state==='UNREVIEWED'">Reset to unreviewed</button>
+        </div>
+        <nav class="review-navigation" aria-label="Case navigation">
+          <button type="button" class="btn btn-outline-secondary" (click)="go(page-1)" [disabled]="controlsDisabled || !currentMember || page<=1">Previous case</button>
+          <span class="text-center">{{total ? page : 0}} of {{total}} in this view</span>
+          <button type="button" class="btn btn-outline-secondary" (click)="go(page+1)" [disabled]="controlsDisabled || !currentMember || page>=lastPage">Next case</button>
+        </nav>
+      </div>
+      <div class="set-toolbar mt-3">
+      <div class="set-actions"><label for="review-filter">Show</label>
+        <select id="review-filter" #filterControl="ngModel" class="form-select w-auto" [(ngModel)]="selectedFilter" (ngModelChange)="changeFilter($event)" [disabled]="controlsDisabled">
+          <option value="ALL">All cases</option><option value="UNREVIEWED">Unreviewed</option><option value="INCLUDED">Included</option><option value="EXCLUDED">Excluded</option>
+        </select>
+        <button class="btn btn-outline-primary" (click)="changeFilter('UNREVIEWED')" [disabled]="controlsDisabled || set.unreviewed===0">Continue unreviewed</button>
+      </div>
+      </div>
+      <div class="review-feedback small mt-2" role="status" aria-live="polite" aria-atomic="true">
+        <span *ngIf="pendingCaseId!==null">Saving decision…</span>
+        <span *ngIf="pendingCaseId===null && busy">Loading case…</span>
+        <span *ngIf="pendingCaseId===null && !busy" [class.text-success]="saved">{{saved || 'Include or Exclude saves your decision and advances to the next case.'}}</span>
+      </div>
+    </section>
+    <div *ngIf="error" class="alert alert-danger mt-3" role="alert">{{error}} <button class="btn btn-sm btn-outline-danger" (click)="reload()" [disabled]="controlsDisabled">Reload</button></div>
+    <p *ngIf="!busy && set.total===0" class="set-panel">The source matched no cases when captured. This is an empty case set.</p>
+    <p *ngIf="!busy && set.total>0 && !currentMember" class="set-panel">No cases match this review filter. <button class="btn btn-link" (click)="changeFilter('ALL')">Show all cases</button></p>
+
+    <article *ngIf="currentMember as member" class="set-panel case-review-card" [class.case-excluded]="member.state==='EXCLUDED'" [attr.aria-label]="'Case ' + member.ordinal" [attr.aria-busy]="busy">
+      <div class="case-review-layout">
+      <div #caseContent class="case-review-content" tabindex="0" role="region" aria-label="Case summary">
+      <div class="set-toolbar mb-2">
+        <span class="small text-muted">Case {{member.ordinal}} of {{set.total}}</span>
+        <span class="badge" [class.text-bg-secondary]="member.state==='UNREVIEWED'" [class.text-bg-success]="member.state==='INCLUDED'" [class.text-bg-danger]="member.state==='EXCLUDED'">{{member.state==='UNREVIEWED' ? 'Unreviewed' : member.state==='INCLUDED' ? 'Included' : 'Excluded'}}</span>
+      </div>
+      <ng-container *ngIf="member.summary as card">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+              <h2 class="h5 mb-0"><a [routerLink]="['/search-detail',member.caseId]" (click)="remember(member)">{{card.casenumber || 'View case details'}}</a></h2>
+              <a *ngIf="card.isconcentriq && card.concentriqurl" class="btn btn-sm concentriq-link"
+                [href]="card.concentriqurl" target="_blank" rel="noopener noreferrer" title="Open Concentriq case in a new tab">
+                <i class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></i> Concentriq<span class="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            </div>
+            <div *ngIf="card.patientname">{{card.patientname}}</div><span>{{card.age || '—'}} / {{card.gender || '—'}}</span>
+          </div>
+          <div class="col-md-4"><div>{{card.hospital}}</div><div class="text-muted">{{card.region}}</div></div>
+          <div class="col-md-4"><div *ngFor="let name of (card.staffnames?.length ? card.staffnames : card.interpreters)">{{name}}</div></div>
+        </div>
+        <hr>
+        <ng-container *ngIf="reportSections as sections">
+          <div *ngFor="let section of sections; trackBy: trackReportSection" [app-contenttext]="section"></div>
+          <p *ngIf="!sections.length" class="text-muted">No report text is available for this case.</p>
+        </ng-container>
+        <div class="set-actions small text-muted mt-3">
+          <span *ngIf="card.receivedate">Received {{card.receivedate | date:'short'}}</span>
+          <span *ngIf="card.accessiondate">Accessioned {{card.accessiondate | date:'short'}}</span>
+          <span *ngIf="card.signoutdate">Signed out {{card.signoutdate | date:'short'}}</span>
+        </div>
+      </ng-container>
+      <p *ngIf="member.unavailable" class="text-muted">This case is no longer available in the search index. Its saved membership and review decision have been retained.</p>
+      <p *ngIf="member.reviewedAt" class="small text-muted mt-3">Reviewed {{member.reviewedAt | date:'short'}}</p>
+      </div>
+      <aside class="specimen-panel" aria-labelledby="specimen-title" [attr.aria-busy]="specimenLoading || specimenSaving">
+        <h2 id="specimen-title" class="h5">Specimen parts</h2>
+        <p class="small text-muted">Choose the specimens for this case. Selections are saved automatically in this case set.</p>
+        <p *ngIf="specimenLoading" role="status">Loading specimens…</p>
+        <div *ngIf="specimenError" class="alert alert-danger small" role="alert">{{specimenError}}
+          <button class="btn btn-sm btn-outline-danger mt-2" (click)="loadSpecimens()" [disabled]="controlsDisabled">Reload specimens</button>
+        </div>
+        <ng-container *ngIf="specimensLoaded">
+          <p *ngIf="!specimens.length" class="text-muted">No specimens are available for this case.</p>
+          <fieldset *ngIf="specimens.length" [disabled]="controlsDisabled">
+            <legend class="visually-hidden">Select specimen parts</legend>
+            <label class="specimen-choice specimen-select-all" *ngIf="availableSpecimens.length">
+              <input type="checkbox" [checked]="allSpecimensSelected" [indeterminate]="someSpecimensSelected" (change)="toggleAllSpecimens($event)">
+              <strong>Select all</strong>
+            </label>
+            <label *ngFor="let specimen of specimens; trackBy: trackSpecimen" class="specimen-choice">
+              <input type="checkbox" [checked]="specimen.selected" [disabled]="!specimen.available && !specimen.selected" (change)="toggleSpecimen(specimen, $event)"
+                [attr.aria-label]="'Select ' + specimen.part + ', specimen ' + specimen.specimenId">
+              <span>{{specimen.part}} <small *ngIf="!specimen.available" class="d-block text-muted">No longer available</small></span>
+            </label>
+          </fieldset>
+          <p *ngIf="specimens.length" class="small mt-3 mb-1">{{selectedSpecimenCount}} selected</p>
+          <p *ngIf="member.state==='EXCLUDED' && selectedSpecimenCount" class="small text-muted">Selections are retained while this case is excluded.</p>
+        </ng-container>
+        <p class="small specimen-feedback" role="status" aria-live="polite" [class.text-success]="specimenSaved">{{specimenSaving ? 'Saving selections…' : specimenSaved}}</p>
+      </aside>
+      </div>
+    </article>
+  </ng-container>
+</main>

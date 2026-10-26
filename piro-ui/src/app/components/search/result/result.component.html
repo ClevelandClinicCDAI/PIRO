@@ -1,3 +1,11 @@
+<div class="case-cart-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 p-3 bg-white border rounded">
+    <span><i class="bi bi-cart3 me-2" aria-hidden="true"></i><strong>Case cart</strong>
+        <span class="ms-2" role="status" aria-live="polite">{{cart.count}} selected</span></span>
+    <button type="button" class="btn btn-primary btn-sm" (click)="openCart()" [disabled]="!cart.count">Review cart / Add to case set</button>
+</div>
+<div *ngIf="cartNotice" class="alert alert-success" role="status">
+    {{cartNotice}} <a [routerLink]="['/case-sets', savedCaseSetId]">Open case set</a>
+</div>
 <div *ngIf="!contentLoaded">
     <div class="" *ngFor="let item of skeltoncards">
         <div class="result-group shadow p-3 bg-white rounded card-skeleton">
@@ -22,14 +30,6 @@
     <div class="container" *ngIf="content.length > 0">
         <div class="row align-items-center">
             <div class="col-md-2">
-                <!-- Send to Extraction Suite -->
-                <button
-                  *ngIf="selectedCaseIds.size > 0"
-                  class="btn btn-sm btn-outline-primary"
-                  (click)="openSendToExtraction()">
-                  <i class="bi bi-table me-1"></i>
-                  Send {{ selectedCaseIds.size }} to Extraction Suite
-                </button>
             </div>
             <div class="col-md-8">
                 <div class="d-flex justify-content-center" style="display: table-cell; vertical-align: middle;"
@@ -49,18 +49,16 @@
     currentPage: page,
     totalItems: countLimit
   };
-let i = index;" [ngClass]="i != 0 ? 'mt-3' : ''">
+let i = index;" [ngClass]="i != 0 ? 'mt-3' : ''" [class.in-case-cart]="cart.has(item.caseid)">
+        <div class="d-flex justify-content-end mb-2">
+            <label class="form-check mb-0">
+                <input type="checkbox" class="form-check-input" [checked]="cart.has(item.caseid)"
+                    [attr.aria-label]="'Select case ' + (item.casenumber || item.caseid) + ' for case cart'"
+                    (change)="selectForCart(item, $event)">
+                {{cart.has(item.caseid) ? 'In cart' : 'Add to cart'}}
+            </label>
+        </div>
         <div class="row">
-            <div class="col-auto d-flex align-items-start pt-1">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  [checked]="selectedCaseIds.has(item.caseid)"
-                  (change)="toggleCase(item.caseid)"
-                  (click)="$event.stopPropagation()"
-                  title="Select for Extraction Suite"
-                />
-            </div>
             <div class="col-md-3">
                 <div><i class="bi bi-person-square"></i> {{item.patientname}} </div>
                 <span>

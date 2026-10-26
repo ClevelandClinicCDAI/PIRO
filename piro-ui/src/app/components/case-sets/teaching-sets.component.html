@@ -1,0 +1,33 @@
+<main class="case-set-page">
+  <h1>Teaching sets</h1>
+  <p class="text-muted">Explore case sets shared by PIRO users.</p>
+  <section class="set-panel" aria-label="Browse teaching sets">
+    <label for="teaching-specialty" class="form-label">Specialty category</label>
+    <select id="teaching-specialty" class="form-select" [(ngModel)]="specialty" (ngModelChange)="browse()">
+      <option value="">All specialties</option>
+      <option *ngIf="specialty && !categories.includes(specialty)" [value]="specialty">{{specialty}}</option>
+      <option *ngFor="let category of categories" [value]="category">{{category}}</option>
+    </select>
+  </section>
+  <div *ngIf="error" class="alert alert-danger" role="alert">{{error}} <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button></div>
+  <p *ngIf="busy" role="status">Loading teaching sets…</p>
+  <p *ngIf="!busy && !error" role="status">{{total}} public {{total === 1 ? 'case set' : 'case sets'}}{{specialty ? ' in ' + specialty : ''}}</p>
+  <p *ngIf="!busy && !error && !items.length" class="set-panel">{{specialty ? 'No public teaching sets in this specialty yet.' : 'No public teaching sets yet.'}}</p>
+  <article *ngFor="let item of items" class="set-panel">
+    <div class="set-toolbar">
+      <h2 class="h4 mb-0"><a [routerLink]="['/teaching-sets', item.caseSetId]" [queryParams]="{specialty: specialty || null, browsePage: page}">{{item.name}}</a></h2>
+      <span class="badge text-bg-primary">{{item.specialtyCategory}}</span>
+    </div>
+    <p class="mt-2 mb-1">Created by <strong>{{item.creatorName}}</strong></p>
+    <p *ngIf="item.description" class="set-description text-muted">{{item.description}}</p>
+    <div class="set-toolbar">
+      <span>{{item.total}} {{item.total === 1 ? 'case' : 'cases'}} · Updated {{item.updatedAt | date:'mediumDate'}}</span>
+      <a class="btn btn-outline-primary btn-sm" [routerLink]="['/teaching-sets', item.caseSetId]" [queryParams]="{specialty: specialty || null, browsePage: page}">View teaching set</a>
+    </div>
+  </article>
+  <nav *ngIf="total>size" class="set-toolbar" aria-label="Teaching set pages">
+    <button class="btn btn-outline-secondary" (click)="browse(page-1)" [disabled]="busy || page<=1">Previous</button>
+    <span>Page {{page}}</span>
+    <button class="btn btn-outline-secondary" (click)="browse(page+1)" [disabled]="busy || page*size>=total">Next</button>
+  </nav>
+</main>

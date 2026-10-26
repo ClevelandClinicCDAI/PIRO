@@ -1,0 +1,45 @@
+<main class="case-set-page">
+  <a routerLink="/teaching-sets" [queryParams]="{specialty: specialty || null, page: browsePage}">← Teaching sets</a>
+  <h1 class="mt-3">{{set?.name || 'Teaching set'}}</h1>
+  <p *ngIf="busy" role="status">Loading teaching set…</p>
+  <div *ngIf="error" class="alert alert-danger" role="alert">{{error}} <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button></div>
+  <ng-container *ngIf="set">
+    <p>Created by <strong>{{set.creatorName}}</strong> <span class="badge text-bg-primary ms-2">{{set.specialtyCategory}}</span></p>
+    <p *ngIf="set.description" class="set-description">{{set.description}}</p>
+    <nav class="set-panel review-controls set-toolbar" aria-label="Teaching case navigation">
+      <button class="btn btn-outline-secondary" (click)="go(page-1)" [disabled]="busy || page<=1">Previous case</button>
+      <span>Case {{total ? page : 0}} of {{total}}</span>
+      <button class="btn btn-outline-secondary" (click)="go(page+1)" [disabled]="busy || page>=total">Next case</button>
+    </nav>
+    <p *ngIf="!total" class="set-panel">This teaching set has no visible cases yet.</p>
+    <article *ngIf="member" class="set-panel case-review-card">
+      <div #caseContent class="case-review-content" tabindex="0" role="region" aria-label="Teaching case summary">
+        <ng-container *ngIf="member.summary as card">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                <h2 class="h5 mb-0">{{card.casenumber || 'Case ' + page}}</h2>
+                <a *ngIf="card.isconcentriq && card.concentriqurl" class="btn btn-sm concentriq-link"
+                  [href]="card.concentriqurl" target="_blank" rel="noopener noreferrer" title="Open Concentriq case in a new tab">
+                  <i class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></i> Concentriq<span class="visually-hidden"> (opens in a new tab)</span>
+                </a>
+              </div>
+              <div *ngIf="card.patientname">{{card.patientname}}</div><span>{{card.age || '—'}} / {{card.gender || '—'}}</span>
+            </div>
+            <div class="col-md-4"><div>{{card.hospital}}</div><div class="text-muted">{{card.region}}</div></div>
+            <div class="col-md-4"><div *ngFor="let name of (card.staffnames?.length ? card.staffnames : card.interpreters)">{{name}}</div></div>
+          </div>
+          <hr>
+          <div *ngFor="let section of reportSections" [app-contenttext]="section"></div>
+          <p *ngIf="!reportSections.length" class="text-muted">No report text is available for this case.</p>
+          <div class="set-actions small text-muted mt-3">
+            <span *ngIf="card.receivedate">Received {{card.receivedate | date:'short'}}</span>
+            <span *ngIf="card.accessiondate">Accessioned {{card.accessiondate | date:'short'}}</span>
+            <span *ngIf="card.signoutdate">Signed out {{card.signoutdate | date:'short'}}</span>
+          </div>
+        </ng-container>
+        <p *ngIf="member.unavailable" class="text-muted">This case is no longer available in the search index.</p>
+      </div>
+    </article>
+  </ng-container>
+</main>

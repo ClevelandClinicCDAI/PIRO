@@ -19,8 +19,18 @@
         <li class="nav-item" *ngIf="isSearch">
           <a href="javascript:void(0);" (click)="searchPage()" class="nav-link" routerLinkActive="active">Search</a>
         </li>
-        <li class="nav-item" *ngIf="isSearch">
-          <a routerLink="cohort" class="nav-link" routerLinkActive="active">Cohort</a>
+        <li class="nav-item dropdown" routerLinkActive="active" #collectionsActive="routerLinkActive">
+          <button type="button" class="nav-link dropdown-toggle" [class.active]="collectionsActive.isActive"
+            id="navbarCollectionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Collections
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="navbarCollectionsDropdown">
+            <li *ngIf="isSearch"><a routerLink="cohort" class="dropdown-item" routerLinkActive="active" ariaCurrentWhenActive="page">Imported Cohorts</a></li>
+            <li *ngIf="isSearch"><a routerLink="case-sets" class="dropdown-item" routerLinkActive="active"
+                [routerLinkActiveOptions]="{exact: true}" ariaCurrentWhenActive="page">Case sets</a></li>
+            <li *ngIf="isSearch"><a routerLink="case-sets/operations" class="dropdown-item" routerLinkActive="active" ariaCurrentWhenActive="page">Case set operations</a></li>
+            <li><a routerLink="teaching-sets" class="dropdown-item" routerLinkActive="active" ariaCurrentWhenActive="page">Teaching sets</a></li>
+          </ul>
         </li>
         <li class="nav-item" *ngIf="isSearch">
           <a routerLink="extraction" class="nav-link" routerLinkActive="active">

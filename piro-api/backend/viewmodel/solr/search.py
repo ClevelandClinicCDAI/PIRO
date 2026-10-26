@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, ClassVar, List, Optional
 
 from core.config import settings
 from core.string_util import StringUtil
@@ -39,11 +39,14 @@ class SearchInputVM(BaseModel):
 
 
 class SearchDocumentBaseVM(BaseModel):
-    def ParseComment(nodeInput: str, nodeOutput: str, values: Any):
+    report_text_limit: ClassVar[Optional[int]] = 1000
+
+    @classmethod
+    def ParseComment(cls, nodeInput: str, nodeOutput: str, values: Any):
         delimiter1 = "   ||||   "
         delimiter2 = "||--||"
         delimiter3 = "  "
-        charLimit = 1000
+        charLimit = cls.report_text_limit
         texts = []
         commentCount = values[nodeInput + "count"]
         try:
@@ -57,6 +60,8 @@ class SearchDocumentBaseVM(BaseModel):
                             texts = input.split(delimiter2)
                         elif delimiter3 in input:
                             texts = input.split(delimiter3)
+                        else:
+                            texts.append(input)
                     else:
                         texts.append(input)
                     li = []
@@ -64,7 +69,7 @@ class SearchDocumentBaseVM(BaseModel):
                         try:
                             if nodeInput == "final":
                                 if not text.startswith("{\\rtf1"):
-                                    if len(text) > charLimit:
+                                    if charLimit is not None and len(text) > charLimit:
                                         text = text[0:charLimit] + "    ....."
                                 else:
                                     # remove additional occurances of {\\rtf1
@@ -74,7 +79,7 @@ class SearchDocumentBaseVM(BaseModel):
                                 if text.startswith("{\\rtf1"):
                                     text = rtf_to_text(text)
 
-                                if len(text) > charLimit:
+                                if charLimit is not None and len(text) > charLimit:
                                     text = text[0:charLimit] + "    ....."
                             li.append(text)
                         except Exception as e:
@@ -161,18 +166,18 @@ class SearchDocumentVM(SearchDocumentBaseVM):
     def transform(cls, values):
         if values is None:
             return
-        SearchDocumentBaseVM.ParseComment("gross", "grosstexts", values)
-        SearchDocumentBaseVM.ParseComment("final", "finaltexts", values)
-        SearchDocumentBaseVM.ParseComment("addend", "addendtexts", values)
-        SearchDocumentBaseVM.ParseComment("comment", "commenttexts", values)
-        SearchDocumentBaseVM.ParseComment(
+        cls.ParseComment("gross", "grosstexts", values)
+        cls.ParseComment("final", "finaltexts", values)
+        cls.ParseComment("addend", "addendtexts", values)
+        cls.ParseComment("comment", "commenttexts", values)
+        cls.ParseComment(
             "microscopic",
             "microscopictexts",
             values,
         )
-        SearchDocumentBaseVM.ParseComment("intraop", "intraoptexts", values)
-        SearchDocumentBaseVM.ParseComment("resident", "residenttexts", values)
-        SearchDocumentBaseVM.ParseComment("synoptic", "synoptictexts", values)
+        cls.ParseComment("intraop", "intraoptexts", values)
+        cls.ParseComment("resident", "residenttexts", values)
+        cls.ParseComment("synoptic", "synoptictexts", values)
 
         if "staffname" in values:
             input = values["staffname"]

@@ -5,6 +5,17 @@
     /* margin-top:20px; */
 }
 
+.case-cart-toolbar {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.result-group.in-case-cart {
+    border-color: #0078bf;
+}
+
 .bold300{
     font-weight: 300;
 }

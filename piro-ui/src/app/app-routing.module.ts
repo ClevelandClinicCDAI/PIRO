@@ -46,6 +46,11 @@ import { UpdateCommentTypeComponent } from './components/CommentType/update-comm
 import { DetailComponent } from './components/search/detail/detail.component';
 import { PagenotfoundComponent } from './pagenotfound/pagenotfound.component';
 import { CohortComponent } from './components/cohort/cohort.component';
+import { CaseSetsComponent } from './components/case-sets/case-sets.component';
+import { CaseSetReviewComponent } from './components/case-sets/case-set-review.component';
+import { CaseSetOperationsComponent } from './components/case-sets/case-set-operations.component';
+import { TeachingSetsComponent } from './components/case-sets/teaching-sets.component';
+import { TeachingSetViewComponent } from './components/case-sets/teaching-set-view.component';
 import { AireviewsComponent } from './components/aireviews/aireviews.component';
 import { SlideRequestFormComponent } from './components/slide-request/slide-request-form/slide-request-form.component';
 import { SlideRequestQueueComponent } from './components/slide-request/slide-request-queue/slide-request-queue.component';
@@ -63,6 +68,11 @@ const routes: Routes = [
   { path: 'auth/callback', component: AuthCallbackComponent },
   { path: 'signed-out', component: SignedOutComponent },
   { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
+  { path: 'teaching-sets', component: TeachingSetsComponent, canActivate: [AuthGuard] },
+  { path: 'teaching-sets/:id', component: TeachingSetViewComponent, canActivate: [AuthGuard] },
+  { path: 'case-sets', component: CaseSetsComponent, canActivate: [AuthGuard], data: {role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']} },
+  { path: 'case-sets/operations', component: CaseSetOperationsComponent, canActivate: [AuthGuard], data: {role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']} },
+  { path: 'case-sets/:id', component: CaseSetReviewComponent, canActivate: [AuthGuard], data: {role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']} },
   {
     path: 'search', component: SearchComponent, canActivate: [AuthGuard], data: {
       role: ['ADMIN', 'DEMOADMIN', 'ANALYST', 'USER']

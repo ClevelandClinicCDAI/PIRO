@@ -35,6 +35,7 @@
           <p class="text-muted mb-0">{{formatDateTime(item.createOn)}}</p>
         </td>
         <td>
+          <a class="btn btn-outline-primary btn-sm me-2" routerLink="/case-sets" [queryParams]="{searchId:item.searchId}" (click)="closeModal()">Create case set</a>
           <a class="btn btn-danger" (click)="deleteSearch(item.searchId)" href="javascript:void(0);"><i
               class="fa fa-trash-o"></i></a>
         </td>

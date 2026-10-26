@@ -26,6 +26,8 @@ export class SessionExpiryService {
             : '/search';
 
         this.localStorageService.clearItem('api-token');
+        this.localStorageService.clearItem('case-set-cart');
+        this.localStorageService.clearItem('case-set-cart-create');
         this.filterService.setLogin(false, '', true);
         if (!isPublicPage) {
             this.router.navigate(['/login'], {

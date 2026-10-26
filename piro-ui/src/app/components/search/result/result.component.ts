@@ -14,7 +14,8 @@ import { LocalStorageService } from '../../../services/localStorage.service';
 import { SynopticCopathComponent } from '../../common/synoptic-copath/synoptic-copath.component';
 import { SynopticEpicComponent } from '../../common/synoptic-epic/synoptic-epic.component';
 import { ToastrService } from 'ngx-toastr';
-import { SendToExtractionComponent } from '../../modal/send-to-extraction/send-to-extraction.component';
+import { CaseCartService } from '../../../services/case-cart.service';
+import { CaseCartComponent } from '../../case-sets/case-cart.component';
 @Component({
   standalone: false,
   selector: 'app-result',
@@ -43,9 +44,9 @@ export class ResultComponent {
 
   resultPayloadSubscription:any;
   noResults: boolean = false;
+  cartNotice = '';
+  savedCaseSetId: number | null = null;
 
-  /** Cases selected for Extraction Suite */
-  selectedCaseIds: Set<number> = new Set();
   constructor(private modalService: NgbModal, 
     private searchService: SearchService, 
     private common: Common, 
@@ -55,7 +56,34 @@ export class ResultComponent {
     private saveTagService: SaveTagService,
     private filterService:FilterService,
     private localStorageService:LocalStorageService,
-    private toastr: ToastrService) { }
+    private toastr: ToastrService,
+    public cart: CaseCartService) { }
+
+  selectForCart(item: any, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const result = this.cart.select(item.caseid, item.casenumber || `Case ${item.caseid}`, input.checked);
+    if (result !== 'selected') {
+      input.checked = false;
+      if (result === 'cart-full') {
+        this.toastr.info(`The cart holds up to ${this.cart.limit} cases. Save these cases to a set before adding more.`);
+      } else {
+        this.toastr.error('This case could not be added because its identifier is missing or invalid. Refresh the search results and try again.');
+      }
+    }
+    this.cartNotice = '';
+  }
+
+  openCart() {
+    const modalRef = this.modalService.open(CaseCartComponent, {
+      ariaLabelledBy: 'case-cart-title', size: 'lg', scrollable: true,
+      backdrop: 'static', keyboard: false
+    });
+    modalRef.result.then(result => {
+      this.savedCaseSetId = result.set.caseSetId;
+      this.cartNotice = `${result.added} case${result.added === 1 ? '' : 's'} added to "${result.set.name}".`;
+      if (result.alreadyPresent) this.cartNotice += ` ${result.alreadyPresent} already in the set; existing decisions and selections kept.`;
+    }).catch(() => {});
+  }
   ngOnInit() {
     this.filterRoute =  this.activatedRoute.snapshot.queryParams['searchFilter'];
     if (this.activatedRoute.snapshot.queryParams['searchFilter']) {
@@ -246,23 +274,4 @@ export class ResultComponent {
 		});
 	}
 
-  toggleCase(caseId: number) {
-    if (this.selectedCaseIds.has(caseId)) {
-      this.selectedCaseIds.delete(caseId);
-    } else {
-      this.selectedCaseIds.add(caseId);
-    }
-  }
-
-  openSendToExtraction() {
-    const modalRef = this.modalService.open(SendToExtractionComponent, {
-      ariaLabelledBy: 'send-to-extraction-title',
-      size: 'md',
-      backdrop: 'static'
-    });
-    modalRef.componentInstance.caseIds = Array.from(this.selectedCaseIds);
-    modalRef.result.then((sessionId) => {
-      this.selectedCaseIds.clear();
-    }).catch(() => {});
-  }
 }

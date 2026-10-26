@@ -1,5 +1,7 @@
 from apis.version1 import (
     route_case,
+    route_case_set,
+    route_teaching_set,
     route_casecomment,
     route_commentType,
     route_cohort,
@@ -43,6 +45,12 @@ api_router.include_router(
 )
 api_router.include_router(
     route_case.router, prefix="/case", tags=["Case Info"]
+)
+api_router.include_router(
+    route_case_set.router, prefix="/case-sets", tags=["Case Sets"]
+)
+api_router.include_router(
+    route_teaching_set.router, prefix="/teaching-sets", tags=["Teaching Sets"]
 )
 api_router.include_router(route_tag.router, prefix="/tag", tags=["Tag"])
 api_router.include_router(

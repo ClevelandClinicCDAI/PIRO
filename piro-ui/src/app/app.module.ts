@@ -81,6 +81,11 @@ import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dial
 import { ConfirmDialogService } from './services/confirm-dialog.service';
 import { UpdateuserComponent } from './components/Admin/user/updateuser/updateuser.component';
 import { ContenttextComponent } from './components/common/contenttext/contenttext.component';
+import { CaseSetsComponent } from './components/case-sets/case-sets.component';
+import { CaseSetReviewComponent } from './components/case-sets/case-set-review.component';
+import { CaseSetOperationsComponent } from './components/case-sets/case-set-operations.component';
+import { TeachingSetsComponent } from './components/case-sets/teaching-sets.component';
+import { TeachingSetViewComponent } from './components/case-sets/teaching-set-view.component';
 import { AutosuggestComponent } from './components/common/autosuggest/autosuggest.component';
 import { ToastComponent } from './components/toast/toast.component';
 import { ToasterComponent } from './components/toaster/toaster.component';
@@ -190,6 +195,11 @@ import { SendToExtractionComponent } from './components/modal/send-to-extraction
     ConfirmDialogComponent,
     UpdateuserComponent,
     ContenttextComponent,
+    CaseSetsComponent,
+    CaseSetReviewComponent,
+    CaseSetOperationsComponent,
+    TeachingSetsComponent,
+    TeachingSetViewComponent,
     AutosuggestComponent,
     ToastComponent,
     ToasterComponent,
