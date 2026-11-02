@@ -153,5 +153,6 @@ class LinkedOrder(SourceBase):
     DefaultUnit: Mapped[str | None] = mapped_column(String(1000))
     OrdValue: Mapped[str | None] = mapped_column(String(1000))
     OrdNumValue: Mapped[Decimal | None] = mapped_column(Numeric(38, 5))
+    ResultDate: Mapped[datetime | None] = mapped_column(DateTime)
 
     __mapper_args__ = {"primary_key": [LinkedOrderId]}

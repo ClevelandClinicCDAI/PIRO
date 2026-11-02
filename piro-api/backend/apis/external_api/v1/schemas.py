@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, StrictStr, constr, validator
@@ -56,7 +57,7 @@ class SearchRequest(BaseModel):
 
 
 class LinkedOrder(BaseModel):
-    """The seven-field external record contract, independent of ORM models."""
+    """The eight-field external record contract, independent of ORM models."""
 
     CaseNumber: StrictStr
     ComponentName: StrictStr | None = Field(..., nullable=True)
@@ -68,6 +69,11 @@ class LinkedOrder(BaseModel):
         ...,
         nullable=True,
         description="Exact decimal string with five fractional digits; never a floating-point number.",  # noqa:E501
+    )
+    ResultDate: datetime | None = Field(
+        ...,
+        nullable=True,
+        description="ISO 8601 naive US/Eastern datetime, without a timezone offset or conversion.",  # noqa:E501
     )
 
 

@@ -92,6 +92,7 @@ def test_complete_batch_joins_all_cases_and_filters_each_description(
     assert {item["CaseNumber"] for item in body["data"]} == {"S26-1"}
     assert all(item["OrdNumValue"] == "12.34000" for item in body["data"])
     assert all(item["DefaultUnit"] is None for item in body["data"])
+    assert all(item["ResultDate"] is None for item in body["data"])
     assert set(body["data"][0]) == {
         "CaseNumber",
         "ComponentName",
@@ -100,6 +101,7 @@ def test_complete_batch_joins_all_cases_and_filters_each_description(
         "DefaultUnit",
         "OrdValue",
         "OrdNumValue",
+        "ResultDate",
     }
     assert body["cases"] == [
         {"CaseNumber": "S26-1", "status": "matched", "record_count": 3},
@@ -136,6 +138,38 @@ def test_complete_batch_joins_all_cases_and_filters_each_description(
         assert json.loads(audit.CaseResultsJson) == body["cases"]
         assert connection.scalar(select(ExternalApiUsage.ReturnedRecords)) == 3
         assert connection.scalar(select(ExternalApiLease.RequestId)) is None
+
+
+@pytest.mark.parametrize(
+    ("result_date", "expected"),
+    [
+        (datetime(2026, 1, 15, 14, 30, 45), "2026-01-15T14:30:45"),
+        (datetime(2026, 7, 15, 14, 30, 45), "2026-07-15T14:30:45"),
+        (
+            datetime(2026, 7, 15, 14, 30, 45, 123000),
+            "2026-07-15T14:30:45.123000",
+        ),
+        (datetime(2026, 11, 1, 1, 30), "2026-11-01T01:30:00"),
+        (None, None),
+    ],
+)
+def test_result_date_preserves_naive_eastern_wall_time(
+    api: ApiFixture, result_date: datetime | None, expected: str | None
+) -> None:
+    """Return source timestamps as naive ISO 8601 values or JSON null."""
+    seed(api)
+    with api["engine"].begin() as connection:
+        connection.execute(update(LinkedOrder).values(ResultDate=result_date))
+    response = search(api)
+    assert response.status_code == 200, response.text
+    records = response.json()["data"]
+    assert len(records) == 4
+    for record in records:
+        assert record["ResultDate"] == expected
+        if record["ResultDate"] is not None:
+            parsed = datetime.fromisoformat(record["ResultDate"])
+            assert parsed == result_date
+            assert parsed.tzinfo is None
 
 
 def test_omitted_filter_and_duplicate_records_are_preserved(
@@ -516,10 +550,10 @@ def test_production_application_factory_mounts_external_app(
         assert app.state.external_api.state.service.engine is api["engine"]
 
 
-def test_openapi_requires_all_seven_nullable_record_fields(
+def test_openapi_requires_all_eight_record_fields(
     api: ApiFixture,
 ) -> None:
-    """Verify openapi requires all seven nullable record fields."""
+    """Require every record field and document nullable datetime values."""
     schema = api["client"].get("/openapi.json").json()
     assert schema["openapi"] == "3.0.3"
     record = schema["components"]["schemas"]["LinkedOrder"]
@@ -531,6 +565,12 @@ def test_openapi_requires_all_seven_nullable_record_fields(
         "DefaultUnit",
         "OrdValue",
         "OrdNumValue",
+        "ResultDate",
     }
     assert record["properties"]["OrdNumValue"]["type"] == "string"
     assert record["properties"]["OrdNumValue"]["nullable"] is True
+    result_date = record["properties"]["ResultDate"]
+    assert result_date["type"] == "string"
+    assert result_date["format"] == "date-time"
+    assert result_date["nullable"] is True
+    assert "naive US/Eastern" in result_date["description"]

@@ -112,7 +112,8 @@ A successful response is complete for the requested batch and filter:
       "ProcedureDesc": "PD-L1 assay",
       "DefaultUnit": "%",
       "OrdValue": "12.34",
-      "OrdNumValue": "12.34000"
+      "OrdNumValue": "12.34000",
+      "ResultDate": "2026-07-15T14:30:45.123000"
     }
   ],
   "record_count": 1,
@@ -123,10 +124,17 @@ A successful response is complete for the requested batch and filter:
 }
 ```
 
-Every data record contains exactly the seven fields shown above. CaseNumber
+Every data record contains exactly the eight fields shown above. CaseNumber
 comes from `Case`; the other fields come from `LinkedOrder`. Null values remain
 JSON null. OrdNumValue is a decimal string with five fractional digits, preserving
 SQL decimal(38,5) precision; parse it with Python's `decimal.Decimal` if needed.
+
+ResultDate is the stored `LinkedOrder.ResultDate`, serialized as an ISO 8601
+naive US/Eastern (`America/New_York`) datetime. Its wall-clock value is preserved
+without timezone conversion, a UTC `Z`, or an offset. Fractional seconds are
+included when present; a missing timestamp is JSON null. As with the source
+database, the repeated fall-back hour cannot be distinguished from this value
+alone. Consumers must interpret it as Eastern wall time, not UTC.
 
 Each distinct submitted case number has a summary:
 

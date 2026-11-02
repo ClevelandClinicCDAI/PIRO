@@ -301,6 +301,7 @@ class ExternalService:
                 LinkedOrder.DefaultUnit,
                 LinkedOrder.OrdValue,
                 LinkedOrder.OrdNumValue,
+                LinkedOrder.ResultDate,
             )
             .select_from(Case)
             .join(LinkedOrder, Case.CaseId == LinkedOrder.CaseId)
