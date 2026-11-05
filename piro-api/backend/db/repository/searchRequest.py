@@ -237,8 +237,9 @@ def list_searchRequest(
         db.query(
             SearchRequest, Search, SearchRequestStatus, Reviewer, Approver
         )
+        .select_from(SearchRequest)
         .join(
-            SearchRequest,
+            Search,
             SearchRequest.SearchId == Search.SearchId,
             isouter=True,
         )
