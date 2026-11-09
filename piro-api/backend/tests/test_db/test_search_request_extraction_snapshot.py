@@ -1,4 +1,6 @@
+import asyncio
 import os
+from pathlib import Path
 
 from datetime import datetime
 
@@ -19,9 +21,11 @@ from db.models.SearchRequestReason import SearchRequestReason  # noqa: F401
 from db.models.SearchRequestStatus import SearchRequestStatus  # noqa: F401
 from db.models.User import User
 from db.repository.searchRequest import (
+    get_searchRequest_all,
     get_extraction_case_ids_for_request,
     snapshot_extraction_cases_for_request,
 )
+from apis.version1 import route_searchRequest
 
 os.environ.setdefault("DATABASE", "SQLITE")
 
@@ -34,6 +38,8 @@ def db():
         tables=[
             User.__table__,
             Case.__table__,
+            Search.__table__,
+            SearchRequestStatus.__table__,
             SearchRequest.__table__,
             ExtractionSession.__table__,
             ExtractionRun.__table__,
@@ -171,3 +177,90 @@ def test_request_extraction_case_snapshot_preserves_original_membership(db):
         extractionRunId=run.ExtractionRunId,
         db=db,
     ) == [case_a.CaseId, case_b.CaseId]
+
+
+def test_extraction_request_without_search_can_be_downloaded(db, monkeypatch):
+    user = _create_user(db, "extraction-download@example.com")
+    session = _create_session(db, user.UserId)
+    request = _create_request(
+        db, user.UserId, session.ExtractionSessionId, None
+    )
+    request.SearchRequestStatusId = 2
+    request.RequestDocumentFile = b"IRB attachment"
+    request.RequestDocumentName = "irb"
+    request.RequestDocumentExtension = ".pdf"
+    request.RequestDocumentType = "application/pdf"
+    db.add(
+        SearchRequestStatus(
+            SearchRequestStatusId=2,
+            ShortName="Submitted",
+            Code="SUBMIT",
+            Description="Submitted",
+            IsActive=True,
+            CreateBy="pytest",
+        )
+    )
+    db.commit()
+
+    found = get_searchRequest_all(request.SearchRequestId, db)
+    assert found.SearchId is None
+    assert found.SearchName is None
+    assert found.ExtractionSessionId == session.ExtractionSessionId
+    assert found.IsLlmAssisted is True
+    assert found.RequestDocumentFile == b"IRB attachment"
+
+    monkeypatch.setattr(
+        route_searchRequest,
+        "create_audit_search_request",
+        lambda **kwargs: None,
+    )
+    response = asyncio.run(
+        route_searchRequest.download(
+            request.SearchRequestId, user.NUID, user.UserId, db
+        )
+    )
+    try:
+        assert Path(response.path).read_bytes() == b"IRB attachment"
+        assert response.media_type == "application/pdf"
+    finally:
+        Path(response.path).unlink()
+
+
+def test_saved_search_request_keeps_search_name(db):
+    user = _create_user(db, "saved-search-download@example.com")
+    search = Search(
+        UserId=user.UserId,
+        Name="Saved cohort",
+        Description="Saved cohort",
+        SearchQuery="*:*",
+        IsActive=True,
+        CreateBy="pytest",
+    )
+    status = SearchRequestStatus(
+        SearchRequestStatusId=2,
+        ShortName="Submitted",
+        Code="SUBMIT",
+        Description="Submitted",
+        IsActive=True,
+        CreateBy="pytest",
+    )
+    db.add_all([search, status])
+    db.flush()
+    request = SearchRequest(
+        RequesterId=user.UserId,
+        SearchId=search.SearchId,
+        IsLlmAssisted=False,
+        SearchRequestStatusId=status.SearchRequestStatusId,
+        SearchRequestReasonId=1,
+        RequestName="Saved search request",
+        IsActive=True,
+        CreateBy="pytest",
+    )
+    db.add(request)
+    db.commit()
+
+    found = get_searchRequest_all(request.SearchRequestId, db)
+    assert found.SearchId == search.SearchId
+    assert found.SearchName == "Saved cohort"
+    assert found.Requester == user.NUID
+    assert found.SearchRequestStatus == "Submitted"
