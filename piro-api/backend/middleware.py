@@ -50,7 +50,8 @@ async def log_request_middleware(request: Request, call_next):
         except ValueError:
             status_phrase = ""
         logger.info(
-            f'{datetime.now()} {nuid} {host}:{port} - "{request.method} {url}" '  # noqa:E501
+            f"{datetime.now()} {nuid} {host}:{port} - "
+            f'"{request.method} {request.url.path}" '
             f"{response.status_code} {status_phrase} {formatted_process_time}ms"  # noqa:E501
         )
         if access_token != "":
@@ -67,7 +68,6 @@ async def log_request_middleware(request: Request, call_next):
                 response.headers["Refreshtoken"] = refreshToken
         return response
     except Exception as exc:
-        logger.error(f"Error! Code: {type(exc).__name__}, Message, {str(exc)}")
         await log_error(request, exc)
 
         if (
