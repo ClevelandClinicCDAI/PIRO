@@ -15,9 +15,11 @@ def create_access_token(
     expire_minutes: Optional[float] = None,
 ):
     expires_delta = timedelta(
-        minutes=expire_minutes
-        if expire_minutes is not None
-        else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=(
+            expire_minutes
+            if expire_minutes is not None
+            else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     )
     data = {"userId": 0, "nuid": "", "role": "", "name": ""}
     data["userId"] = userId

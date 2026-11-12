@@ -134,6 +134,8 @@ def ensure_role_exists(
         role.UpdateBy = user
         db.commit()
         db.refresh(role)
-        logger.info("Updated role '%s' to ensure it is active and current.", code)
+        logger.info(
+            "Updated role '%s' to ensure it is active and current.", code
+        )
 
     return role
