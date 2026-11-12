@@ -29,7 +29,7 @@ from viewmodel.searchRequest import (
     SearchRequestVMCreate,
 )
 from jinja2 import Template
-from logger import logger
+from piro_logger import logger
 
 
 def create_new_searchRequest(

@@ -12,7 +12,7 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi_pagination import add_pagination
-from logger import logger
+from piro_logger import logger
 from core.constants import Constants
 from db.repository.role import ensure_role_exists
 from middleware import log_request_middleware

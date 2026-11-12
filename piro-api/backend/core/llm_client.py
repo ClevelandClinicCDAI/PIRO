@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import httpx
-from logger import logger
+from piro_logger import logger
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Response dataclass

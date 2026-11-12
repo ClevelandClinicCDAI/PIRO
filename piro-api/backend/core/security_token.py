@@ -3,7 +3,7 @@ from typing import Optional
 
 from core.config import settings
 import jwt
-from logger import logger
+from piro_logger import logger
 
 
 def create_access_token(

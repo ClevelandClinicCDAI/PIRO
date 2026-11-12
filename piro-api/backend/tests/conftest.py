@@ -5,7 +5,7 @@ from typing import Callable, Generator
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from fastapi_pagination import add_pagination
-from logger import logger
+from piro_logger import logger
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists, drop_database

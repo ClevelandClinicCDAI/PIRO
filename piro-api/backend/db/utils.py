@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from db.session import SQLALCHEMY_DATABASE_URL
-from logger import logger
+from piro_logger import logger
 
 
 async def check_db_connected():

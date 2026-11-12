@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from logger import logger
+from piro_logger import logger
 from tests.conftest import TestClient
 
 

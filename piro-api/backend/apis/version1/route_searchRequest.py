@@ -57,7 +57,7 @@ from viewmodel.searchRequest import (
 )
 from db.repository.searchRequestDataField import list_searchRequestDataField
 from viewmodel.searchRequestReason import SearchRequestReasonVMDropdown
-from logger import logger
+from piro_logger import logger
 from exception.data_exception import DataException
 
 router = APIRouter()

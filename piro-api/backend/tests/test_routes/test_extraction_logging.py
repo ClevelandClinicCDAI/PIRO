@@ -3,7 +3,7 @@ from io import StringIO
 from types import SimpleNamespace
 
 from apis.version1 import route_extraction
-from logger import logger
+from piro_logger import logger
 
 
 def _capture_logs():

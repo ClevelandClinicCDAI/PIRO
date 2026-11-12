@@ -9,7 +9,7 @@ from fastapi.exception_handlers import (
 )
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
-from logger import logger
+from piro_logger import logger
 
 
 async def request_validation_exception_handler(

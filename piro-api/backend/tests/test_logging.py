@@ -30,7 +30,7 @@ class LoggingTests(unittest.TestCase):
     def test_loguru_and_standard_logging_are_captured_once(self):
         result = self.run_logging(
             "import logging\n"
-            "from logger import configure_logging, logger\n"
+            "from piro_logger import configure_logging, logger\n"
             "configure_logging()\n"
             "logger.info('application-marker')\n"
             "logging.getLogger('piro.external_api').info('library-marker')\n"
@@ -45,7 +45,7 @@ class LoggingTests(unittest.TestCase):
     def test_log_level_is_configurable(self):
         result = self.run_logging(
             "import logging\n"
-            "from logger import logger\n"
+            "from piro_logger import logger\n"
             "logger.debug('application-debug')\n"
             "logging.getLogger('piro.external_api').debug('library-debug')\n",
             level="DEBUG",
@@ -55,7 +55,7 @@ class LoggingTests(unittest.TestCase):
 
     def test_tracebacks_do_not_dump_local_values(self):
         result = self.run_logging(
-            "from logger import logger\n"
+            "from piro_logger import logger\n"
             "def fail():\n"
             "    values = {'credential': 'sensitive-local-marker'}\n"
             "    return values['missing']\n"

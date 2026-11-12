@@ -6,7 +6,7 @@ from core.security_token import decode_access_nuid_token, refresh_jwt
 from exception_handlers import log_error
 from fastapi import Request, status
 from fastapi.responses import PlainTextResponse
-from logger import logger
+from piro_logger import logger
 
 
 async def log_request_middleware(request: Request, call_next):

@@ -1,7 +1,7 @@
 import re
 import ldap
 import ldap.filter
-from logger import logger
+from piro_logger import logger
 from core.config import settings
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session

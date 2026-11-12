@@ -6,7 +6,7 @@ from uuid import uuid4
 
 def main():
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-    from logger import logger
+    from piro_logger import logger
 
     marker = f"PIRO_LOGGING_CHECK_{uuid4().hex}"
     print(f"{marker} stdout", flush=True)

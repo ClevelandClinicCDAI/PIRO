@@ -63,7 +63,7 @@ import json as _json
 from db.session import SessionLocal, get_db, get_solr
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
-from logger import logger
+from piro_logger import logger
 from sqlalchemy.orm import Session
 from viewmodel.extraction import (
     CaseTextVM,
