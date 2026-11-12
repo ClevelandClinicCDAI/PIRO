@@ -435,7 +435,7 @@ Perform all the following at a Powershell prompt:
         * You can then test the Nginx reverse proxy by starting the app under Gunicorn (`gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --access-logfile - --error-logfile - --bind 127.0.0.1:8000`), and visiting the website on port 80. Stop the foreground process before starting the service.
 8. Configure gunicorn as a service
     * Use [deploy/piro-api.service](deploy/piro-api.service) as the template. Merge it with existing server-specific settings rather than replacing an established unit blindly.
-    * Follow [README_LOGGING.md](README_LOGGING.md) to install and validate the service and journal collector on the development server first.
+    * Follow [deploy/README_LOGGING.md](README_LOGGING.md) to set up logging.
 9. Configure gunicorn/piro-api Logs
     * The collector writes a single `backend/logs/runtime.log`; journald remains an independent retrieval path.
     * Install the dedicated hourly rotation timer.
