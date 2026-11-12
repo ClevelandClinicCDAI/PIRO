@@ -478,6 +478,7 @@ async def _run_extraction_job(
     role: str,
     case_ids: Optional[List[int]] = None,
     related_run_id: Optional[int] = None,
+    search_request_id: Optional[int] = None,
 ) -> None:
     """Background task: extract cases for a session.
 
@@ -497,6 +498,18 @@ async def _run_extraction_job(
         schema = json.loads(run.SchemaJson)
         sess = get_session(session_id, db)
         comment_types = parse_text_sources(sess.TextSources if sess else None)
+        logger.info(
+            "Extraction run started: search_request_id={} session_id={} "
+            "run_id={} case_count={} schema_field_count={} provider={} "
+            "model={}",
+            search_request_id,
+            session_id,
+            run_id,
+            len(queue),
+            len(schema),
+            run.LlmProvider,
+            run.LlmModel,
+        )
 
         # Determine which cases to process
         validation_set = set(case_ids) if case_ids is not None else None
@@ -541,6 +554,16 @@ async def _run_extraction_job(
                         "failed",
                         db,
                         error="No report text found for this case",
+                    )
+                    logger.warning(
+                        "Extraction case failed: search_request_id={} "
+                        "session_id={} run_id={} case_id={} "
+                        "attempt={} reason=no_report_text",
+                        search_request_id,
+                        session_id,
+                        run_id,
+                        queue_item.CaseId,
+                        (queue_item.AttemptCount or 0) + 1,
                     )
                     continue
 
@@ -599,38 +622,64 @@ async def _run_extraction_job(
                     queue_item.ExtractionQueueId, "completed", db
                 )
 
-            except Exception as e:
-                logger.error(
-                    f"Extraction failed for case {queue_item.CaseId}: {e}",
-                    exc_info=True,
+            except Exception as exc:
+                logger.exception(
+                    "Extraction case failed: search_request_id={} "
+                    "session_id={} run_id={} case_id={} attempt={} "
+                    "exception_type={}",
+                    search_request_id,
+                    session_id,
+                    run_id,
+                    queue_item.CaseId,
+                    (queue_item.AttemptCount or 0) + 1,
+                    type(exc).__name__,
                 )
                 update_queue_item_status(
                     queue_item.ExtractionQueueId,
                     "failed",
                     db,
-                    error=str(e)[:1000],
+                    error=str(exc)[:1000],
                 )
 
         # Update run/session status
+        status_summary: dict = get_extraction_status(session_id, db)
         if cancelled:
             final_status = "cancelled"
         else:
-            status = get_extraction_status(session_id, db)
+
             final_status = (
                 "completed"
-                if status["failed"] == 0
+                if status_summary["failed"] == 0
                 else "completed_with_errors"
             )
         update_run_status(run_id, final_status, db)
         update_session_status(session_id, final_status, db)
+        logger.info(
+            "Extraction run finished: search_request_id={} session_id={} "
+            "run_id={} status={} completed={} failed={} pending={} "
+            "running={} cancelled={}",
+            search_request_id,
+            session_id,
+            run_id,
+            final_status,
+            status_summary["completed"],
+            status_summary["failed"],
+            status_summary["pending"],
+            status_summary["running"],
+            cancelled,
+        )
         _notify_extraction_run_completed(run_id, final_status, db)
 
-    except Exception as e:
-        logger.error(
-            f"Extraction job failed for session {session_id}: {e}",
-            exc_info=True,
+    except Exception as exc:
+        logger.exception(
+            "Extraction run failed: search_request_id={} session_id={} "
+            "run_id={} exception_type={}",
+            search_request_id,
+            session_id,
+            run_id,
+            type(exc).__name__,
         )
-        update_run_status(run_id, "failed", db, error=str(e)[:1000])
+        update_run_status(run_id, "failed", db, error=str(exc)[:1000])
         update_session_status(session_id, "failed", db)
         _notify_extraction_run_completed(run_id, "failed", db)
     finally:

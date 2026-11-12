@@ -1,11 +1,21 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import TYPE_CHECKING
 
-from loguru import logger
+from loguru import logger as _loguru_logger
+
+if TYPE_CHECKING:
+    from loguru import Logger
+
+logger: Logger = _loguru_logger
+
+__all__ = ["configure_logging", "logger"]
 
 
-def configure_logging():
+def configure_logging() -> None:
     level = os.getenv("PIRO_LOG_LEVEL", "INFO").upper()
     logger.remove()
     logger.add(
