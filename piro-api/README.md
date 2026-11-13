@@ -70,7 +70,21 @@ OAuth client or exchange the authorization code. Consequently,
 `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_REDIRECT_URI`, and
 `OIDC_SCOPES` are UI settings and are not API configuration options.
 
-### Executing Unit Tests
+## Logging
+
+Application logs go to stderr. Set `PIRO_LOG_LEVEL` to change the default
+`INFO` level.
+
+Local Uvicorn and Docker development use console logs. For Linux
+development/production servers, systemd retains stdout/stderr in journald and a
+ dedicated rsyslog collector writes API, server, access, and startup records to
+ `backend/logs/runtime.log`.
+
+## External integration API
+
+In addition to the main internal API, we also have a separate "external" API for use by external applications.  The external API uses PIRO-managed application keys, independently of LDAP/OAuth user login. See [README_EXTERNAL_API.md](deploy/README_EXTERNAL_API.md) for information.
+
+## Executing Unit Tests
 
 * Activate the 'venv' for the project
 * Navigate to the `piro-api/backend` directory
@@ -100,13 +114,13 @@ OAuth client or exchange the authorization code. Consequently,
     docker exec -w /app piro-github-api-1 python -m pytest tests/test_core/test_oauth_auth.py -v
     ```
 
-### Application Install on Localhost
+## Application Install on Localhost
 
-#### General Prerequisites
+### General Prerequisites
 
 * A modern (v3 or greater) installation of Python.
 
-#### Installation
+### Installation
 
 > Note that these instructions are for Windows
 
@@ -153,8 +167,6 @@ Perform all the following at a Powershell prompt:
     ```bash
     pip install .\python_ldap-3.4.0-cp311-cp311-win_amd64.whl
     ```
-
-## Server Deployment
 
 ## Application Install on Our Servers
 
@@ -420,63 +432,10 @@ Perform all the following at a Powershell prompt:
         sudo systemctl restart nginx
         ```
 
-        * You can then test the Nginx reverse proxy by starting up the app under gunicorn (`gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --error-logfile /var/log/gunicorn/error.log --bind 0.0.0.0:8000`), and visiting the website on port 80.
+        * You can then test the Nginx reverse proxy by starting the app under Gunicorn (`gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --access-logfile - --error-logfile - --bind 127.0.0.1:8000`), and visiting the website on port 80. Stop the foreground process before starting the service.
 8. Configure gunicorn as a service
-    * Navigate to the `/etc/systemd/system` directory and create a file called `piro-api.service`, and update it's contents to match the following:
-
-        ```bash
-        [Unit]
-        Description=Gunicorn instance to serve the piro-api application
-        After=network.target
-
-        [Service]
-        User=piro-user
-        Group=piro-user
-        UMask=017
-        WorkingDirectory=/opt/piro-api/piro-api/backend
-        Environment="PATH=/opt/piro-api/piro-api_venv/bin"
-        ExecStart=/opt/piro-api/piro-api_venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker --access-logfile /var/log/gunicorn/access.log --error-logfile /var/log/gunicorn/error.log main:app
-
-        [Install]
-        WantedBy=multi-user.target
-        ```
-
-    * Enable the piro-api service:
-
-        ```bash
-        sudo systemctl enable piro-api
-        ```
-
-    * And start the piro-api service:
-
-        ```bash
-        sudo systemctl start piro-api
-        ```
-
-    * You can then check the status of the piro-api service with `sudo systemctl status piro-api`
+    * Use [deploy/piro-api.service](deploy/piro-api.service) as the template. Merge it with existing server-specific settings rather than replacing an established unit blindly.
+    * Follow [README_LOGGING.md](deploy/README_LOGGING.md) to set up logging.
 9. Configure gunicorn/piro-api Logs
-    * Create the directory for log files and set up proper permissions:
-
-        ```bash
-        sudo mkdir /var/log/gunicorn
-        sudo chown piro-api /var/log/gunicorn
-        ```
-
-    * To avoid problems caused by running out of disk space due to logs, we need to configure the logs to be rotated.
-        * Create the file `/etc/logrotate.d/gunicorn` containing the following:
-
-            ```bash
-            compress
-
-            /var/log/gunicorn/* {
-                rotate 10
-                daily
-            }
-            ```
-
-        * Execute the following to turn on the log rotation: `sudo logrotate /etc/logrotate.d/gunicorn`
-        * Restart the piro-api service: `sudo systemctl restart piro-api`
-
-## External integration API
-
-In addition to the main internal API, we also have a separate "external" API for use by external applications.  The external API uses PIRO-managed application keys, independently of LDAP/OAuth user login. See [README_EXTERNAL_API.md](README_EXTERNAL_API.md) for information.
+    * The collector writes a single `backend/logs/runtime.log`; journald remains an independent retrieval path.
+    * Install the dedicated hourly rotation timer.

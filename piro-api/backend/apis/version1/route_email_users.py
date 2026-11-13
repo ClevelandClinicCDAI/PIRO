@@ -7,7 +7,7 @@ from core.security_user import get_current_user_nuid
 from db.repository.user import list_user_active
 from db.session import get_db
 from fastapi import APIRouter, Depends, HTTPException
-from logger import logger
+from piro_logger import logger
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 

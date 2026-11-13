@@ -5,7 +5,7 @@ from core.constants import Constants
 from core.email import Email
 from db.models.SlideRequest import SlideRequest
 from exception.data_exception import DataException
-from logger import logger
+from piro_logger import logger
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session, joinedload
 from viewmodel.slide_request import (

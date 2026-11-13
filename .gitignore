@@ -31,6 +31,7 @@ build/
 config.json
 
 *.log
+/piro-api/backend/logs/
 casecomment_dependency_graph.md
 casecomment_dependency_graph.txt
 casecomment_table_usage.txt

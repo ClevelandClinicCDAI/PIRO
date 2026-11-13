@@ -2,7 +2,7 @@ import json
 import requests
 from pathlib import Path
 
-from logger import logger
+from piro_logger import logger
 from core.config import settings
 from airflow.general import get_certificate_path_airflow, get_airflow_api_token
 

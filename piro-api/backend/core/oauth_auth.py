@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.constants import Constants
 from db.repository.user import create_user_log
-from logger import logger
+from piro_logger import logger
 
 SUCCESS: str = Constants.StatusCode.S.name
 ERROR: str = Constants.StatusCode.E.name

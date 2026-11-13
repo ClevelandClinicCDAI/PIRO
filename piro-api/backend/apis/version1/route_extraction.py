@@ -5,10 +5,13 @@ All endpoints require authentication. Provider selection is server-side only.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
-from typing import Annotated, Any, Dict, List, Optional
+from contextlib import contextmanager
+from time import perf_counter
+from typing import Annotated, Any, Dict, List, Optional, cast
 
 from core.auth_bearer import JWTBearer
 from core.config import settings
@@ -63,7 +66,7 @@ import json as _json
 from db.session import SessionLocal, get_db, get_solr
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
-from logger import logger
+from piro_logger import logger
 from sqlalchemy.orm import Session
 from viewmodel.extraction import (
     CaseTextVM,
@@ -471,6 +474,30 @@ async def clear_queue_endpoint(
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@contextmanager
+def _log_extraction_process(context: str, phase: str):
+    """Creates logs for different portions of the extraction process, including
+    performance timings."""
+
+    started = perf_counter()
+    phase_status = "failed"
+    logger.info("Extraction phase started: {} phase={}", context, phase)
+    try:
+        yield
+        phase_status = "completed"
+    except asyncio.CancelledError:
+        phase_status = "cancelled"
+        raise
+    finally:
+        logger.info(
+            "Extraction phase finished: {} phase={} status={} elapsed_ms={:.2f}",  # noqa:E501
+            context,
+            phase,
+            phase_status,
+            (perf_counter() - started) * 1000,
+        )
+
+
 async def _run_extraction_job(
     session_id: int,
     run_id: int,
@@ -478,6 +505,7 @@ async def _run_extraction_job(
     role: str,
     case_ids: Optional[List[int]] = None,
     related_run_id: Optional[int] = None,
+    search_request_id: Optional[int] = None,
 ) -> None:
     """Background task: extract cases for a session.
 
@@ -486,6 +514,8 @@ async def _run_extraction_job(
     If ``case_ids`` is None (full run), all queue items are (re-)processed.
     """
     db = SessionLocal()
+    active_queue_id: int | None = None
+    task_cancelled: bool = False
     try:
         update_run_status(run_id, "running", db)
         update_session_status(session_id, "running", db)
@@ -497,6 +527,18 @@ async def _run_extraction_job(
         schema = json.loads(run.SchemaJson)
         sess = get_session(session_id, db)
         comment_types = parse_text_sources(sess.TextSources if sess else None)
+        logger.info(
+            "Extraction run started: search_request_id={} session_id={} "
+            "run_id={} case_count={} schema_field_count={} provider={} "
+            "model={}",
+            search_request_id,
+            session_id,
+            run_id,
+            len(queue),
+            len(schema),
+            run.LlmProvider,
+            run.LlmModel,
+        )
 
         # Determine which cases to process
         validation_set = set(case_ids) if case_ids is not None else None
@@ -506,7 +548,13 @@ async def _run_extraction_job(
         if validation_set is None:
             reset_queue_statuses(session_id, db)
 
-        cancelled = False
+        cancelled: bool = False
+        processed_count: int = 0
+        completed_count: int = 0
+        cancelled_count: int = 0
+        progress_started: float = perf_counter()
+        selected_count = _get_selected_count(queue, validation_set)
+
         for queue_item in queue:
             if (
                 validation_set is not None
@@ -524,16 +572,25 @@ async def _run_extraction_job(
                 cancelled = True
                 break
 
+            case_started = perf_counter()
+            case_status = "failed"
+            case_context = (
+                f"search_request_id={search_request_id} session_id={session_id} "  # noqa:E501
+                f"run_id={run_id} case_id={queue_item.CaseId}"
+            )
+            logger.info("Extraction case started: {}", case_context)
+            active_queue_id = cast(int, queue_item.ExtractionQueueId)
             update_queue_item_status(
                 queue_item.ExtractionQueueId, "running", db
             )
             try:
-                labelled_text, segments = get_case_text_for_extraction(
-                    queue_item.CaseId,
-                    db,
-                    role=role,
-                    comment_types=comment_types,
-                )
+                with _log_extraction_process(case_context, "report_retrieval"):
+                    labelled_text, segments = get_case_text_for_extraction(
+                        queue_item.CaseId,
+                        db,
+                        role=role,
+                        comment_types=comment_types,
+                    )
 
                 if not labelled_text.strip():
                     update_queue_item_status(
@@ -542,9 +599,20 @@ async def _run_extraction_job(
                         db,
                         error="No report text found for this case",
                     )
+                    logger.warning(
+                        "Extraction case failed: search_request_id={} "
+                        "session_id={} run_id={} case_id={} "
+                        "attempt={} reason=no_report_text",
+                        search_request_id,
+                        session_id,
+                        run_id,
+                        queue_item.CaseId,
+                        (queue_item.AttemptCount or 0),
+                    )
                     continue
 
-                extraction = await llm.extract(labelled_text, schema)
+                with _log_extraction_process(case_context, "llm_call"):
+                    extraction = await llm.extract(labelled_text, schema)
 
                 # Build a character-offset map for provenance anchoring
                 offset_map: Dict[int, tuple] = {}
@@ -556,85 +624,228 @@ async def _run_extraction_job(
                     offset_map[seg.Id] = (content_start, content_end, seg.Id)
                     running_offset = content_end + 2  # +2 for "\n\n"
 
-                for field_name, fe in extraction.items():
-                    # Find provenance location
-                    source_comment_id = None
-                    prov_start = None
-                    prov_end = None
+                with _log_extraction_process(
+                    case_context, "result_persistence"
+                ):
+                    for field_name, fe in extraction.items():
+                        # Find provenance location
+                        source_comment_id = None
+                        prov_start = None
+                        prov_end = None
 
-                    if fe.provenance and segments:
-                        for seg in segments:
-                            idx = seg.CommentText.find(fe.provenance)
-                            if idx != -1:
-                                source_comment_id = seg.Id
-                                if seg.Id in offset_map:
-                                    base = offset_map[seg.Id][0]
-                                    prov_start = base + idx
-                                    prov_end = prov_start + len(fe.provenance)
-                                break
+                        if fe.provenance and segments:
+                            for seg in segments:
+                                idx = seg.CommentText.find(fe.provenance)
+                                if idx != -1:
+                                    source_comment_id = seg.Id
+                                    if seg.Id in offset_map:
+                                        base = offset_map[seg.Id][0]
+                                        prov_start = base + idx
+                                        prov_end = prov_start + len(
+                                            fe.provenance
+                                        )
+                                    break
 
-                    extracted_json = (
-                        json.dumps(fe.value) if fe.value is not None else None
+                        extracted_json = (
+                            json.dumps(fe.value)
+                            if fe.value is not None
+                            else None
+                        )
+
+                        upsert_result(
+                            run_id=run_id,
+                            session_id=session_id,
+                            case_id=queue_item.CaseId,
+                            field_name=field_name,
+                            extracted_value=extracted_json,
+                            confidence=fe.confidence,
+                            provenance_text=fe.provenance,
+                            source_comment_id=source_comment_id,
+                            provenance_start=prov_start,
+                            provenance_end=prov_end,
+                            user=user,
+                            db=db,
+                            related_run_ids=(
+                                [related_run_id] if related_run_id else None
+                            ),
+                        )
+
+                    update_queue_item_status(
+                        queue_item.ExtractionQueueId, "completed", db
                     )
+                case_status = "completed"
+                completed_count += 1
+                active_queue_id = None
 
-                    upsert_result(
-                        run_id=run_id,
-                        session_id=session_id,
-                        case_id=queue_item.CaseId,
-                        field_name=field_name,
-                        extracted_value=extracted_json,
-                        confidence=fe.confidence,
-                        provenance_text=fe.provenance,
-                        source_comment_id=source_comment_id,
-                        provenance_start=prov_start,
-                        provenance_end=prov_end,
-                        user=user,
-                        db=db,
-                        related_run_ids=(
-                            [related_run_id] if related_run_id else None
-                        ),
-                    )
-
-                update_queue_item_status(
-                    queue_item.ExtractionQueueId, "completed", db
-                )
-
-            except Exception as e:
-                logger.error(
-                    f"Extraction failed for case {queue_item.CaseId}: {e}",
-                    exc_info=True,
+            except asyncio.CancelledError:
+                case_status = "cancelled"
+                cancelled_count += 1
+                raise
+            except Exception as exc:
+                logger.exception(
+                    "Extraction case failed: search_request_id={} "
+                    "session_id={} run_id={} case_id={} attempt={} "
+                    "exception_type={}",
+                    search_request_id,
+                    session_id,
+                    run_id,
+                    queue_item.CaseId,
+                    (queue_item.AttemptCount or 0),
+                    type(exc).__name__,
                 )
                 update_queue_item_status(
                     queue_item.ExtractionQueueId,
                     "failed",
                     db,
-                    error=str(e)[:1000],
+                    error=str(exc)[:1000],
                 )
+                active_queue_id = None
+            finally:
+                processed_count += 1
+                logger.info(
+                    "Extraction case finished: {} status={} elapsed_ms={:.2f}",
+                    case_context,
+                    case_status,
+                    (perf_counter() - case_started) * 1000,
+                )
+                if (
+                    processed_count % 10 == 0
+                    or processed_count == selected_count
+                ):
+                    logger.info(
+                        "Extraction progress: search_request_id={} "
+                        "session_id={} run_id={} processed={} total={} "
+                        "completed={} failed={} "
+                        "cancelled={} elapsed_ms={:.2f}",
+                        search_request_id,
+                        session_id,
+                        run_id,
+                        processed_count,
+                        selected_count,
+                        completed_count,
+                        processed_count - completed_count - cancelled_count,
+                        cancelled_count,
+                        (perf_counter() - progress_started) * 1000,
+                    )
 
         # Update run/session status
+        status_summary: dict = get_extraction_status(session_id, db)
         if cancelled:
             final_status = "cancelled"
         else:
-            status = get_extraction_status(session_id, db)
+
             final_status = (
                 "completed"
-                if status["failed"] == 0
+                if status_summary["failed"] == 0
                 else "completed_with_errors"
             )
         update_run_status(run_id, final_status, db)
         update_session_status(session_id, final_status, db)
+        logger.info(
+            "Extraction run finished: search_request_id={} session_id={} "
+            "run_id={} status={} completed={} failed={} pending={} "
+            "running={} cancelled={}",
+            search_request_id,
+            session_id,
+            run_id,
+            final_status,
+            status_summary["completed"],
+            status_summary["failed"],
+            status_summary["pending"],
+            status_summary["running"],
+            cancelled,
+        )
         _notify_extraction_run_completed(run_id, final_status, db)
 
-    except Exception as e:
-        logger.error(
-            f"Extraction job failed for session {session_id}: {e}",
-            exc_info=True,
+    except asyncio.CancelledError:
+        task_cancelled = True
+        cancellation_context = (
+            f"search_request_id={search_request_id} session_id={session_id} "
+            f"run_id={run_id}"
         )
-        update_run_status(run_id, "failed", db, error=str(e)[:1000])
+        logger.warning(
+            "Extraction run cancelled: {} reason=task_cancelled",
+            cancellation_context,
+        )
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception(
+                "Extraction cancellation cleanup failed: {} target=rollback",
+                cancellation_context,
+            )
+        updates = [
+            ("run", lambda: update_run_status(run_id, "cancelled", db)),
+            (
+                "session",
+                lambda: update_session_status(session_id, "cancelled", db),
+            ),
+        ]
+        if active_queue_id is not None:
+            updates.append(
+                (
+                    "queue",
+                    lambda: update_queue_item_status(
+                        active_queue_id, "pending", db
+                    ),
+                )
+            )
+        for target, update in updates:
+            try:
+                update()
+            except Exception:
+                logger.exception(
+                    "Extraction cancellation cleanup failed: {} target={}",
+                    cancellation_context,
+                    target,
+                )
+                try:
+                    db.rollback()
+                except Exception:
+                    logger.exception(
+                        "Extraction cancellation cleanup failed: {} "
+                        "target=rollback",
+                        cancellation_context,
+                    )
+        raise
+    except Exception as exc:
+        logger.exception(
+            "Extraction run failed: search_request_id={} session_id={} "
+            "run_id={} exception_type={}",
+            search_request_id,
+            session_id,
+            run_id,
+            type(exc).__name__,
+        )
+        update_run_status(run_id, "failed", db, error=str(exc)[:1000])
         update_session_status(session_id, "failed", db)
         _notify_extraction_run_completed(run_id, "failed", db)
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            if not task_cancelled:
+                raise
+            logger.exception(
+                "Extraction cancellation cleanup failed: search_request_id={} "
+                "session_id={} run_id={} target=close",
+                search_request_id,
+                session_id,
+                run_id,
+            )
+
+
+def _get_selected_count(queue, validation_set) -> int:
+    """Retrieve a count of selected items."""
+
+    return sum(
+        1
+        for item in queue
+        if (
+            (validation_set is None and item.Status != "completed")
+            or (validation_set is not None and item.CaseId in validation_set)
+        )
+    )
 
 
 def _notify_extraction_run_completed(

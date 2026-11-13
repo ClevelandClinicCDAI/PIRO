@@ -36,7 +36,6 @@ idna==3.10
 importlib_metadata==8.5.0
 iniconfig==2.0.0
 Jinja2==3.1.6
-logger==1.4
 loguru==0.7.2
 mammoth==1.11.0
 MarkupSafe==3.0.2

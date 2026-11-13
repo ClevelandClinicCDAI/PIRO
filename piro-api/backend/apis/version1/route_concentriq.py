@@ -6,7 +6,7 @@ from db.session import get_db
 from fastapi import Request, APIRouter, Depends, status
 from pytest import Session
 from viewmodel.views.case import ResultVM
-from logger import logger
+from piro_logger import logger
 from core.config import settings
 
 router = APIRouter()

@@ -1,7 +1,7 @@
 from core.security_token import decode_access_token
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from logger import logger
+from piro_logger import logger
 
 
 class JWTBearer(HTTPBearer):

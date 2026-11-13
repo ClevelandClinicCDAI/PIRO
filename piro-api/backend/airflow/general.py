@@ -3,7 +3,7 @@ import requests
 from pathlib import Path
 
 from core.config import settings
-from logger import logger
+from piro_logger import logger
 
 
 def get_application_root_directory() -> Path | None:

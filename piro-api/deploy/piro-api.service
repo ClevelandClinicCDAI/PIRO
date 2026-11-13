@@ -1,0 +1,20 @@
+[Unit]
+Description=Gunicorn instance to serve the piro-api application
+After=network.target
+
+[Service]
+User=piro-user
+Group=piro-user
+UMask=0027
+WorkingDirectory=/opt/piro-api/piro-api/backend
+Environment="PATH=/opt/piro-api/piro-api_venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PIRO_LOG_LEVEL=INFO"
+ExecStart=/opt/piro-api/piro-api_venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --access-logfile - --error-logfile - main:app
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=piro-api
+LogRateLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

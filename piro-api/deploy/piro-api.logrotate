@@ -1,0 +1,17 @@
+/opt/piro-api/piro-api/backend/logs/runtime.log {
+    su syslog adm
+    daily
+    maxsize 100M
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 syslog adm
+    sharedscripts
+    postrotate
+        if /bin/systemctl is-active --quiet piro-api-log-collector.service; then
+            /bin/systemctl kill --kill-who=main --signal=HUP piro-api-log-collector.service
+        fi
+    endscript
+}
