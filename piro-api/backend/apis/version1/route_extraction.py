@@ -607,7 +607,7 @@ async def _run_extraction_job(
                         session_id,
                         run_id,
                         queue_item.CaseId,
-                        (queue_item.AttemptCount or 0) + 1,
+                        (queue_item.AttemptCount or 0),
                     )
                     continue
 
@@ -690,7 +690,7 @@ async def _run_extraction_job(
                     session_id,
                     run_id,
                     queue_item.CaseId,
-                    (queue_item.AttemptCount or 0) + 1,
+                    (queue_item.AttemptCount or 0),
                     type(exc).__name__,
                 )
                 update_queue_item_status(
