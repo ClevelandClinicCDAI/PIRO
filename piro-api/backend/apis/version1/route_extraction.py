@@ -8,6 +8,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+from contextlib import contextmanager
+from time import perf_counter
 from typing import Annotated, Any, Dict, List, Optional
 
 from core.auth_bearer import JWTBearer
@@ -471,6 +473,27 @@ async def clear_queue_endpoint(
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+@contextmanager
+def _log_extraction_process(context: str, phase: str):
+    """Creates logs for different portions of the extraction process, including
+    performance timings."""
+
+    started = perf_counter()
+    completed = False
+    logger.info("Extraction phase started: {} phase={}", context, phase)
+    try:
+        yield
+        completed = True
+    finally:
+        logger.info(
+            "Extraction phase finished: {} phase={} status={} elapsed_ms={:.2f}",  # noqa:E501
+            context,
+            phase,
+            "completed" if completed else "failed",
+            (perf_counter() - started) * 1000,
+        )
+
+
 async def _run_extraction_job(
     session_id: int,
     run_id: int,
@@ -519,7 +542,12 @@ async def _run_extraction_job(
         if validation_set is None:
             reset_queue_statuses(session_id, db)
 
-        cancelled = False
+        cancelled: bool = False
+        processed_count: int = 0
+        completed_count: int = 0
+        progress_started: float = perf_counter()
+        selected_count = _get_selected_count(queue, validation_set)
+
         for queue_item in queue:
             if (
                 validation_set is not None
@@ -537,16 +565,24 @@ async def _run_extraction_job(
                 cancelled = True
                 break
 
+            case_started = perf_counter()
+            case_status = "failed"
+            case_context = (
+                f"search_request_id={search_request_id} session_id={session_id} "  # noqa:E501
+                f"run_id={run_id} case_id={queue_item.CaseId}"
+            )
+            logger.info("Extraction case started: {}", case_context)
             update_queue_item_status(
                 queue_item.ExtractionQueueId, "running", db
             )
             try:
-                labelled_text, segments = get_case_text_for_extraction(
-                    queue_item.CaseId,
-                    db,
-                    role=role,
-                    comment_types=comment_types,
-                )
+                with _log_extraction_process(case_context, "report_retrieval"):
+                    labelled_text, segments = get_case_text_for_extraction(
+                        queue_item.CaseId,
+                        db,
+                        role=role,
+                        comment_types=comment_types,
+                    )
 
                 if not labelled_text.strip():
                     update_queue_item_status(
@@ -567,7 +603,8 @@ async def _run_extraction_job(
                     )
                     continue
 
-                extraction = await llm.extract(labelled_text, schema)
+                with _log_extraction_process(case_context, "llm_call"):
+                    extraction = await llm.extract(labelled_text, schema)
 
                 # Build a character-offset map for provenance anchoring
                 offset_map: Dict[int, tuple] = {}
@@ -579,48 +616,57 @@ async def _run_extraction_job(
                     offset_map[seg.Id] = (content_start, content_end, seg.Id)
                     running_offset = content_end + 2  # +2 for "\n\n"
 
-                for field_name, fe in extraction.items():
-                    # Find provenance location
-                    source_comment_id = None
-                    prov_start = None
-                    prov_end = None
+                with _log_extraction_process(
+                    case_context, "result_persistence"
+                ):
+                    for field_name, fe in extraction.items():
+                        # Find provenance location
+                        source_comment_id = None
+                        prov_start = None
+                        prov_end = None
 
-                    if fe.provenance and segments:
-                        for seg in segments:
-                            idx = seg.CommentText.find(fe.provenance)
-                            if idx != -1:
-                                source_comment_id = seg.Id
-                                if seg.Id in offset_map:
-                                    base = offset_map[seg.Id][0]
-                                    prov_start = base + idx
-                                    prov_end = prov_start + len(fe.provenance)
-                                break
+                        if fe.provenance and segments:
+                            for seg in segments:
+                                idx = seg.CommentText.find(fe.provenance)
+                                if idx != -1:
+                                    source_comment_id = seg.Id
+                                    if seg.Id in offset_map:
+                                        base = offset_map[seg.Id][0]
+                                        prov_start = base + idx
+                                        prov_end = prov_start + len(
+                                            fe.provenance
+                                        )
+                                    break
 
-                    extracted_json = (
-                        json.dumps(fe.value) if fe.value is not None else None
+                        extracted_json = (
+                            json.dumps(fe.value)
+                            if fe.value is not None
+                            else None
+                        )
+
+                        upsert_result(
+                            run_id=run_id,
+                            session_id=session_id,
+                            case_id=queue_item.CaseId,
+                            field_name=field_name,
+                            extracted_value=extracted_json,
+                            confidence=fe.confidence,
+                            provenance_text=fe.provenance,
+                            source_comment_id=source_comment_id,
+                            provenance_start=prov_start,
+                            provenance_end=prov_end,
+                            user=user,
+                            db=db,
+                            related_run_ids=(
+                                [related_run_id] if related_run_id else None
+                            ),
+                        )
+
+                    update_queue_item_status(
+                        queue_item.ExtractionQueueId, "completed", db
                     )
-
-                    upsert_result(
-                        run_id=run_id,
-                        session_id=session_id,
-                        case_id=queue_item.CaseId,
-                        field_name=field_name,
-                        extracted_value=extracted_json,
-                        confidence=fe.confidence,
-                        provenance_text=fe.provenance,
-                        source_comment_id=source_comment_id,
-                        provenance_start=prov_start,
-                        provenance_end=prov_end,
-                        user=user,
-                        db=db,
-                        related_run_ids=(
-                            [related_run_id] if related_run_id else None
-                        ),
-                    )
-
-                update_queue_item_status(
-                    queue_item.ExtractionQueueId, "completed", db
-                )
+                case_status = "completed"
+                completed_count += 1
 
             except Exception as exc:
                 logger.exception(
@@ -640,6 +686,31 @@ async def _run_extraction_job(
                     db,
                     error=str(exc)[:1000],
                 )
+            finally:
+                processed_count += 1
+                logger.info(
+                    "Extraction case finished: {} status={} elapsed_ms={:.2f}",
+                    case_context,
+                    case_status,
+                    (perf_counter() - case_started) * 1000,
+                )
+                if (
+                    processed_count % 10 == 0
+                    or processed_count == selected_count
+                ):
+                    logger.info(
+                        "Extraction progress: search_request_id={} session_id={} "
+                        "run_id={} processed={} total={} completed={} failed={} "
+                        "elapsed_ms={:.2f}",
+                        search_request_id,
+                        session_id,
+                        run_id,
+                        processed_count,
+                        selected_count,
+                        completed_count,
+                        processed_count - completed_count,
+                        (perf_counter() - progress_started) * 1000,
+                    )
 
         # Update run/session status
         status_summary: dict = get_extraction_status(session_id, db)
@@ -684,6 +755,19 @@ async def _run_extraction_job(
         _notify_extraction_run_completed(run_id, "failed", db)
     finally:
         db.close()
+
+
+def _get_selected_count(queue, validation_set) -> int:
+    """Retrieve a count of selected items."""
+
+    return sum(
+        1
+        for item in queue
+        if (
+            (validation_set is None and item.Status != "completed")
+            or (validation_set is not None and item.CaseId in validation_set)
+        )
+    )
 
 
 def _notify_extraction_run_completed(

@@ -1,6 +1,9 @@
 import asyncio
+import re
 from io import StringIO
 from types import SimpleNamespace
+
+import pytest
 
 from apis.version1 import route_extraction
 from piro_logger import logger
@@ -67,20 +70,41 @@ def test_run_level_failure_logs_request_context_and_traceback(monkeypatch):
     assert run_statuses[-1][1] == "failed"
 
 
-def test_missing_report_logs_case_failure_without_report_content(monkeypatch):
+@pytest.mark.parametrize(
+    "report_text,case_count",
+    [
+        ("", 1),
+        ("synthetic report content", 1),
+        ("synthetic report content", 11),
+    ],
+)
+def test_case_progress_without_report_content(
+    monkeypatch, report_text, case_count
+):
     db = SimpleNamespace(close=lambda: None)
-    queue_item = SimpleNamespace(
-        CaseId=44,
-        ExtractionQueueId=55,
-        AttemptCount=0,
-        Status="pending",
-    )
     queue_updates = []
+    persisted_results = []
     output, handler_id = _capture_logs()
+    queue = [
+        SimpleNamespace(
+            CaseId=44 + index,
+            ExtractionQueueId=55 + index,
+            AttemptCount=0,
+            Status="pending",
+        )
+        for index in range(case_count)
+    ]
 
     class FakeLlmClient:
         async def extract(self, report_text, schema):
-            raise AssertionError("LLM must not run without report text")
+            assert report_text
+            return {
+                "diagnosis": SimpleNamespace(
+                    value="sensitive extracted value",
+                    confidence=0.8,
+                    provenance="sensitive provenance",
+                )
+            }
 
     monkeypatch.setattr(route_extraction, "SessionLocal", lambda: db)
     monkeypatch.setattr(
@@ -90,9 +114,7 @@ def test_missing_report_logs_case_failure_without_report_content(monkeypatch):
         route_extraction, "update_session_status", lambda *args: None
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
-    monkeypatch.setattr(
-        route_extraction, "get_queue", lambda *args: [queue_item]
-    )
+    monkeypatch.setattr(route_extraction, "get_queue", lambda *args: queue)
     monkeypatch.setattr(
         route_extraction,
         "get_run",
@@ -121,7 +143,12 @@ def test_missing_report_logs_case_failure_without_report_content(monkeypatch):
     monkeypatch.setattr(
         route_extraction,
         "get_case_text_for_extraction",
-        lambda *args, **kwargs: ("", []),
+        lambda *args, **kwargs: (report_text, []),
+    )
+    monkeypatch.setattr(
+        route_extraction,
+        "upsert_result",
+        lambda **kwargs: persisted_results.append(kwargs["case_id"]),
     )
     monkeypatch.setattr(
         route_extraction,
@@ -134,8 +161,8 @@ def test_missing_report_logs_case_failure_without_report_content(monkeypatch):
         route_extraction,
         "get_extraction_status",
         lambda *args: {
-            "completed": 0,
-            "failed": 1,
+            "completed": case_count if report_text else 0,
+            "failed": 0 if report_text else case_count,
             "pending": 0,
             "running": 0,
         },
@@ -160,16 +187,48 @@ def test_missing_report_logs_case_failure_without_report_content(monkeypatch):
         logger.remove(handler_id)
 
     message = output.getvalue()
-    assert "reason=no_report_text" in message
     assert "search_request_id=11" in message
     assert "session_id=22" in message
     assert "run_id=33" in message
     assert "case_id=44" in message
-    assert "report text" not in message
-    assert queue_updates == [
-        (55, "running", None),
-        (55, "failed", "No report text found for this case"),
-    ]
+    assert "synthetic report content" not in message
+    assert "sensitive extracted value" not in message
+    assert "sensitive provenance" not in message
+    assert "Extraction case started:" in message
+    assert "Extraction case finished:" in message
+    assert "elapsed_ms=" in message
+    elapsed_values = re.findall(r"elapsed_ms=(\d+\.\d{2})", message)
+    assert elapsed_values
+    assert all(float(value) >= 0 for value in elapsed_values)
+    assert f"processed={case_count} total={case_count}" in message
+    if report_text:
+        assert persisted_results == [item.CaseId for item in queue]
+        for item in queue:
+            case_logs = [
+                line
+                for line in message.splitlines()
+                if f"case_id={item.CaseId} " in line
+            ]
+            phases = ["report_retrieval", "llm_call", "result_persistence"]
+            assert len(case_logs) == 7
+            for index, phase in enumerate(phases):
+                assert f"phase={phase}" in case_logs[index * 2]
+                assert "phase started:" in case_logs[index * 2]
+                assert f"phase={phase} status=completed elapsed_ms=" in (
+                    case_logs[index * 2 + 1]
+                )
+            assert "status=completed elapsed_ms=" in case_logs[-1]
+        if case_count == 11:
+            assert "processed=10 total=11 completed=10 failed=0" in message
+            assert "processed=11 total=11 completed=11 failed=0" in message
+    else:
+        assert "reason=no_report_text" in message
+        assert "phase=llm_call" not in message
+        assert "status=failed elapsed_ms=" in message
+        assert queue_updates == [
+            (55, "running", None),
+            (55, "failed", "No report text found for this case"),
+        ]
 
 
 def test_case_exception_logs_traceback_and_request_context(monkeypatch):
@@ -274,3 +333,6 @@ def test_case_exception_logs_traceback_and_request_context(monkeypatch):
     assert "Traceback" in message
     assert "synthetic report content" not in message
     assert queue_updates[-1][1] == "failed"
+    assert "phase=llm_call status=failed elapsed_ms=" in message
+    assert "phase=result_persistence" not in message
+    assert "processed=1 total=1 completed=0 failed=1" in message
