@@ -4,9 +4,13 @@ from core.config import settings
 from db.base_class import Base
 from db.session import SessionLocal, engine_inst
 from db.utils import check_db_connected, check_db_disconnected
-from exception_handlers import request_validation_exception_handler
+from exception_handlers import (
+    request_validation_exception_handler,
+    http_exception_handler,
+    unhandled_exception_handler,
+)
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -64,6 +68,8 @@ def start_application():
     app.add_exception_handler(
         RequestValidationError, request_validation_exception_handler
     )
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(Exception, unhandled_exception_handler)
 
     app.add_middleware(
         CORSMiddleware,
