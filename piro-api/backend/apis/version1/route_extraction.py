@@ -5,12 +5,13 @@ All endpoints require authentication. Provider selection is server-side only.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import json
 from contextlib import contextmanager
 from time import perf_counter
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional, cast
 
 from core.auth_bearer import JWTBearer
 from core.config import settings
@@ -479,17 +480,20 @@ def _log_extraction_process(context: str, phase: str):
     performance timings."""
 
     started = perf_counter()
-    completed = False
+    phase_status = "failed"
     logger.info("Extraction phase started: {} phase={}", context, phase)
     try:
         yield
-        completed = True
+        phase_status = "completed"
+    except asyncio.CancelledError:
+        phase_status = "cancelled"
+        raise
     finally:
         logger.info(
             "Extraction phase finished: {} phase={} status={} elapsed_ms={:.2f}",  # noqa:E501
             context,
             phase,
-            "completed" if completed else "failed",
+            phase_status,
             (perf_counter() - started) * 1000,
         )
 
@@ -510,6 +514,8 @@ async def _run_extraction_job(
     If ``case_ids`` is None (full run), all queue items are (re-)processed.
     """
     db = SessionLocal()
+    active_queue_id: int | None = None
+    task_cancelled: bool = False
     try:
         update_run_status(run_id, "running", db)
         update_session_status(session_id, "running", db)
@@ -545,6 +551,7 @@ async def _run_extraction_job(
         cancelled: bool = False
         processed_count: int = 0
         completed_count: int = 0
+        cancelled_count: int = 0
         progress_started: float = perf_counter()
         selected_count = _get_selected_count(queue, validation_set)
 
@@ -572,6 +579,7 @@ async def _run_extraction_job(
                 f"run_id={run_id} case_id={queue_item.CaseId}"
             )
             logger.info("Extraction case started: {}", case_context)
+            active_queue_id = cast(int, queue_item.ExtractionQueueId)
             update_queue_item_status(
                 queue_item.ExtractionQueueId, "running", db
             )
@@ -667,7 +675,12 @@ async def _run_extraction_job(
                     )
                 case_status = "completed"
                 completed_count += 1
+                active_queue_id = None
 
+            except asyncio.CancelledError:
+                case_status = "cancelled"
+                cancelled_count += 1
+                raise
             except Exception as exc:
                 logger.exception(
                     "Extraction case failed: search_request_id={} "
@@ -686,6 +699,7 @@ async def _run_extraction_job(
                     db,
                     error=str(exc)[:1000],
                 )
+                active_queue_id = None
             finally:
                 processed_count += 1
                 logger.info(
@@ -699,16 +713,18 @@ async def _run_extraction_job(
                     or processed_count == selected_count
                 ):
                     logger.info(
-                        "Extraction progress: search_request_id={} session_id={} "
-                        "run_id={} processed={} total={} completed={} failed={} "
-                        "elapsed_ms={:.2f}",
+                        "Extraction progress: search_request_id={} "
+                        "session_id={} run_id={} processed={} total={} "
+                        "completed={} failed={} "
+                        "cancelled={} elapsed_ms={:.2f}",
                         search_request_id,
                         session_id,
                         run_id,
                         processed_count,
                         selected_count,
                         completed_count,
-                        processed_count - completed_count,
+                        processed_count - completed_count - cancelled_count,
+                        cancelled_count,
                         (perf_counter() - progress_started) * 1000,
                     )
 
@@ -741,6 +757,57 @@ async def _run_extraction_job(
         )
         _notify_extraction_run_completed(run_id, final_status, db)
 
+    except asyncio.CancelledError:
+        task_cancelled = True
+        cancellation_context = (
+            f"search_request_id={search_request_id} session_id={session_id} "
+            f"run_id={run_id}"
+        )
+        logger.warning(
+            "Extraction run cancelled: {} reason=task_cancelled",
+            cancellation_context,
+        )
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception(
+                "Extraction cancellation cleanup failed: {} target=rollback",
+                cancellation_context,
+            )
+        updates = [
+            ("run", lambda: update_run_status(run_id, "cancelled", db)),
+            (
+                "session",
+                lambda: update_session_status(session_id, "cancelled", db),
+            ),
+        ]
+        if active_queue_id is not None:
+            updates.append(
+                (
+                    "queue",
+                    lambda: update_queue_item_status(
+                        active_queue_id, "pending", db
+                    ),
+                )
+            )
+        for target, update in updates:
+            try:
+                update()
+            except Exception:
+                logger.exception(
+                    "Extraction cancellation cleanup failed: {} target={}",
+                    cancellation_context,
+                    target,
+                )
+                try:
+                    db.rollback()
+                except Exception:
+                    logger.exception(
+                        "Extraction cancellation cleanup failed: {} "
+                        "target=rollback",
+                        cancellation_context,
+                    )
+        raise
     except Exception as exc:
         logger.exception(
             "Extraction run failed: search_request_id={} session_id={} "
@@ -754,7 +821,18 @@ async def _run_extraction_job(
         update_session_status(session_id, "failed", db)
         _notify_extraction_run_completed(run_id, "failed", db)
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            if not task_cancelled:
+                raise
+            logger.exception(
+                "Extraction cancellation cleanup failed: search_request_id={} "
+                "session_id={} run_id={} target=close",
+                search_request_id,
+                session_id,
+                run_id,
+            )
 
 
 def _get_selected_count(queue, validation_set) -> int:

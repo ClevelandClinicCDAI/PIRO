@@ -231,8 +231,25 @@ def test_case_progress_without_report_content(
         ]
 
 
-def test_case_exception_logs_traceback_and_request_context(monkeypatch):
-    db = SimpleNamespace(close=lambda: None)
+@pytest.mark.parametrize(
+    "cancel_task,cleanup_failure",
+    [(False, False), (True, False), (True, True)],
+)
+def test_case_exception_logs_traceback_and_request_context(
+    monkeypatch, cancel_task, cleanup_failure
+):
+    cleanup_calls = []
+    run_updates = []
+    session_updates = []
+
+    def close_db():
+        cleanup_calls.append("close")
+        if cleanup_failure:
+            raise RuntimeError("synthetic close failure")
+
+    db = SimpleNamespace(
+        close=close_db, rollback=lambda: cleanup_calls.append("rollback")
+    )
     queue_item = SimpleNamespace(
         CaseId=44,
         ExtractionQueueId=55,
@@ -244,14 +261,24 @@ def test_case_exception_logs_traceback_and_request_context(monkeypatch):
 
     class FakeLlmClient:
         async def extract(self, report_text, schema):
+            if cancel_task:
+                task = asyncio.current_task()
+                assert task is not None
+                task.cancel()
+                await asyncio.sleep(0)
             raise ValueError("synthetic provider response error")
 
+    def update_run(run_id, status, db, error=None):
+        run_updates.append(status)
+        if cleanup_failure and status == "cancelled":
+            raise RuntimeError("synthetic status cleanup failure")
+
     monkeypatch.setattr(route_extraction, "SessionLocal", lambda: db)
+    monkeypatch.setattr(route_extraction, "update_run_status", update_run)
     monkeypatch.setattr(
-        route_extraction, "update_run_status", lambda *args, **kwargs: None
-    )
-    monkeypatch.setattr(
-        route_extraction, "update_session_status", lambda *args: None
+        route_extraction,
+        "update_session_status",
+        lambda session_id, status, db: session_updates.append(status),
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
     monkeypatch.setattr(
@@ -311,15 +338,18 @@ def test_case_exception_logs_traceback_and_request_context(monkeypatch):
     )
 
     try:
-        asyncio.run(
-            route_extraction._run_extraction_job(
-                session_id=22,
-                run_id=33,
-                user="test-user",
-                role="ANALYST",
-                search_request_id=11,
-            )
+        job = route_extraction._run_extraction_job(
+            session_id=22,
+            run_id=33,
+            user="test-user",
+            role="ANALYST",
+            search_request_id=11,
         )
+        if cancel_task:
+            with pytest.raises(asyncio.CancelledError):
+                asyncio.run(job)
+        else:
+            asyncio.run(job)
     finally:
         logger.remove(handler_id)
 
@@ -328,11 +358,27 @@ def test_case_exception_logs_traceback_and_request_context(monkeypatch):
     assert "session_id=22" in message
     assert "run_id=33" in message
     assert "case_id=44" in message
-    assert "ValueError" in message
-    assert "synthetic provider response error" in message
-    assert "Traceback" in message
     assert "synthetic report content" not in message
-    assert queue_updates[-1][1] == "failed"
-    assert "phase=llm_call status=failed elapsed_ms=" in message
     assert "phase=result_persistence" not in message
-    assert "processed=1 total=1 completed=0 failed=1" in message
+    if cancel_task:
+        assert "Extraction run cancelled:" in message
+        assert "reason=task_cancelled" in message
+        assert "phase=llm_call status=cancelled elapsed_ms=" in message
+        assert "Extraction run failed:" not in message
+        assert "completed=0 failed=0 cancelled=1" in message
+        assert run_updates == ["running", "cancelled"]
+        assert session_updates == ["running", "cancelled"]
+        assert queue_updates[-1] == (55, "pending", None)
+        assert cleanup_calls[-1] == "close"
+        assert cleanup_calls.count("rollback") == (2 if cleanup_failure else 1)
+        if cleanup_failure:
+            assert "Extraction cancellation cleanup failed:" in message
+            assert "target=run" in message
+            assert "target=close" in message
+    else:
+        assert "ValueError" in message
+        assert "synthetic provider response error" in message
+        assert "Traceback" in message
+        assert queue_updates[-1][1] == "failed"
+        assert "phase=llm_call status=failed elapsed_ms=" in message
+        assert "processed=1 total=1 completed=0 failed=1" in message

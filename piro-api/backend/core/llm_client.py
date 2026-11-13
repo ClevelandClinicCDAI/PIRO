@@ -580,6 +580,7 @@ class AzureOpenAIClient(LLMClient):
         }
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.post(url, json=payload, headers=headers)
+            # TODO: improve logging of response content on error
             resp.raise_for_status()
         data = resp.json()
         return data["choices"][0]["message"]["content"]
