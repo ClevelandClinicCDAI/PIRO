@@ -3,7 +3,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from core.config import settings
-from logger import logger
+from piro_logger import logger
 
 
 class Email:

@@ -1,0 +1,8 @@
+[Unit]
+Description=Rotate PIRO API collected logs
+
+[Service]
+Type=oneshot
+StateDirectory=piro-api-logrotate
+StateDirectoryMode=0700
+ExecStart=/usr/sbin/logrotate --state /var/lib/piro-api-logrotate/status /etc/piro-api-logrotate.conf

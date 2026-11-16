@@ -1,5 +1,5 @@
 from typing import Annotated, Callable, Union
-from logger import logger
+from piro_logger import logger
 from core.config import settings
 from core.constants import Constants
 from core.ldap_auth import user_group, user_login, user_display_name

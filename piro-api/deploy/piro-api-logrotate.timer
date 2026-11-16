@@ -1,0 +1,11 @@
+[Unit]
+Description=Check PIRO API log rotation hourly
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+Unit=piro-api-logrotate.service
+
+[Install]
+WantedBy=timers.target

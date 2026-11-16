@@ -3,7 +3,7 @@ import importlib
 from core.config import settings
 from dateutil.parser import parse as date_parse
 from db.base_class import Base
-from logger import logger
+from piro_logger import logger
 from sqlalchemy import select
 from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.orm import Session, selectinload

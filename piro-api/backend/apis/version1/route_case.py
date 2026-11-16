@@ -17,7 +17,7 @@ from pytest import Session
 from viewmodel.views.case import CaseInputVM, ResultVM
 from viewmodel.annotationConfiguration import AnnotationConfigurationVM
 from core.security_util import SecurityUtil
-from logger import logger
+from piro_logger import logger
 
 router = APIRouter()
 

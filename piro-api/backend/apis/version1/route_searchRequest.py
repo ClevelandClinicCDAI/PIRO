@@ -57,7 +57,7 @@ from viewmodel.searchRequest import (
 )
 from db.repository.searchRequestDataField import list_searchRequestDataField
 from viewmodel.searchRequestReason import SearchRequestReasonVMDropdown
-from logger import logger
+from piro_logger import logger
 from exception.data_exception import DataException
 
 router = APIRouter()
@@ -408,6 +408,15 @@ async def start_extraction(
         user=current_user,
         role=current_role,
         case_ids=None,
+        search_request_id=searchRequestId,
+    )
+    logger.info(
+        "LLM-assisted extraction scheduled: search_request_id={} "
+        "session_id={} run_id={} case_count={}",
+        searchRequestId,
+        searchRequest.ExtractionSessionId,
+        run.ExtractionRunId,
+        len(case_ids),
     )
 
     try:

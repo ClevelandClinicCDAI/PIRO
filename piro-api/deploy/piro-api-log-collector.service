@@ -1,0 +1,23 @@
+[Unit]
+Description=Collect PIRO API journal records into rotating files
+After=systemd-journald.service
+
+[Service]
+Type=simple
+User=syslog
+Group=adm
+SupplementaryGroups=systemd-journal
+UMask=0027
+StateDirectory=piro-api-log-collector
+StateDirectoryMode=0700
+RuntimeDirectory=piro-api-log-collector
+RuntimeDirectoryMode=0700
+ExecStart=/usr/sbin/rsyslogd -n -i /run/piro-api-log-collector/rsyslogd.pid -f /etc/rsyslog-piro-api.conf
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=piro-api-log-collector
+
+[Install]
+WantedBy=multi-user.target

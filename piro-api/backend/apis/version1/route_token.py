@@ -12,7 +12,7 @@ from core.security_user import (
 )
 from db.session import get_db
 from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
-from logger import logger
+from piro_logger import logger
 from sqlalchemy.orm import Session
 from viewmodel.tokens import LogoutResponseVM, OAuthLoginVM, Token, UserLoginVM
 from viewmodel.user import UserAuthVM, UserDetailsVM

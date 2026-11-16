@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from core.config import settings
 from core.string_util import StringUtil
-from logger import logger
+from piro_logger import logger
 from pydantic import BaseModel, Field, root_validator
 from striprtf.striprtf import rtf_to_text
 

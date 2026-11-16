@@ -17,7 +17,7 @@ from db.models.ExtractionRun import ExtractionRun
 from db.models.ExtractionSession import ExtractionSession
 from db.repository.caseCommentSynoptic import synoptic_report
 from db.views.VCaseCommentText import VCaseCommentText
-from logger import logger
+from piro_logger import logger
 
 # All selectable text sources for the schema builder's checkbox UI, in the
 # order they should appear in the assembled report text. Codes are matched

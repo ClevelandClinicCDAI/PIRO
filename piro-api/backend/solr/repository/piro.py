@@ -8,7 +8,7 @@ import aiohttp
 from core.config import settings
 from core.string_util import StringUtil
 from db.repository.caseComment import comment_final_copath, comment_final_epic
-from logger import logger
+from piro_logger import logger
 from pysolr import Solr
 from solr.models.document import document
 from sqlalchemy.orm import Session
