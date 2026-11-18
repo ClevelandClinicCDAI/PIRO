@@ -14,7 +14,7 @@ from db.models.ExtractionSession import ExtractionSession
 from db.repository.lookup import SearchRequestStatus_get_id
 from db.repository.extraction import (
     create_run,
-    get_queue,
+    get_queue_for_extraction,
     reclaim_stale_run,
 )
 from db.repository.searchRequestDataField import (
@@ -477,7 +477,7 @@ def start_extraction_for_searchRequest(
             "Extraction schema is not defined for this request"
         )
 
-    queue = get_queue(searchRequest.ExtractionSessionId, db)
+    queue = get_queue_for_extraction(searchRequest.ExtractionSessionId, db)
     if not queue:
         raise DataException("Extraction schema has no queued cases")
 

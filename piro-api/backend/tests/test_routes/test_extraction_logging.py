@@ -20,7 +20,9 @@ def _capture_logs():
 
 
 def test_run_level_failure_logs_request_context_and_traceback(monkeypatch):
-    db = SimpleNamespace(close=lambda: None)
+    db = SimpleNamespace(
+        close=lambda: None, rollback=lambda: None, commit=lambda: None
+    )
     run_statuses = []
     output, handler_id = _capture_logs()
 
@@ -34,22 +36,25 @@ def test_run_level_failure_logs_request_context_and_traceback(monkeypatch):
     monkeypatch.setattr(
         route_extraction,
         "update_run_status",
-        lambda run_id, status, db, error=None: run_statuses.append(
+        lambda run_id, status, db, error=None, **kwargs: run_statuses.append(
             (run_id, status, error)
         ),
     )
     monkeypatch.setattr(
-        route_extraction, "update_session_status", lambda *args: None
+        route_extraction, "update_session_status", lambda *args, **kwargs: None
     )
     monkeypatch.setattr(
         route_extraction,
         "_notify_extraction_run_completed",
         lambda *args: None,
     )
+    monkeypatch.setattr(
+        route_extraction, "fail_unfinished_queue", lambda *args, **kwargs: None
+    )
 
     try:
         asyncio.run(
-            route_extraction._run_extraction_job(
+            route_extraction._run_extraction_job_async(
                 session_id=22,
                 run_id=33,
                 user="test-user",
@@ -81,7 +86,9 @@ def test_run_level_failure_logs_request_context_and_traceback(monkeypatch):
 def test_case_progress_without_report_content(
     monkeypatch, report_text, case_count
 ):
-    db = SimpleNamespace(close=lambda: None)
+    db = SimpleNamespace(
+        close=lambda: None, rollback=lambda: None, commit=lambda: None
+    )
     queue_updates = []
     persisted_results = []
     output, handler_id = _capture_logs()
@@ -114,7 +121,9 @@ def test_case_progress_without_report_content(
         route_extraction, "update_session_status", lambda *args: None
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
-    monkeypatch.setattr(route_extraction, "get_queue", lambda *args: queue)
+    monkeypatch.setattr(
+        route_extraction, "get_queue_for_extraction", lambda *args: queue
+    )
     monkeypatch.setattr(
         route_extraction,
         "get_run",
@@ -153,7 +162,7 @@ def test_case_progress_without_report_content(
     monkeypatch.setattr(
         route_extraction,
         "update_queue_item_status",
-        lambda queue_id, status, db, error=None: queue_updates.append(
+        lambda queue_id, status, db, error=None, **kwargs: queue_updates.append(
             (queue_id, status, error)
         ),
     )
@@ -175,7 +184,7 @@ def test_case_progress_without_report_content(
 
     try:
         asyncio.run(
-            route_extraction._run_extraction_job(
+            route_extraction._run_extraction_job_async(
                 session_id=22,
                 run_id=33,
                 user="test-user",
@@ -248,7 +257,9 @@ def test_case_exception_logs_traceback_and_request_context(
             raise RuntimeError("synthetic close failure")
 
     db = SimpleNamespace(
-        close=close_db, rollback=lambda: cleanup_calls.append("rollback")
+        close=close_db,
+        rollback=lambda: cleanup_calls.append("rollback"),
+        commit=lambda: None,
     )
     queue_item = SimpleNamespace(
         CaseId=44,
@@ -282,7 +293,9 @@ def test_case_exception_logs_traceback_and_request_context(
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
     monkeypatch.setattr(
-        route_extraction, "get_queue", lambda *args: [queue_item]
+        route_extraction,
+        "get_queue_for_extraction",
+        lambda *args: [queue_item],
     )
     monkeypatch.setattr(
         route_extraction,
@@ -338,7 +351,7 @@ def test_case_exception_logs_traceback_and_request_context(
     )
 
     try:
-        job = route_extraction._run_extraction_job(
+        job = route_extraction._run_extraction_job_async(
             session_id=22,
             run_id=33,
             user="test-user",
