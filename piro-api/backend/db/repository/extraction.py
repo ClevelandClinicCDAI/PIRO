@@ -7,7 +7,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from core.security_util import SecurityUtil
@@ -263,66 +263,120 @@ def get_run(run_id: int, db: Session) -> Optional[ExtractionRun]:
 
 
 def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
+    # Admission is serialized by the session lock. Identity order remains
+    # reliable when timestamps reflect a transaction begun before that lock.
     return (
         db.query(ExtractionRun)
+        .populate_existing()
         .filter(ExtractionRun.ExtractionSessionId == session_id)
-        .order_by(
-            ExtractionRun.CreateDate.desc(),
-            ExtractionRun.ExtractionRunId.desc(),
-        )
+        .order_by(ExtractionRun.ExtractionRunId.desc())
         .first()
     )
 
 
-# A run stuck in "pending"/"running" this long with no queue-item activity is
-# almost certainly orphaned (e.g. the API process was restarted/crashed
-# mid-run), not a genuinely slow job — Azure OpenAI calls normally finish in
-# seconds.
+# Inactivity is a warning, not proof that a worker has stopped. Explicit
+# recovery must fence its writes before allowing another run to start.
 STALE_RUN_THRESHOLD_MINUTES = 30
 
 
-def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
-    """Auto-fail the session's latest run if it's stuck in pending/running with
-    no recent progress, so it stops blocking new runs from being started.
+class ExtractionRunSuperseded(RuntimeError):
+    """The worker no longer owns this session's extraction writes."""
 
-    Without this, a run orphaned by a server crash/restart would permanently
-    block the "a run is already running" concurrency guard, even after the
-    originating SearchRequest is deleted (deleting a request only soft-deletes
-    it — it never touches the underlying ExtractionRun).
+
+def lock_extraction_session(session_id: int, db: Session) -> None:
+    """Serialize run admission, recovery, and worker writes until commit.
+
+    The lock must be held in the same transaction as the guarded writes.
+    SQL Server ignores FOR UPDATE, so use its transaction-scoped lock hints.
     """
-    run = get_latest_run(session_id, db)
-    if run is None or run.Status not in ("pending", "running"):
-        return run
-
-    last_activity = (
-        db.query(func.max(ExtractionQueue.UpdateDate))
-        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+    if db.get_bind().dialect.name == "sqlite":
+        connection = db.connection().connection.driver_connection
+        if not connection.in_transaction:
+            db.execute(text("BEGIN IMMEDIATE"))
+    session_id_found = (
+        db.query(ExtractionSession.ExtractionSessionId)
+        .filter(ExtractionSession.ExtractionSessionId == session_id)
+        .with_hint(ExtractionSession, "WITH (UPDLOCK, HOLDLOCK)", "mssql")
+        .with_for_update()
         .scalar()
     )
+    if session_id_found is None:
+        raise ExtractionRunSuperseded("Extraction session no longer exists")
+
+
+def require_run_ownership(
+    session_id: int, run_id: int, db: Session, *, allow_cancelled: bool = False
+) -> None:
+    """Fence every worker write using fresh state under the session lock."""
+    lock_extraction_session(session_id, db)
+    latest = get_latest_run(session_id, db)
+    statuses = (
+        ("pending", "running", "cancelled")
+        if allow_cancelled
+        else ("pending", "running")
+    )
+    if (
+        latest is None
+        or latest.ExtractionRunId != run_id
+        or latest.Status not in statuses
+    ):
+        raise ExtractionRunSuperseded(
+            f"Extraction run {run_id} no longer owns session {session_id}"
+        )
+
+
+def is_run_stale(
+    run: ExtractionRun, last_activity: Optional[datetime]
+) -> bool:
+    """Read-only inactivity detection; it does not revoke worker ownership."""
+    if run.Status not in ("pending", "running"):
+        return False
     activity_dates = [
         value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
         for value in (last_activity, run.StartedAt, run.CreateDate)
         if value is not None
     ]
     if not activity_dates:
-        return run
+        return False
     reference = max(activity_dates)
 
     now = datetime.now(timezone.utc)
-    if now - reference <= timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES):
+    return now - reference > timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES)
+
+
+def reclaim_stale_run(
+    session_id: int, db: Session, *, commit: bool = True
+) -> Optional[ExtractionRun]:
+    """Explicitly fence an inactive run while serializing replacement starts.
+
+    With commit=False, the caller must commit/rollback; keep this lock through
+    replacement run creation. Polling must use is_run_stale instead.
+    """
+    lock_extraction_session(session_id, db)
+    run = get_latest_run(session_id, db)
+    last_activity = (
+        db.query(func.max(ExtractionQueue.UpdateDate))
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .scalar()
+    )
+    if run is None or not is_run_stale(run, last_activity):
+        if commit:
+            db.commit()
         return run
 
     logger.warning(
-        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "  # noqa:E501
-        f"stale (no activity since {reference}); auto-marking as failed so a "
-        f"new run can be started."
+        "Fencing inactive extraction run: session_id={} run_id={}",
+        session_id,
+        run.ExtractionRunId,
     )
+    now = datetime.now(timezone.utc)
+    run.CancellationRequested = True
     run.Status = "failed"
     run.CompletedAt = datetime.now(timezone.utc)
     note = (
-        "[Auto-recovered] Run had no progress for over "
-        f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a "
-        "server restart or crash; marked failed to unblock new runs."
+        "[Recovered] Run had no progress for over "
+        f"{STALE_RUN_THRESHOLD_MINUTES} minutes; its writes were fenced "
+        "before releasing the session for another run."
     )
     run.ErrorMessage = (
         f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
@@ -340,8 +394,10 @@ def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
         {"Status": "failed", "ErrorMessage": note, "UpdateDate": now},
         synchronize_session=False,
     )
-    db.commit()
-    db.refresh(run)
+    db.flush()
+    if commit:
+        db.commit()
+        db.refresh(run)
     return run
 
 
@@ -1192,6 +1248,7 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             "started_at": None,
             "completed_at": None,
             "last_updated_at": None,
+            "is_stale": False,
         }
 
     # Most recent queue-item activity, used as a "still alive" heartbeat for
@@ -1280,4 +1337,5 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
         "started_at": latest_run.StartedAt,
         "completed_at": latest_run.CompletedAt,
         "last_updated_at": last_updated_at,
+        "is_stale": is_run_stale(latest_run, last_updated_at),
     }

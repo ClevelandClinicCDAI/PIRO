@@ -10,6 +10,7 @@ from pydantic import BaseModel, validator
 # Session
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class ExtractionSessionCreate(BaseModel):
     name: str
     schema_definition: Optional[str] = None
@@ -51,6 +52,7 @@ class TextSourceOptionVM(BaseModel):
 # Run
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class ExtractionRunVM(BaseModel):
     ExtractionRunId: int
     ExtractionSessionId: int
@@ -71,6 +73,7 @@ class ExtractionRunVM(BaseModel):
 # ──────────────────────────────────────────────────────────────────────────────
 # Queue
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class ExtractionQueueAdd(BaseModel):
     session_id: int
@@ -100,6 +103,7 @@ class ExtractionQueueItemVM(BaseModel):
 # Run request
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class ExtractionRunRequest(BaseModel):
     session_id: int
     run_type: Literal["validation", "full"] = "full"
@@ -109,7 +113,9 @@ class ExtractionRunRequest(BaseModel):
     def check_validation_size(cls, v, values):
         if values.get("run_type") == "validation":
             if v is None or v <= 0:
-                raise ValueError("validation_size must be a positive integer for validation runs")
+                raise ValueError(
+                    "validation_size must be a positive integer for validation runs"
+                )
         return v
 
 
@@ -129,11 +135,13 @@ class ExtractionStatusVM(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     last_updated_at: Optional[datetime] = None
+    is_stale: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Results
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class ExtractionResultVM(BaseModel):
     ExtractionResultId: int
@@ -166,6 +174,7 @@ class ExtractionResultPatch(BaseModel):
 # Field suggestion
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class FieldSuggestionRequest(BaseModel):
     session_id: Optional[int] = None
     sample_text: Optional[str] = None
@@ -183,6 +192,7 @@ class FieldSuggestionVM(BaseModel):
 # ──────────────────────────────────────────────────────────────────────────────
 # Preview (single-doc extraction for schema builder)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class ExtractionPreviewRequest(BaseModel):
     session_id: int
@@ -206,6 +216,7 @@ class ExtractionPreviewVM(BaseModel):
 # ──────────────────────────────────────────────────────────────────────────────
 # Case text
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class CaseCommentSegmentVM(BaseModel):
     CaseCommentId: int

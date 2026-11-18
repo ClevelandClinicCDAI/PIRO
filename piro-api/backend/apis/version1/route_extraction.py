@@ -9,6 +9,7 @@ import asyncio
 import csv
 import io
 import json
+from functools import partial
 from contextlib import contextmanager
 from time import perf_counter
 from typing import Annotated, Any, Dict, List, Optional, cast
@@ -17,6 +18,7 @@ from core.auth_bearer import JWTBearer
 from core.config import settings
 from core.constants import Constants
 from core.llm_client import get_llm_client
+from core.extraction_worker import extraction_workers
 from core.security_util import SecurityUtil
 from core.security_user import (
     get_current_user_id,
@@ -25,6 +27,7 @@ from core.security_user import (
 )
 from db.repository.extraction import (
     AVAILABLE_TEXT_SOURCES,
+    ExtractionRunSuperseded,
     add_cases_to_queue,
     bulk_approve_high_confidence,
     clear_queue,
@@ -46,9 +49,12 @@ from db.repository.extraction import (
     get_result_by_id,
     get_results_for_session,
     get_run,
+    get_latest_run,
     get_session,
     list_user_sessions,
     parse_text_sources,
+    lock_extraction_session,
+    require_run_ownership,
     remove_from_queue,
     reset_queue_statuses,
     update_queue_item_status,
@@ -451,7 +457,7 @@ async def remove_queue_item(
     "/queue/{session_id}",
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
 )
-async def clear_queue_endpoint(
+def clear_queue_endpoint(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
@@ -460,7 +466,7 @@ async def clear_queue_endpoint(
     _require_session_ownership(session_id, current_user_id, db)
 
     # Guard against clearing out from under an active run.
-    latest = reclaim_stale_run(session_id, db)
+    latest = reclaim_stale_run(session_id, db, commit=False)
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
@@ -500,7 +506,7 @@ def _log_extraction_process(context: str, phase: str):
         )
 
 
-def _run_extraction_job(
+async def _run_extraction_job(
     session_id: int,
     run_id: int,
     user: str,
@@ -509,13 +515,10 @@ def _run_extraction_job(
     related_run_id: Optional[int] = None,
     search_request_id: Optional[int] = None,
 ) -> None:
-    """Starlette runs synchronous background tasks in its worker thread pool.
-
-    Keep the synchronous ORM and the LLM's event loop in that thread so web
-    requests and Gunicorn heartbeats can continue during extraction.
-    """
-    asyncio.run(
-        _run_extraction_job_async(
+    """Await a dedicated extraction worker without borrowing AnyIO tokens."""
+    await extraction_workers.run(
+        partial(
+            _run_extraction_job_async,
             session_id,
             run_id,
             user,
@@ -546,8 +549,10 @@ async def _run_extraction_job_async(
     active_queue_id: int | None = None
     task_cancelled: bool = False
     try:
-        update_run_status(run_id, "running", db)
-        update_session_status(session_id, "running", db)
+        require_run_ownership(session_id, run_id, db)
+        update_run_status(run_id, "running", db, commit=False)
+        update_session_status(session_id, "running", db, commit=False)
+        db.commit()
 
         llm = get_llm_client()
 
@@ -575,6 +580,7 @@ async def _run_extraction_job_async(
         # For full runs, reset all queue items so previously completed
         # validation cases are reprocessed to produce a complete result set
         if validation_set is None:
+            require_run_ownership(session_id, run_id, db)
             reset_queue_statuses(session_id, db)
 
         cancelled: bool = False
@@ -610,6 +616,7 @@ async def _run_extraction_job_async(
             queue_id = queue_item.ExtractionQueueId
             attempt = (queue_item.AttemptCount or 0) + 1
             try:
+                require_run_ownership(session_id, run_id, db)
                 update_queue_item_status(queue_id, "running", db)
                 with _log_extraction_process(case_context, "report_retrieval"):
                     labelled_text, segments = get_case_text_for_extraction(
@@ -620,6 +627,7 @@ async def _run_extraction_job_async(
                     )
 
                 if not labelled_text.strip():
+                    require_run_ownership(session_id, run_id, db)
                     update_queue_item_status(
                         queue_id,
                         "failed",
@@ -655,6 +663,7 @@ async def _run_extraction_job_async(
                 with _log_extraction_process(
                     case_context, "result_persistence"
                 ):
+                    require_run_ownership(session_id, run_id, db)
                     for field_name, fe in extraction.items():
                         # Find provenance location
                         source_comment_id = None
@@ -707,12 +716,16 @@ async def _run_extraction_job_async(
                 completed_count += 1
                 active_queue_id = None
 
+            except ExtractionRunSuperseded:
+                case_status = "superseded"
+                raise
             except asyncio.CancelledError:
                 case_status = "cancelled"
                 cancelled_count += 1
                 raise
             except Exception as exc:
                 db.rollback()
+                require_run_ownership(session_id, run_id, db)
                 logger.exception(
                     "Extraction case failed: search_request_id={} "
                     "session_id={} run_id={} case_id={} attempt={} "
@@ -760,6 +773,7 @@ async def _run_extraction_job_async(
                     )
 
         # Update run/session status
+        require_run_ownership(session_id, run_id, db)
         status_summary: dict = get_extraction_status(session_id, db)
         if cancelled:
             final_status = "cancelled"
@@ -770,8 +784,9 @@ async def _run_extraction_job_async(
                 if status_summary["failed"] == 0
                 else "completed_with_errors"
             )
-        update_run_status(run_id, final_status, db)
-        update_session_status(session_id, final_status, db)
+        update_run_status(run_id, final_status, db, commit=False)
+        update_session_status(session_id, final_status, db, commit=False)
+        db.commit()
         logger.info(
             "Extraction run finished: search_request_id={} session_id={} "
             "run_id={} status={} completed={} failed={} pending={} "
@@ -788,6 +803,13 @@ async def _run_extraction_job_async(
         )
         _notify_extraction_run_completed(run_id, final_status, db)
 
+    except ExtractionRunSuperseded:
+        db.rollback()
+        logger.warning(
+            "Extraction worker stopped after losing ownership: session_id={} run_id={}",
+            session_id,
+            run_id,
+        )
     except asyncio.CancelledError:
         task_cancelled = True
         cancellation_context = (
@@ -823,7 +845,13 @@ async def _run_extraction_job_async(
             )
         for target, update in updates:
             try:
+                require_run_ownership(
+                    session_id, run_id, db, allow_cancelled=True
+                )
                 update()
+            except ExtractionRunSuperseded:
+                db.rollback()
+                break
             except Exception:
                 logger.exception(
                     "Extraction cancellation cleanup failed: {} target={}",
@@ -850,6 +878,7 @@ async def _run_extraction_job_async(
         )
         db.rollback()
         try:
+            require_run_ownership(session_id, run_id, db)
             update_run_status(
                 run_id, "failed", db, error=str(exc)[:1000], commit=False
             )
@@ -869,6 +898,13 @@ async def _run_extraction_job_async(
                 case_ids=case_ids,
             )
             db.commit()
+        except ExtractionRunSuperseded:
+            db.rollback()
+            logger.warning(
+                "Extraction failure cleanup skipped for superseded run: session_id={} run_id={}",
+                session_id,
+                run_id,
+            )
         except Exception:
             db.rollback()
             logger.exception(
@@ -950,7 +986,7 @@ def start_extraction(
 
     # Concurrency guard: reject if a run is already active. First reclaim the
     # slot if the prior run is stale (e.g. orphaned by a server crash/restart).
-    latest = reclaim_stale_run(payload.session_id, db)
+    latest = reclaim_stale_run(payload.session_id, db, commit=False)
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
@@ -1019,7 +1055,7 @@ def retry_failed_cases(
 
     # Concurrency guard: reject if a run is already active. First reclaim the
     # slot if the prior run is stale (e.g. orphaned by a server crash/restart).
-    latest = reclaim_stale_run(payload.session_id, db)
+    latest = reclaim_stale_run(payload.session_id, db, commit=False)
     if latest and latest.Status in ("pending", "running"):
         raise HTTPException(
             status_code=409,
@@ -1075,7 +1111,7 @@ def retry_failed_cases(
     dependencies=[Depends(JWTBearer(_ALLOWED_ROLES))],
     response_model=ExtractionRunVM,
 )
-async def cancel_extraction(
+def cancel_extraction(
     session_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
@@ -1088,7 +1124,8 @@ async def cancel_extraction(
     cases stay queued so the run can be resumed later.
     """
     _require_session_ownership(session_id, current_user_id, db)
-    run = reclaim_stale_run(session_id, db)
+    lock_extraction_session(session_id, db)
+    run = get_latest_run(session_id, db)
     if run is None or run.Status not in ("pending", "running"):
         raise HTTPException(
             status_code=409, detail="No active run to cancel for this session"
@@ -1110,7 +1147,6 @@ async def get_status(
     _require_session_status_access(
         session_id, current_user_id, current_role, db
     )
-    reclaim_stale_run(session_id, db)
     status = get_extraction_status(session_id, db)
     return status
 

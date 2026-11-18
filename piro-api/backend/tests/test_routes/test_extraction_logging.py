@@ -9,6 +9,14 @@ from apis.version1 import route_extraction
 from piro_logger import logger
 
 
+@pytest.fixture(autouse=True)
+def mock_ownership_guard(monkeypatch):
+    # Logging uses DB stubs; integration tests exercise the real fence/lock.
+    monkeypatch.setattr(
+        route_extraction, "require_run_ownership", lambda *args, **kwargs: None
+    )
+
+
 def _capture_logs():
     output = StringIO()
     handler_id = logger.add(
@@ -118,7 +126,7 @@ def test_case_progress_without_report_content(
         route_extraction, "update_run_status", lambda *args, **kwargs: None
     )
     monkeypatch.setattr(
-        route_extraction, "update_session_status", lambda *args: None
+        route_extraction, "update_session_status", lambda *args, **kwargs: None
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
     monkeypatch.setattr(
@@ -279,7 +287,7 @@ def test_case_exception_logs_traceback_and_request_context(
                 await asyncio.sleep(0)
             raise ValueError("synthetic provider response error")
 
-    def update_run(run_id, status, db, error=None):
+    def update_run(run_id, status, db, error=None, **kwargs):
         run_updates.append(status)
         if cleanup_failure and status == "cancelled":
             raise RuntimeError("synthetic status cleanup failure")
@@ -289,7 +297,9 @@ def test_case_exception_logs_traceback_and_request_context(
     monkeypatch.setattr(
         route_extraction,
         "update_session_status",
-        lambda session_id, status, db: session_updates.append(status),
+        lambda session_id, status, db, **kwargs: session_updates.append(
+            status
+        ),
     )
     monkeypatch.setattr(route_extraction, "get_llm_client", FakeLlmClient)
     monkeypatch.setattr(

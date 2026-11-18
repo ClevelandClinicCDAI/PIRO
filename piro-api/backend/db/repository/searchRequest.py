@@ -481,7 +481,9 @@ def start_extraction_for_searchRequest(
     if not queue:
         raise DataException("Extraction schema has no queued cases")
 
-    latest = reclaim_stale_run(searchRequest.ExtractionSessionId, db)
+    latest = reclaim_stale_run(
+        searchRequest.ExtractionSessionId, db, commit=False
+    )
     if latest and latest.Status in ("pending", "running"):
         raise DataException(
             f"A run is already {latest.Status}. Wait for it to finish before starting another."

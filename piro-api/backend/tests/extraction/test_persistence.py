@@ -141,6 +141,23 @@ def stored_result(db, run_id, case_id=101, field_name="grade"):
     )
 
 
+def previous_run_for_retry(state):
+    previous_id = state.run_id
+    extraction.update_run_status(
+        previous_id, "completed_with_errors", state.db
+    )
+    run = extraction.create_run(
+        state.session_id,
+        '{"grade": {}}',
+        "test",
+        "test",
+        "pytest",
+        state.db,
+    )
+    state.run_id = run.ExtractionRunId
+    return previous_id
+
+
 @pytest.mark.parametrize(
     "source", ["final", "legacy_synoptic", "parsed_synoptic"]
 )
@@ -244,10 +261,7 @@ def test_fk_failure_rolls_back_whole_case_and_continues(state, monkeypatch):
     comment(state, "Grade: 2")
     comment(state, "Grade: 2", comment_id=502, case_id=102)
     original = route_extraction.upsert_result
-    related = extraction.create_run(
-        state.session_id, "{}", "test", "test", "pytest", state.db
-    )
-    related_id = related.ExtractionRunId
+    related_id = previous_run_for_retry(state)
 
     def fail_second_field(**kwargs):
         if kwargs["case_id"] == 101 and kwargs["field_name"] == "second":
@@ -294,10 +308,7 @@ def test_existing_review_and_related_results_survive_case_rollback(
     state, monkeypatch
 ):
     comment(state, "Grade: 2")
-    related = extraction.create_run(
-        state.session_id, "{}", "test", "test", "pytest", state.db
-    )
-    related_id = related.ExtractionRunId
+    related_id = previous_run_for_retry(state)
     for run_id in (state.run_id, related_id):
         extraction.upsert_result(
             run_id,

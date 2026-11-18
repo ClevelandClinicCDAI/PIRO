@@ -19,9 +19,3 @@ Connection settings come from `POSTGRES_*`, or
 `PIRO_EXTRACTION_TEST_POSTGRES_URL`. Only localhost is accepted. Each test
 creates and removes its own `piro_extraction_test_*` schema; it does not
 create/drop the database or modify existing application schemas.
-
-The SQL Server migration
-`piro-sql/add_extraction_result_comment_fk.sql` restores the development FK
-after the application fix is installed. It refuses to proceed if existing
-references are invalid, reports only their count, and leaves data correction
-for a separate review. It also validates an existing disabled/untrusted FK.
