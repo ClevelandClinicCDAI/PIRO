@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, text
 from sqlalchemy.orm import Session, joinedload
 
 from core.security_util import SecurityUtil
@@ -78,6 +79,35 @@ def _segment_order(short_name: str) -> int:
     if "addend" in c:  # matches Addendum, Addend, etc.
         return _TEXT_SOURCE_ORDER.get("addendum", 99)
     return _TEXT_SOURCE_ORDER.get(c, 99)
+
+
+@dataclass(frozen=True)
+class CaseTextSegment:
+    """Dataclass representing a case text segment.
+
+    Id identifies a displayed segment. SourceCommentId identifies an actual
+    CaseComment row and is None for assembled synoptic text.
+    """
+
+    Id: int
+    CaseId: int
+    CommentTypeId: int
+    CommentType: str
+    CommentText: str
+    SourceCommentType: str
+    SourceCommentId: Optional[int]
+
+
+def _comment_segment(row: VCaseCommentText) -> CaseTextSegment:
+    return CaseTextSegment(
+        Id=row.Id,
+        CaseId=row.CaseId,
+        CommentTypeId=row.CommentTypeId,
+        CommentType=row.CommentType,
+        CommentText=row.CommentText,
+        SourceCommentType=row.SourceCommentType,
+        SourceCommentId=row.Id,
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -169,11 +199,14 @@ def update_session_text_sources(
     return session
 
 
-def update_session_status(session_id: int, status: str, db: Session) -> None:
+def update_session_status(
+    session_id: int, status: str, db: Session, *, commit: bool = True
+) -> None:
     session = get_session(session_id, db)
     if session:
         session.Status = status
-        db.commit()
+        if commit:
+            db.commit()
 
 
 def delete_session(session_id: int, user: str, db: Session) -> bool:
@@ -200,6 +233,8 @@ def create_run(
     db: Session,
     run_type: str = "full",
     validation_size: Optional[int] = None,
+    *,
+    commit: bool = True,
 ) -> ExtractionRun:
     run = ExtractionRun(
         ExtractionSessionId=session_id,
@@ -212,8 +247,10 @@ def create_run(
         CreateBy=user,
     )
     db.add(run)
-    db.commit()
-    db.refresh(run)
+    db.flush()
+    if commit:
+        db.commit()
+        db.refresh(run)
     return run
 
 
@@ -226,67 +263,141 @@ def get_run(run_id: int, db: Session) -> Optional[ExtractionRun]:
 
 
 def get_latest_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
+    # Admission is serialized by the session lock. Identity order remains
+    # reliable when timestamps reflect a transaction begun before that lock.
     return (
         db.query(ExtractionRun)
+        .populate_existing()
         .filter(ExtractionRun.ExtractionSessionId == session_id)
-        .order_by(
-            ExtractionRun.CreateDate.desc(),
-            ExtractionRun.ExtractionRunId.desc(),
-        )
+        .order_by(ExtractionRun.ExtractionRunId.desc())
         .first()
     )
 
 
-# A run stuck in "pending"/"running" this long with no queue-item activity is
-# almost certainly orphaned (e.g. the API process was restarted/crashed
-# mid-run), not a genuinely slow job — Azure OpenAI calls normally finish in
-# seconds.
+# Inactivity is a warning, not proof that a worker has stopped. Explicit
+# recovery must fence its writes before allowing another run to start.
 STALE_RUN_THRESHOLD_MINUTES = 30
 
 
-def reclaim_stale_run(session_id: int, db: Session) -> Optional[ExtractionRun]:
-    """Auto-fail the session's latest run if it's stuck in pending/running with
-    no recent progress, so it stops blocking new runs from being started.
+class ExtractionRunSuperseded(RuntimeError):
+    """The worker no longer owns this session's extraction writes."""
 
-    Without this, a run orphaned by a server crash/restart would permanently
-    block the "a run is already running" concurrency guard, even after the
-    originating SearchRequest is deleted (deleting a request only soft-deletes
-    it — it never touches the underlying ExtractionRun).
+
+def lock_extraction_session(session_id: int, db: Session) -> None:
+    """Serialize run admission, recovery, and worker writes until commit.
+
+    The lock must be held in the same transaction as the guarded writes.
+    SQL Server ignores FOR UPDATE, so use its transaction-scoped lock hints.
     """
-    run = get_latest_run(session_id, db)
-    if run is None or run.Status not in ("pending", "running"):
-        return run
+    if db.get_bind().dialect.name == "sqlite":
+        connection = db.connection().connection.driver_connection
+        if not connection.in_transaction:
+            db.execute(text("BEGIN IMMEDIATE"))
+    session_id_found = (
+        db.query(ExtractionSession.ExtractionSessionId)
+        .filter(ExtractionSession.ExtractionSessionId == session_id)
+        .with_hint(ExtractionSession, "WITH (UPDLOCK, HOLDLOCK)", "mssql")
+        .with_for_update()
+        .scalar()
+    )
+    if session_id_found is None:
+        raise ExtractionRunSuperseded("Extraction session no longer exists")
 
+
+def require_run_ownership(
+    session_id: int, run_id: int, db: Session, *, allow_cancelled: bool = False
+) -> None:
+    """Fence every worker write using fresh state under the session lock."""
+    lock_extraction_session(session_id, db)
+    latest = get_latest_run(session_id, db)
+    statuses = (
+        ("pending", "running", "cancelled")
+        if allow_cancelled
+        else ("pending", "running")
+    )
+    if (
+        latest is None
+        or latest.ExtractionRunId != run_id
+        or latest.Status not in statuses
+    ):
+        raise ExtractionRunSuperseded(
+            f"Extraction run {run_id} no longer owns session {session_id}"
+        )
+
+
+def is_run_stale(
+    run: ExtractionRun, last_activity: Optional[datetime]
+) -> bool:
+    """Read-only inactivity detection; it does not revoke worker ownership."""
+    if run.Status not in ("pending", "running"):
+        return False
+    activity_dates = [
+        value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
+        for value in (last_activity, run.StartedAt, run.CreateDate)
+        if value is not None
+    ]
+    if not activity_dates:
+        return False
+    reference = max(activity_dates)
+
+    now = datetime.now(timezone.utc)
+    return now - reference > timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES)
+
+
+def reclaim_stale_run(
+    session_id: int, db: Session, *, commit: bool = True
+) -> Optional[ExtractionRun]:
+    """Explicitly fence an inactive run while serializing replacement starts.
+
+    With commit=False, the caller must commit/rollback; keep this lock through
+    replacement run creation. Polling must use is_run_stale instead.
+    """
+    lock_extraction_session(session_id, db)
+    run = get_latest_run(session_id, db)
     last_activity = (
         db.query(func.max(ExtractionQueue.UpdateDate))
         .filter(ExtractionQueue.ExtractionSessionId == session_id)
         .scalar()
     )
-    reference = last_activity or run.StartedAt or run.CreateDate
-    if reference is None:
-        return run
-
-    now = datetime.now(timezone.utc) if reference.tzinfo else datetime.utcnow()
-    if now - reference <= timedelta(minutes=STALE_RUN_THRESHOLD_MINUTES):
+    if run is None or not is_run_stale(run, last_activity):
+        if commit:
+            db.commit()
         return run
 
     logger.warning(
-        f"Extraction run {run.ExtractionRunId} for session {session_id} appears "  # noqa:E501
-        f"stale (no activity since {reference}); auto-marking as failed so a "
-        f"new run can be started."
+        "Fencing inactive extraction run: session_id={} run_id={}",
+        session_id,
+        run.ExtractionRunId,
     )
+    now = datetime.now(timezone.utc)
+    run.CancellationRequested = True
     run.Status = "failed"
     run.CompletedAt = datetime.now(timezone.utc)
     note = (
-        "[Auto-recovered] Run had no progress for over "
-        f"{STALE_RUN_THRESHOLD_MINUTES} minutes and was likely orphaned by a "
-        "server restart or crash; marked failed to unblock new runs."
+        "[Recovered] Run had no progress for over "
+        f"{STALE_RUN_THRESHOLD_MINUTES} minutes; its writes were fenced "
+        "before releasing the session for another run."
     )
     run.ErrorMessage = (
         f"{run.ErrorMessage}\n{note}" if run.ErrorMessage else note
     )
-    db.commit()
-    db.refresh(run)
+    update_session_status(session_id, "failed", db, commit=False)
+    # Full/retry runs must make unprocessed cases retryable as well. A
+    # validation run owns only its sampled cases; leave other pending cases.
+    unfinished = (
+        ("running",) if run.RunType == "validation" else ("pending", "running")
+    )
+    db.query(ExtractionQueue).filter(
+        ExtractionQueue.ExtractionSessionId == session_id,
+        ExtractionQueue.Status.in_(unfinished),
+    ).update(
+        {"Status": "failed", "ErrorMessage": note, "UpdateDate": now},
+        synchronize_session=False,
+    )
+    db.flush()
+    if commit:
+        db.commit()
+        db.refresh(run)
     return run
 
 
@@ -295,6 +406,8 @@ def update_run_status(
     status: str,
     db: Session,
     error: Optional[str] = None,
+    *,
+    commit: bool = True,
 ) -> None:
     run = get_run(run_id, db)
     if run is None:
@@ -311,7 +424,8 @@ def update_run_status(
         run.CompletedAt = datetime.now(timezone.utc)
     if error:
         run.ErrorMessage = error
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def request_run_cancellation(
@@ -402,11 +516,36 @@ def add_cases_to_queue(
 
 
 def get_queue(session_id: int, db: Session) -> List[ExtractionQueue]:
+    """Retrieve ExtractionQueue records for a session.
+
+    Returns all values from the ExtractionQueue table, plus Case data."""
+
     return (
         db.query(ExtractionQueue)
         .options(joinedload(ExtractionQueue.Case))
         .filter(ExtractionQueue.ExtractionSessionId == session_id)
         .order_by(ExtractionQueue.CreateDate)
+        .all()
+    )
+
+
+def get_queue_for_extraction(session_id: int, db: Session) -> list:
+    """Retrieve ExtractionQueue records for a session.
+
+    Returns a more limited set of values than `get_queue`, including only key
+    values needed for extraction."""
+
+    return (
+        db.query(
+            ExtractionQueue.ExtractionQueueId,
+            ExtractionQueue.CaseId,
+            ExtractionQueue.Status,
+            ExtractionQueue.AttemptCount,
+        )
+        .filter(ExtractionQueue.ExtractionSessionId == session_id)
+        .order_by(
+            ExtractionQueue.CreateDate, ExtractionQueue.ExtractionQueueId
+        )
         .all()
     )
 
@@ -447,6 +586,8 @@ def update_queue_item_status(
     status: str,
     db: Session,
     error: Optional[str] = None,
+    *,
+    commit: bool = True,
 ) -> None:
     item = (
         db.query(ExtractionQueue)
@@ -470,7 +611,8 @@ def update_queue_item_status(
     # datetime.now(timezone.utc) convention as StartedAt/CompletedAt keeps
     # all run/queue timestamps consistently UTC-aware.
     item.UpdateDate = datetime.now(timezone.utc)
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def reset_queue_statuses(session_id: int, db: Session) -> None:
@@ -481,6 +623,42 @@ def reset_queue_statuses(session_id: int, db: Session) -> None:
         {"Status": "pending", "ErrorMessage": None}, synchronize_session=False
     )
     db.commit()
+
+
+def fail_unfinished_queue(
+    session_id: int,
+    db: Session,
+    error: str,
+    case_ids: Optional[List[int]] = None,
+) -> None:
+    """Update per-case records in the ExtractionQueue table, setting status to
+    Failed.
+
+    This is needed when a run has been interrupted, so that we can retry cases.
+    """
+    chunks = (
+        [None]
+        if case_ids is None
+        else [
+            case_ids[index : index + 1000]
+            for index in range(0, len(case_ids), 1000)
+        ]
+    )
+    for chunk in chunks:
+        query = db.query(ExtractionQueue).filter(
+            ExtractionQueue.ExtractionSessionId == session_id,
+            ExtractionQueue.Status.in_(("pending", "running")),
+        )
+        if chunk is not None:
+            query = query.filter(ExtractionQueue.CaseId.in_(chunk))
+        query.update(
+            {
+                "Status": "failed",
+                "ErrorMessage": error[:1000],
+                "UpdateDate": datetime.now(timezone.utc),
+            },
+            synchronize_session=False,
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -507,6 +685,8 @@ def upsert_result(
     reviewed_by: Optional[str] = None,
     reviewed_date: Optional[datetime] = None,
     related_run_ids: Optional[List[int]] = None,
+    *,
+    commit: bool = True,
 ) -> ExtractionResult:
     """Insert or update an extraction result for a given run, session, and
     case.
@@ -514,6 +694,10 @@ def upsert_result(
     If a result already exists for the specified run, session, case, and field,
     it will be updated with the provided values. Otherwise, a new result will
     be created.
+
+    With commit=False, the caller owns the transaction for all fields and
+    related-run writes. Flushing detects constraint failures without making
+    partial results durable.
     """
 
     def _apply_result_values(result: ExtractionResult) -> ExtractionResult:
@@ -548,8 +732,6 @@ def upsert_result(
     )
     if existing:
         _apply_result_values(existing)
-        db.commit()
-        db.refresh(existing)
         result = existing
     else:
         result = ExtractionResult(
@@ -572,8 +754,7 @@ def upsert_result(
             UpdateBy=user,
         )
         db.add(result)
-        db.commit()
-        db.refresh(result)
+    db.flush()
 
     current_run_id = run_id
 
@@ -603,8 +784,6 @@ def upsert_result(
         if existing_result_from_another_run:
             _apply_result_values(existing_result_from_another_run)
             existing_result_from_another_run.ExtractionSessionId = session_id
-            db.commit()
-            db.refresh(existing_result_from_another_run)
         else:
             mirror_result = ExtractionResult(
                 ExtractionRunId=related_run_id,
@@ -628,8 +807,10 @@ def upsert_result(
                 UpdateBy=user,
             )
             db.add(mirror_result)
-            db.commit()
-            db.refresh(mirror_result)
+        db.flush()
+    if commit:
+        db.commit()
+        db.refresh(result)
     return result
 
 
@@ -638,6 +819,8 @@ def clone_results_for_run(
     destination_run_id: int,
     user: str,
     db: Session,
+    *,
+    commit: bool = True,
 ) -> int:
     """Copy every result row from one run into another run.
 
@@ -666,8 +849,11 @@ def clone_results_for_run(
             reviewed_date=result.ReviewedDate,
             user=user,
             db=db,
+            commit=False,
         )
         copied += 1
+    if commit:
+        db.commit()
     return copied
 
 
@@ -826,7 +1012,7 @@ def bulk_approve_high_confidence(
 
 def _build_synoptic_segment(
     case_id: int, db: Session
-) -> Optional[VCaseCommentText]:
+) -> Optional[CaseTextSegment]:
     """Build a synthetic 'Synoptic' text segment sourced from
     CaseCommentSynopticSpecimen / CaseCommentSynopticText — the same tables
     the case detail UI's synoptic report is built from — instead of
@@ -845,6 +1031,7 @@ def _build_synoptic_segment(
             db.query(CaseCommentSynopticSpecimen.SynopticId)
             .filter(CaseCommentSynopticSpecimen.CaseId == case_id)
             .distinct()
+            .order_by(CaseCommentSynopticSpecimen.SynopticId)
             .all()
         )
     ]
@@ -864,19 +1051,20 @@ def _build_synoptic_segment(
     if not text:
         return None
 
-    return VCaseCommentText(
+    return CaseTextSegment(
         Id=-case_id,
         CaseId=case_id,
         CommentTypeId=0,
         CommentType="Synoptic",
         CommentText=text,
         SourceCommentType="Synoptic",
+        SourceCommentId=None,
     )
 
 
 def get_case_text_segments(
     case_id: int, db: Session, comment_types: Optional[set] = None
-) -> List[VCaseCommentText]:
+) -> List[CaseTextSegment]:
     """Fetch comment segments for extraction-relevant types in display order.
 
     Filters on V_CaseCommentText.CommentType (the ShortName already in the
@@ -909,7 +1097,7 @@ def get_case_text_segments(
 
     non_synoptic_types = types - {"synoptic"}
 
-    rows: List[VCaseCommentText] = []
+    rows: List[CaseTextSegment] = []
     if non_synoptic_types:
         filters = [
             func.lower(VCaseCommentText.CommentType).in_(non_synoptic_types)
@@ -918,12 +1106,14 @@ def get_case_text_segments(
             filters.append(
                 func.lower(VCaseCommentText.CommentType).like("%addend%")
             )
-        rows = (
+        comment_rows = (
             db.query(VCaseCommentText)
             .filter(VCaseCommentText.CaseId == case_id)
             .filter(or_(*filters))
+            .order_by(VCaseCommentText.Id)
             .all()
         )
+        rows = [_comment_segment(row) for row in comment_rows]
 
     if "synoptic" in types:
         synoptic_segment = _build_synoptic_segment(case_id, db)
@@ -938,9 +1128,10 @@ def get_case_text_segments(
                 db.query(VCaseCommentText)
                 .filter(VCaseCommentText.CaseId == case_id)
                 .filter(func.lower(VCaseCommentText.CommentType) == "synoptic")
+                .order_by(VCaseCommentText.Id)
                 .all()
             )
-            rows.extend(legacy_synoptic_rows)
+            rows.extend(_comment_segment(row) for row in legacy_synoptic_rows)
 
     if rows:
         rows.sort(key=lambda r: _segment_order(r.CommentType))
@@ -950,6 +1141,7 @@ def get_case_text_segments(
         all_rows = (
             db.query(VCaseCommentText)
             .filter(VCaseCommentText.CaseId == case_id)
+            .order_by(VCaseCommentText.Id)
             .all()
         )
         available = [r.CommentType for r in all_rows]
@@ -961,7 +1153,7 @@ def get_case_text_segments(
             available,
         )
         all_rows.sort(key=lambda r: _segment_order(r.CommentType))
-        return all_rows
+        return [_comment_segment(row) for row in all_rows]
     else:
         logger.info(
             "Case %s: no segments matched explicit text-source selection %s; "
@@ -982,7 +1174,7 @@ def _strip_ldt_disclaimer(text: str) -> str:
     return cleaned.strip()
 
 
-def build_labelled_report_text(segments: List[VCaseCommentText]) -> str:
+def build_labelled_report_text(segments: List[CaseTextSegment]) -> str:
     """Build a structured, labelled text string from comment segments.
 
     The LDT disclaimer boilerplate is stripped from each segment before
@@ -1008,19 +1200,21 @@ def get_case_text_for_extraction(
     db: Session,
     role: Optional[str] = None,
     comment_types: Optional[set] = None,
-) -> tuple[str, List[VCaseCommentText]]:
+) -> tuple[str, List[CaseTextSegment]]:
     """Return (labelled_text, segments) for LLM input.
 
     Applies DEMOADMIN masking if role == 'DEMOADMIN'.
     """
     segments = get_case_text_segments(case_id, db, comment_types=comment_types)
 
-    # Apply PHI masking for demo mode (reuses existing SecurityUtil logic)
-    if role and role.upper() == "DEMOADMIN":
-
-        for seg in segments:
-            seg.CommentText = SecurityUtil.mask_date(seg.CommentText)
-            seg.CommentText = SecurityUtil.mask_case(seg.CommentText)
+    normalized = []
+    for seg in segments:
+        text = _strip_ldt_disclaimer(seg.CommentText)
+        if role and role.upper() == "DEMOADMIN":
+            text = SecurityUtil.mask_case(SecurityUtil.mask_date(text))
+        if text:
+            normalized.append(replace(seg, CommentText=text))
+    segments = normalized
 
     labelled_text = build_labelled_report_text(segments)
     return labelled_text, segments
@@ -1054,6 +1248,7 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
             "started_at": None,
             "completed_at": None,
             "last_updated_at": None,
+            "is_stale": False,
         }
 
     # Most recent queue-item activity, used as a "still alive" heartbeat for
@@ -1142,4 +1337,5 @@ def get_extraction_status(session_id: int, db: Session) -> dict:
         "started_at": latest_run.StartedAt,
         "completed_at": latest_run.CompletedAt,
         "last_updated_at": last_updated_at,
+        "is_stale": is_run_stale(latest_run, last_updated_at),
     }

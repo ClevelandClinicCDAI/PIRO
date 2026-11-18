@@ -381,7 +381,7 @@ async def deny_search_request(
         )
     ],
 )
-async def start_extraction(
+def start_extraction(
     searchRequestId: int,
     background_tasks: BackgroundTasks,
     current_user: Annotated[str, Depends(get_current_user_nuid)],

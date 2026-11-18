@@ -14,7 +14,7 @@ from db.models.ExtractionSession import ExtractionSession
 from db.repository.lookup import SearchRequestStatus_get_id
 from db.repository.extraction import (
     create_run,
-    get_queue,
+    get_queue_for_extraction,
     reclaim_stale_run,
 )
 from db.repository.searchRequestDataField import (
@@ -477,11 +477,13 @@ def start_extraction_for_searchRequest(
             "Extraction schema is not defined for this request"
         )
 
-    queue = get_queue(searchRequest.ExtractionSessionId, db)
+    queue = get_queue_for_extraction(searchRequest.ExtractionSessionId, db)
     if not queue:
         raise DataException("Extraction schema has no queued cases")
 
-    latest = reclaim_stale_run(searchRequest.ExtractionSessionId, db)
+    latest = reclaim_stale_run(
+        searchRequest.ExtractionSessionId, db, commit=False
+    )
     if latest and latest.Status in ("pending", "running"):
         raise DataException(
             f"A run is already {latest.Status}. Wait for it to finish before starting another."
